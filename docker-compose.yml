@@ -1,0 +1,68 @@
+services:
+  serv-mech-db:
+    image: postgres:16
+
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "${POSTGRES_HOST_PORT}:5432"
+    volumes:
+      - mech_db_data:/var/lib/postgresql/data
+    networks:
+      - mechanic-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  serv-mech-api:
+    build:
+      context: ./mechanic-api
+      dockerfile: Dockerfile.dev
+
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "${BACKEND_PORT}:8000"
+    volumes:
+      - ./mechanic-api:/app
+    depends_on:
+      serv-mech-db:
+        condition: service_healthy
+    networks:
+      - mechanic-net
+
+  serv-mech-web:
+    build:
+      context: ./mechanic-web
+      dockerfile: Dockerfile.dev
+
+    restart: unless-stopped
+    depends_on:
+      - serv-mech-api
+    environment:
+      # enables file watching via polling (for live reload)
+      CHOKIDAR_USEPOLLING: "true"
+    ports:
+      - "${FRONTEND_PORT}:4200"
+    volumes:
+      - ./mechanic-web:/app
+      - node_modules:/app/node_modules
+    working_dir: /app
+    networks:
+      - mechanic-net
+
+volumes:
+  mech_db_data:
+  node_modules:
+
+networks:
+  mechanic-net:
+    # custom network name (avoid auto-generated compose name)
+    name: mechanic-system_mechanic-net
+    driver: bridge
