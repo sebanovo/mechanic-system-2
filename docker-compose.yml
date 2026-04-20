@@ -1,7 +1,6 @@
 services:
   serv-mech-db:
     image: postgres:16
-
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
@@ -19,11 +18,24 @@ services:
       timeout: 5s
       retries: 5
 
+  serv-mech-redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    networks:
+      - mechanic-net
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   serv-mech-api:
     build:
       context: ./mechanic-api
       dockerfile: Dockerfile.dev
-
     restart: unless-stopped
     env_file:
       - .env
@@ -33,6 +45,37 @@ services:
       - ./mechanic-api:/app
     depends_on:
       serv-mech-db:
+        condition: service_healthy
+    networks:
+      - mechanic-net
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/system/health', timeout=5).read()",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  serv-mech-worker:
+    build:
+      context: ./mechanic-api
+      dockerfile: Dockerfile.dev
+    restart: unless-stopped
+    command: ["/app/scripts/start_worker.sh"]
+    env_file:
+      - .env
+    volumes:
+      - ./mechanic-api:/app
+      - ./mechanic-api/storage:/app/storage
+    depends_on:
+      serv-mech-db:
+        condition: service_healthy
+      serv-mech-redis:
         condition: service_healthy
     networks:
       - mechanic-net
@@ -59,6 +102,7 @@ services:
 
 volumes:
   mech_db_data:
+  redis_data:
   node_modules:
 
 networks:

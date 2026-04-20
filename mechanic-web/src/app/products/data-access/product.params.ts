@@ -1,4 +1,4 @@
-export interface ProductListParams {
+export type ProductListParams = {
   search?: string;
   category?: string;
   status?: 'active' | 'inactive' | 'out_of_stock';
