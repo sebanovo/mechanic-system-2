@@ -1,0 +1,443 @@
+<section class="space-y-6">
+  <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+    <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      <div>
+        <p class="text-sm font-semibold text-slate-500">Sistema</p>
+        <h1 class="text-3xl font-bold text-slate-900">Notificaciones</h1>
+        <p class="mt-2 max-w-3xl text-sm text-slate-500">
+          Gestiona dispositivos registrados para notificaciones push. En móvil o web push el
+          token vendrá de Firebase/FCM.
+        </p>
+      </div>
+
+      <div class="flex flex-wrap gap-3">
+        <a routerLink="/app/dashboard"
+          class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+          Dashboard
+        </a>
+
+        <button type="button" (click)="onRefreshDevices()" [disabled]="store.deviceTokensLoading()"
+          class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60">
+          {{ store.deviceTokensLoading() ? "Actualizando..." : "Actualizar" }}
+        </button>
+      </div>
+    </div>
+
+    <div class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div class="rounded-2xl border border-slate-200 p-4">
+        <p class="text-xs font-semibold text-slate-500">Dispositivos</p>
+        <p class="mt-1 text-2xl font-bold text-slate-900">
+          {{ store.deviceTokensCount() }}
+        </p>
+      </div>
+
+      <div class="rounded-2xl border border-slate-200 p-4">
+        <p class="text-xs font-semibold text-slate-500">Activos</p>
+        <p class="mt-1 text-2xl font-bold text-emerald-700">
+          {{ store.activeDeviceTokensCount() }}
+        </p>
+      </div>
+
+      <div class="rounded-2xl border border-slate-200 p-4">
+        <p class="text-xs font-semibold text-slate-500">Inactivos</p>
+        <p class="mt-1 text-2xl font-bold text-slate-900">
+          {{ store.inactiveDeviceTokensCount() }}
+        </p>
+      </div>
+
+      <div class="rounded-2xl border border-slate-200 p-4">
+        <p class="text-xs font-semibold text-slate-500">Usuario actual</p>
+        <p class="mt-1 truncate text-sm font-bold text-slate-900">
+          {{ store.currentUser()?.email || "Sin usuario" }}
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+    <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <h2 class="text-xl font-bold text-slate-900">Registrar dispositivo</h2>
+      <p class="mt-1 text-sm text-slate-500">
+        Flutter o Firebase Web SDK enviarán el token real.
+      </p>
+
+      @if (store.hasRegisteringDeviceTokenError()) {
+      <div class="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4">
+        <p class="text-sm text-red-700">
+          {{ store.registeringDeviceTokenError()?.message }}
+        </p>
+      </div>
+      }
+
+      <form class="mt-5 grid gap-4" [formGroup]="registerDeviceForm" (ngSubmit)="onRegisterDevice()">
+        <label class="space-y-1">
+          <span class="text-sm font-semibold text-slate-700">
+            Token de dispositivo
+          </span>
+          <textarea rows="4" formControlName="deviceToken"
+            class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"></textarea>
+        </label>
+
+        <div class="grid gap-4 md:grid-cols-2">
+          <label class="space-y-1">
+            <span class="text-sm font-semibold text-slate-700">
+              Plataforma
+            </span>
+            <select formControlName="devicePlatform"
+              class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm">
+              <option value="WEB">WEB</option>
+              <option value="ANDROID">ANDROID</option>
+              <option value="IOS">IOS</option>
+            </select>
+          </label>
+
+          <label class="space-y-1">
+            <span class="text-sm font-semibold text-slate-700">Rol app</span>
+            <input type="text" formControlName="appRole"
+              class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
+          </label>
+        </div>
+
+        <label class="space-y-1">
+          <span class="text-sm font-semibold text-slate-700">Etiqueta</span>
+          <input type="text" formControlName="deviceLabel" placeholder="Ej: Navegador Chrome taller"
+            class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
+        </label>
+
+        <div class="flex justify-end">
+          <button type="submit" [disabled]="store.registeringDeviceToken()"
+            class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50">
+            {{
+            store.registeringDeviceToken()
+            ? "Registrando..."
+            : "Registrar dispositivo"
+            }}
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <section class="rounded-3xl border border-slate-200 bg-white shadow-sm">
+      <div class="border-b border-slate-200 p-6">
+        <h2 class="text-xl font-bold text-slate-900">
+          Mis dispositivos registrados
+        </h2>
+        <p class="text-sm text-slate-500">
+          Tokens asociados al usuario autenticado.
+        </p>
+      </div>
+
+      @if (store.deviceTokensLoading() && !store.deviceTokensHasLoaded()) {
+      <div class="p-6">
+        <p class="text-sm font-semibold text-slate-500">
+          Cargando dispositivos...
+        </p>
+      </div>
+      } @else if (store.hasDeviceTokensError()) {
+      <div class="p-6">
+        <div class="rounded-2xl border border-red-200 bg-red-50 p-4">
+          <p class="text-sm text-red-700">
+            {{ store.deviceTokensError()?.message }}
+          </p>
+        </div>
+      </div>
+      } @else if (store.deviceTokens().length === 0) {
+      <div class="p-10 text-center">
+        <p class="font-bold text-slate-900">Sin dispositivos</p>
+        <p class="mt-1 text-sm text-slate-500">
+          Registra un token para poder recibir notificaciones.
+        </p>
+      </div>
+      } @else {
+      <div class="overflow-x-auto">
+        <table class="w-full min-w-[900px] text-left text-sm">
+          <thead class="border-b border-slate-200 bg-slate-50">
+            <tr>
+              <th class="px-6 py-3 font-bold text-slate-700">Dispositivo</th>
+              <th class="px-6 py-3 font-bold text-slate-700">Plataforma</th>
+              <th class="px-6 py-3 font-bold text-slate-700">Proveedor</th>
+              <th class="px-6 py-3 font-bold text-slate-700">Último uso</th>
+              <th class="px-6 py-3 font-bold text-slate-700">Estado</th>
+              <th class="px-6 py-3 text-right font-bold text-slate-700">
+                Acciones
+              </th>
+            </tr>
+          </thead>
+
+          <tbody class="divide-y divide-slate-100">
+            @for (device of store.deviceTokens(); track device.id) {
+            <tr class="hover:bg-slate-50">
+              <td class="px-6 py-4">
+                <p class="font-bold text-slate-900">
+                  {{ device.deviceLabel || "Sin etiqueta" }}
+                </p>
+                <p class="mt-1 max-w-xs truncate font-mono text-xs text-slate-500">
+                  {{ device.id }}
+                </p>
+                <p class="mt-1 text-xs text-slate-400">
+                  Rol: {{ device.appRole || "Sin rol" }}
+                </p>
+              </td>
+
+              <td class="px-6 py-4">
+                <span class="rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-blue-700">
+                  {{ device.devicePlatform }}
+                </span>
+              </td>
+
+              <td class="px-6 py-4">
+                {{ device.pushProviderName || "Sin proveedor" }}
+              </td>
+
+              <td class="px-6 py-4 text-xs text-slate-600">
+                {{ device.lastSeenAt }}
+              </td>
+
+              <td class="px-6 py-4">
+                <span class="rounded-full px-3 py-1 text-xs font-bold"
+                  [class]="getDeviceStatusBadgeClass(device.isActive)">
+                  {{ device.isActive ? "Activo" : "Inactivo" }}
+                </span>
+              </td>
+
+              <td class="px-6 py-4 text-right">
+                <button type="button" (click)="onDeactivateDevice(device)"
+                  [disabled]="!device.isActive || store.isDeactivatingDeviceToken(device.id)"
+                  class="rounded-xl border border-red-200 px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50">
+                  {{
+                  store.isDeactivatingDeviceToken(device.id)
+                  ? "Desactivando..."
+                  : "Desactivar"
+                  }}
+                </button>
+              </td>
+            </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      }
+    </section>
+  </section>
+
+  @if (store.isPlatformAdmin()) {
+  <section class="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+    <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <h2 class="text-xl font-bold text-slate-900">
+        Enviar push de prueba
+      </h2>
+      <p class="mt-1 text-sm text-slate-500">
+        Solo plataforma. Envía una notificación de prueba a un usuario por ID.
+      </p>
+
+      @if (store.hasSendingTestPushError()) {
+      <div class="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4">
+        <p class="text-sm text-red-700">
+          {{ store.sendingTestPushError()?.message }}
+        </p>
+      </div>
+      }
+
+      @if (store.testPushResult()) {
+      <div class="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+        <p class="text-sm font-bold text-emerald-900">
+          Notificación encolada
+        </p>
+        <p class="mt-1 text-sm text-emerald-700">
+          Dispositivos activos:
+          {{ store.testPushResult()?.activeDeviceTokensCount }}
+        </p>
+        <p class="text-sm text-emerald-700">
+          Jobs encolados: {{ store.testPushResult()?.enqueuedJobsCount }}
+        </p>
+      </div>
+      }
+
+      <form class="mt-5 grid gap-4" [formGroup]="testPushForm" (ngSubmit)="onSendTestPush()">
+        <label class="space-y-1">
+          <span class="text-sm font-semibold text-slate-700">
+            ID del usuario destino
+          </span>
+          <input type="text" formControlName="userId"
+            class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
+        </label>
+
+        <label class="space-y-1">
+          <span class="text-sm font-semibold text-slate-700">Título</span>
+          <input type="text" formControlName="title"
+            class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
+        </label>
+
+        <label class="space-y-1">
+          <span class="text-sm font-semibold text-slate-700">Mensaje</span>
+          <textarea rows="3" formControlName="body"
+            class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"></textarea>
+        </label>
+
+        <label class="space-y-1">
+          <span class="text-sm font-semibold text-slate-700">
+            ID de incidente opcional
+          </span>
+          <input type="text" formControlName="incidentId"
+            class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
+        </label>
+
+        <label class="space-y-1">
+          <span class="text-sm font-semibold text-slate-700">
+            Data JSON
+          </span>
+          <textarea rows="4" formControlName="dataJsonText"
+            class="w-full rounded-xl border border-slate-300 px-3 py-2 font-mono text-sm"></textarea>
+        </label>
+
+        <div class="flex justify-end">
+          <button type="submit" [disabled]="store.sendingTestPush()"
+            class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50">
+            {{
+            store.sendingTestPush()
+            ? "Enviando..."
+            : "Enviar push de prueba"
+            }}
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <section class="rounded-3xl border border-slate-200 bg-white shadow-sm">
+      <div class="border-b border-slate-200 p-6">
+        <h2 class="text-xl font-bold text-slate-900">
+          Entregas por incidente
+        </h2>
+        <p class="text-sm text-slate-500">
+          Consulta las notificaciones generadas para un incidente específico.
+        </p>
+
+        <form class="mt-5 flex flex-col gap-3 sm:flex-row" [formGroup]="deliveriesForm" (ngSubmit)="onLoadDeliveries()">
+          <input type="text" formControlName="incidentId" placeholder="incident_id"
+            class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
+
+          <button type="submit" [disabled]="store.deliveriesLoading()"
+            class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50">
+            {{ store.deliveriesLoading() ? "Buscando..." : "Buscar" }}
+          </button>
+        </form>
+      </div>
+
+      <div class="grid gap-4 border-b border-slate-200 p-6 sm:grid-cols-3">
+        <div class="rounded-2xl border border-slate-200 p-4">
+          <p class="text-xs font-semibold text-slate-500">Total</p>
+          <p class="mt-1 text-2xl font-bold text-slate-900">
+            {{ store.deliveriesCount() }}
+          </p>
+        </div>
+
+        <div class="rounded-2xl border border-slate-200 p-4">
+          <p class="text-xs font-semibold text-slate-500">Enviadas</p>
+          <p class="mt-1 text-2xl font-bold text-emerald-700">
+            {{ store.sentDeliveriesCount() }}
+          </p>
+        </div>
+
+        <div class="rounded-2xl border border-slate-200 p-4">
+          <p class="text-xs font-semibold text-slate-500">Fallidas</p>
+          <p class="mt-1 text-2xl font-bold text-red-700">
+            {{ store.failedDeliveriesCount() }}
+          </p>
+        </div>
+      </div>
+
+      @if (store.deliveriesLoading()) {
+      <div class="p-6">
+        <p class="text-sm text-slate-500">Cargando entregas...</p>
+      </div>
+      } @else if (store.hasDeliveriesError()) {
+      <div class="p-6">
+        <div class="rounded-2xl border border-red-200 bg-red-50 p-4">
+          <p class="text-sm text-red-700">
+            {{ store.deliveriesError()?.message }}
+          </p>
+        </div>
+      </div>
+      } @else if (store.deliveriesHasLoaded() && store.deliveries().length === 0) {
+      <div class="p-10 text-center">
+        <p class="font-bold text-slate-900">Sin entregas</p>
+        <p class="mt-1 text-sm text-slate-500">
+          No hay notificaciones registradas para este incidente.
+        </p>
+      </div>
+      } @else {
+      <div class="overflow-x-auto">
+        <table class="w-full min-w-[1000px] text-left text-sm">
+          <thead class="border-b border-slate-200 bg-slate-50">
+            <tr>
+              <th class="px-6 py-3 font-bold text-slate-700">Evento</th>
+              <th class="px-6 py-3 font-bold text-slate-700">Destino</th>
+              <th class="px-6 py-3 font-bold text-slate-700">Mensaje</th>
+              <th class="px-6 py-3 font-bold text-slate-700">Estado</th>
+              <th class="px-6 py-3 font-bold text-slate-700">Fecha</th>
+              <th class="px-6 py-3 font-bold text-slate-700">Error</th>
+            </tr>
+          </thead>
+
+          <tbody class="divide-y divide-slate-100">
+            @for (delivery of store.deliveries(); track delivery.id) {
+            <tr class="hover:bg-slate-50">
+              <td class="px-6 py-4">
+                <p class="font-bold text-slate-900">
+                  {{ delivery.eventCode }}
+                </p>
+                <p class="mt-1 font-mono text-xs text-slate-400">
+                  {{ delivery.id }}
+                </p>
+              </td>
+
+              <td class="px-6 py-4">
+                @if (delivery.recipientUser) {
+                <p class="font-semibold text-slate-900">
+                  {{ delivery.recipientUser.fullName }}
+                </p>
+                <p class="text-xs text-slate-500">
+                  {{ delivery.recipientUser.email }}
+                </p>
+                } @else {
+                <span class="text-xs text-slate-500">
+                  Sin destinatario
+                </span>
+                }
+              </td>
+
+              <td class="px-6 py-4">
+                <p class="font-bold text-slate-900">
+                  {{ delivery.title }}
+                </p>
+                <p class="mt-1 max-w-xs text-xs text-slate-500">
+                  {{ delivery.body }}
+                </p>
+              </td>
+
+              <td class="px-6 py-4">
+                <span class="rounded-full px-3 py-1 text-xs font-bold" [class]="getStatusBadgeClass(delivery.status)">
+                  {{ getStatusLabel(delivery.status) }}
+                </span>
+              </td>
+
+              <td class="px-6 py-4 text-xs text-slate-600">
+                <p>Creado: {{ delivery.createdAt }}</p>
+                <p>Enviado: {{ delivery.sentAt || "—" }}</p>
+              </td>
+
+              <td class="px-6 py-4">
+                <p class="max-w-xs text-xs text-red-700">
+                  {{ delivery.errorMessage || "—" }}
+                </p>
+              </td>
+            </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      }
+    </section>
+  </section>
+  }
+</section>

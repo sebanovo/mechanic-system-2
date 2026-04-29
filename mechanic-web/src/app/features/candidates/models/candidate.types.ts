@@ -1,17 +1,25 @@
 export type CandidateStatus = "AVAILABLE" | "ACCEPTED" | "REJECTED" | "EXPIRED";
 
 export type CandidateIncidentStatus =
+	| "PENDING"
 	| "PUBLISHED"
 	| "ASSIGNED"
 	| "EN_ROUTE"
+	| "ON_SITE"
 	| "ARRIVED"
 	| "IN_PROGRESS"
 	| "COMPLETED"
 	| "CANCELLED";
 
-export type CandidatePriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
+export type CandidatePriority =
+	| "LOW"
+	| "MEDIUM"
+	| "HIGH"
+	| "CRITICAL"
+	| "URGENT"
+	| "UNKNOWN";
 
-export type CandidateRationaleDto = Record<string, string>;
+export type CandidateRationaleDto = Record<string, unknown>;
 
 export type CandidateProviderOwnerUserDto = {
 	id: string;
@@ -32,13 +40,13 @@ export type CandidateProviderDto = {
 	id: string;
 	provider_type: string;
 	business_name: string;
-	city: string;
+	city: string | null;
 	contact_phone: string | null;
 	average_rating: number;
 	available_capacity: number;
 	available_technicians_count: number;
-	base_latitude: number;
-	base_longitude: number;
+	base_latitude: number | null;
+	base_longitude: number | null;
 	owner_user: CandidateProviderOwnerUserDto;
 	matched_services: CandidateMatchedServiceDto[];
 };
@@ -50,8 +58,8 @@ export type CandidateIncidentDto = {
 	reported_category: string;
 	title: string;
 	description: string;
-	incident_latitude: number;
-	incident_longitude: number;
+	incident_latitude: number | null;
+	incident_longitude: number | null;
 	address_reference: string | null;
 	ai_summary_status: string | null;
 	structured_summary: string | null;
@@ -67,10 +75,10 @@ export type AssignmentCandidateDto = {
 	status: CandidateStatus;
 	recommendation_rank: number;
 	score: number;
-	distance_km: number;
+	distance_km: number | null;
 	required_service_codes: string[];
 	matched_service_codes: string[];
-	rationale: CandidateRationaleDto;
+	rationale: CandidateRationaleDto | null;
 	provider_average_rating_snapshot: number;
 	provider_available_capacity_snapshot: number;
 	available_technicians_count_snapshot: number;
@@ -105,8 +113,8 @@ export type CandidateProvider = {
 	averageRating: number;
 	availableCapacity: number;
 	availableTechniciansCount: number;
-	baseLatitude: number;
-	baseLongitude: number;
+	baseLatitude: number | null;
+	baseLongitude: number | null;
 	ownerUser: CandidateProviderOwnerUser;
 	matchedServices: CandidateMatchedService[];
 };
@@ -118,8 +126,8 @@ export type CandidateIncident = {
 	reportedCategory: string;
 	title: string;
 	description: string;
-	incidentLatitude: number;
-	incidentLongitude: number;
+	incidentLatitude: number | null;
+	incidentLongitude: number | null;
 	addressReference: string | null;
 	aiSummaryStatus: string | null;
 	structuredSummary: string | null;
@@ -135,10 +143,10 @@ export type AssignmentCandidate = {
 	status: CandidateStatus;
 	recommendationRank: number;
 	score: number;
-	distanceKm: number;
+	distanceKm: number | null;
 	requiredServiceCodes: string[];
 	matchedServiceCodes: string[];
-	rationale: Record<string, string>;
+	rationale: Record<string, unknown>;
 	providerAverageRatingSnapshot: number;
 	providerAvailableCapacitySnapshot: number;
 	availableTechniciansCountSnapshot: number;

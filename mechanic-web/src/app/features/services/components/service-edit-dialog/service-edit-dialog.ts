@@ -68,15 +68,26 @@ export class ServiceEditDialog {
 			const currentService = this.providerService();
 
 			if (!currentService) {
+				this.form.reset({
+					customTitle: "",
+					customDescription: "",
+					priceEstimateMin: 0,
+					priceEstimateMax: 0,
+					estimatedDurationMinutes: 30,
+					isMobileServiceEnabled: true,
+					isEmergencyServiceEnabled: true,
+					isActive: true,
+				});
 				return;
 			}
 
 			this.form.patchValue({
-				customTitle: currentService.customTitle,
-				customDescription: currentService.customDescription,
-				priceEstimateMin: currentService.priceEstimateMin,
-				priceEstimateMax: currentService.priceEstimateMax,
-				estimatedDurationMinutes: currentService.estimatedDurationMinutes,
+				customTitle: currentService.customTitle ?? "",
+				customDescription: currentService.customDescription ?? "",
+				priceEstimateMin: currentService.priceEstimateMin ?? 0,
+				priceEstimateMax: currentService.priceEstimateMax ?? 0,
+				estimatedDurationMinutes:
+					currentService.estimatedDurationMinutes ?? 30,
 				isMobileServiceEnabled: currentService.isMobileServiceEnabled,
 				isEmergencyServiceEnabled: currentService.isEmergencyServiceEnabled,
 				isActive: currentService.isActive,
@@ -101,6 +112,15 @@ export class ServiceEditDialog {
 			return;
 		}
 
-		this.updateService.emit(value);
+		this.updateService.emit({
+			customTitle: value.customTitle || null,
+			customDescription: value.customDescription || null,
+			priceEstimateMin: value.priceEstimateMin,
+			priceEstimateMax: value.priceEstimateMax,
+			estimatedDurationMinutes: value.estimatedDurationMinutes,
+			isMobileServiceEnabled: value.isMobileServiceEnabled,
+			isEmergencyServiceEnabled: value.isEmergencyServiceEnabled,
+			isActive: value.isActive,
+		});
 	}
 }

@@ -2,7 +2,7 @@ import { computed, inject, Injectable, signal } from "@angular/core";
 import { firstValueFrom } from "rxjs";
 
 import { toAuthUser } from "../../../features/auth/adapters/auth.adapter";
-import { AuthUser } from "../../../features/auth/models/auth.types";
+import { AuthUser, RoleCode } from "../../../features/auth/models/auth.types";
 import { AuthService } from "../../../features/auth/services/auth.service";
 import { SessionBootstrapResult } from "../model/session-result.type";
 import { SessionState } from "../model/session-state.type";
@@ -24,10 +24,10 @@ export class SessionStore {
 
 	readonly state = this.stateSignal.asReadonly();
 
-	readonly status = computed(() => this.stateSignal().status);
-	readonly initialized = computed(() => this.stateSignal().initialized);
-	readonly user = computed(() => this.stateSignal().user);
-	readonly errorMessage = computed(() => this.stateSignal().errorMessage);
+	readonly status = computed(() => this.state().status);
+	readonly initialized = computed(() => this.state().initialized);
+	readonly user = computed(() => this.state().user);
+	readonly errorMessage = computed(() => this.state().errorMessage);
 
 	readonly isIdle = computed(() => this.status() === "idle");
 	readonly isBootstrapping = computed(() => this.status() === "bootstrapping");
@@ -37,53 +37,46 @@ export class SessionStore {
 	);
 	readonly isReady = computed(() => this.initialized());
 
-	readonly roles = computed(() => this.user()?.roleCodes ?? []);
-
-	readonly isClient = computed(() => this.roles().includes("CLIENT"));
-	readonly isProviderAdmin = computed(() =>
-		this.roles().includes("PROVIDER_ADMIN")
-	);
-	readonly isPlatformAdmin = computed(() =>
-		this.roles().includes("PLATFORM_ADMIN")
-	);
-
-	readonly userFullName = computed(() => {
-		const user = this.user();
-		return user ? user.fullName : null;
-	});
+	readonly roleCodes = computed<RoleCode[]>(() => this.user()?.roleCodes ?? []);
 
 	/**
-	 * Bootstraps session using current token and /auth/me.
-	 * Clears session when token is missing or invalid.
+	 * Alias de compatibilidad.
+	 * El AppSidebar y otros componentes existentes usan sessionStore.roles().
 	 */
+	readonly roles = this.roleCodes;
+
+	readonly isPlatformAdmin = computed(() =>
+		this.hasAnyRole(["PLATFORM_ADMIN"])
+	);
+
+	readonly isProviderAdmin = computed(() =>
+		this.hasAnyRole(["PROVIDER_ADMIN"])
+	);
+
+	readonly isTechnician = computed(() => this.hasAnyRole(["TECHNICIAN"]));
+
+	readonly isClient = computed(() => this.hasAnyRole(["CLIENT"]));
+
+	readonly displayName = computed(() => {
+		const currentUser = this.user();
+
+		if (!currentUser) {
+			return "Invitado";
+		}
+
+		return currentUser.fullName || currentUser.email;
+	});
+
 	async bootstrap(): Promise<void> {
 		this.startBootstrap();
 
-		try {
-			const result = await this.resolveBootstrapResult();
-			this.applyBootstrapResult(result);
-		} catch {
-			this.authService.logout();
-			this.setUnauthenticated("Unexpected session bootstrap error.");
-		}
-	}
+		const result = await this.resolveBootstrapResult();
 
-	/**
-	 * Reloads the authenticated user from /auth/me.
-	 * Keeps token handling inside AuthService.
-	 */
-	async loadUser(): Promise<void> {
-		try {
-			const userDto = await firstValueFrom(this.authService.getMe());
-			this.setAuthenticated(toAuthUser(userDto));
-		} catch {
-			this.authService.logout();
-			this.setUnauthenticated();
-		}
+		this.applyBootstrapResult(result);
 	}
 
 	setAuthenticated(user: AuthUser): void {
-		this.patchState({
+		this.stateSignal.set({
 			status: "authenticated",
 			initialized: true,
 			user,
@@ -92,7 +85,7 @@ export class SessionStore {
 	}
 
 	setUnauthenticated(errorMessage: string | null = null): void {
-		this.patchState({
+		this.stateSignal.set({
 			status: "unauthenticated",
 			initialized: true,
 			user: null,
@@ -101,16 +94,22 @@ export class SessionStore {
 	}
 
 	clearSession(): void {
-		this.patchState({
-			status: "unauthenticated",
-			initialized: true,
-			user: null,
-			errorMessage: null,
-		});
+		this.authService.logout();
+		this.setUnauthenticated(null);
 	}
 
 	reset(): void {
 		this.stateSignal.set(this.initialState);
+	}
+
+	hasAnyRole(allowedRoles: readonly RoleCode[]): boolean {
+		const currentRoles = this.roleCodes();
+
+		if (!allowedRoles.length) {
+			return true;
+		}
+
+		return allowedRoles.some(role => currentRoles.includes(role));
 	}
 
 	private async resolveBootstrapResult(): Promise<SessionBootstrapResult> {
@@ -136,15 +135,16 @@ export class SessionStore {
 			return {
 				status: "unauthenticated",
 				user: null,
-				errorMessage: "Invalid or expired session.",
+				errorMessage: "La sesión expiró o ya no es válida.",
 			};
 		}
 	}
 
 	private startBootstrap(): void {
-		this.patchState({
+		this.stateSignal.set({
 			status: "bootstrapping",
 			initialized: false,
+			user: null,
 			errorMessage: null,
 		});
 	}
@@ -156,12 +156,5 @@ export class SessionStore {
 		}
 
 		this.setUnauthenticated(result.errorMessage);
-	}
-
-	private patchState(patch: Partial<SessionState>): void {
-		this.stateSignal.update(currentState => ({
-			...currentState,
-			...patch,
-		}));
 	}
 }

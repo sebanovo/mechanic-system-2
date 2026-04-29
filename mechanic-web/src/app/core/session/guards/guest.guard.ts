@@ -1,15 +1,10 @@
+import { CanActivateFn, Router } from "@angular/router";
 import { inject } from "@angular/core";
-import { CanActivateFn, Router, UrlTree } from "@angular/router";
 
+import { getDefaultRouteForUser } from "../utils/session-route.utils";
 import { SessionStore } from "../store/session.store";
 
-/**
- * Allows access only to unauthenticated users.
- * Redirects logged users to the app.
- */
-export const guestGuard: CanActivateFn = async (): Promise<
-	boolean | UrlTree
-> => {
+export const guestGuard: CanActivateFn = async () => {
 	const sessionStore = inject(SessionStore);
 	const router = inject(Router);
 
@@ -17,9 +12,9 @@ export const guestGuard: CanActivateFn = async (): Promise<
 		await sessionStore.bootstrap();
 	}
 
-	if (sessionStore.isAuthenticated()) {
-		return router.createUrlTree(["/app"]);
+	if (!sessionStore.isAuthenticated()) {
+		return true;
 	}
 
-	return true;
+	return router.createUrlTree([getDefaultRouteForUser(sessionStore.user())]);
 };

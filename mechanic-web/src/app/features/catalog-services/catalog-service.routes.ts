@@ -2,7 +2,7 @@ import { Routes } from "@angular/router";
 
 export const CATALOG_ROUTES: Routes = [
 	{
-		path: "", //default route
+		path: "",
 		redirectTo: "list",
 		pathMatch: "full",
 	},

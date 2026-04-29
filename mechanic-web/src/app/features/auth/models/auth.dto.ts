@@ -1,8 +1,11 @@
-// ===== ENUMS =====
-export type RoleCode = "CLIENT" | "PROVIDER_ADMIN" | "PLATFORM_ADMIN";
+import type { RoleCode } from "./auth.types";
+
+export type { RoleCode } from "./auth.types";
+
 export type AccountType = "CLIENT" | "INDEPENDENT_MECHANIC" | "WORKSHOP";
 
 // ===== REQUESTS =====
+
 export type RegisterRequest = {
 	email: string;
 	password: string;
@@ -17,9 +20,9 @@ export type ProviderProfileRequest = {
 	business_name: string;
 	legal_name?: string | null;
 	description?: string | null;
-	contact_email: string;
-	contact_phone: string;
-	city: string;
+	contact_email?: string | null;
+	contact_phone?: string | null;
+	city?: string | null;
 	address?: string | null;
 	base_latitude?: number | null;
 	base_longitude?: number | null;
@@ -31,15 +34,17 @@ export type LoginRequest = {
 	password: string;
 };
 
-// ===== RESPONSE WRAPPER (AUTH) =====
-export type AuthResponse<T> = {
+// ===== RESPONSE WRAPPER =====
+
+export type AuthResponse<TData, TMeta = unknown> = {
 	success: boolean;
 	message: string;
-	data: T;
-	meta: unknown;
+	data: TData;
+	meta: TMeta;
 };
 
 // ===== SESSION =====
+
 export type AuthSessionDto = {
 	access_token: string;
 	token_type: string;
@@ -48,6 +53,7 @@ export type AuthSessionDto = {
 };
 
 // ===== USER =====
+
 export type UserDto = {
 	id: string;
 	email: string;
@@ -67,5 +73,5 @@ export type RoleDto = {
 	id: string;
 	code: RoleCode;
 	name: string;
-	description: string;
+	description: string | null;
 };

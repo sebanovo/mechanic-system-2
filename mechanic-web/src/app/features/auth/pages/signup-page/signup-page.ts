@@ -1,5 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject } from "@angular/core";
 import { Router } from "@angular/router";
+
+import { getDefaultRouteForUser } from "../../../../core/session/utils/session-route.utils";
 import { RegisterForm } from "../../components/register-form/register-form";
 import { RegisterRequest } from "../../models/auth.dto";
 import { AuthStore } from "../../store/auth.store";
@@ -26,7 +28,7 @@ export class SignupPage {
 			return;
 		}
 
-		await this.router.navigateByUrl("/app");
+		await this.router.navigateByUrl(getDefaultRouteForUser(this.authStore.user()));
 	}
 
 	onFormEdited(): void {

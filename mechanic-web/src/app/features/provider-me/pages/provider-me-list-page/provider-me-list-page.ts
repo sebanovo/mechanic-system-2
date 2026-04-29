@@ -1,22 +1,9 @@
+import { CommonModule } from "@angular/common";
 import { Component, inject, OnInit, signal } from "@angular/core";
-import { NgIcon, provideIcons } from "@ng-icons/core";
-import {
-	lucideAlertCircle,
-	lucideInbox,
-	lucidePlus,
-	lucideUsers,
-} from "@ng-icons/lucide";
+import { FormBuilder, ReactiveFormsModule, Validators } from "@angular/forms";
+import { RouterLink } from "@angular/router";
 import { toast } from "@spartan-ng/brain/sonner";
 
-import { HlmCardImports } from "@shared/ui/card";
-import { HlmSkeletonImports } from "@shared/ui/skeleton";
-
-import { CardHeader } from "../../../../shared/custom-components/card-header/card-header";
-import { EmptyState } from "../../../../shared/custom-components/empty-state/empty-state";
-import { TableError } from "../../../../shared/custom-components/table-error/table-error";
-import { ProviderMeCreateDialog } from "../../components/provider-me-create-dialog/provider-me-create-dialog";
-import { ProviderMeEditDialog } from "../../components/provider-me-edit-dialog/provider-me-edit-dialog";
-import { ProviderMeTable } from "../../components/provider-me-table/provider-me-table";
 import {
 	CreateProviderMeTechnicianFormValue,
 	ProviderMeTechnician,
@@ -26,66 +13,88 @@ import { ProviderMeStore } from "../../store/provider-me.store";
 
 @Component({
 	selector: "app-provider-me-list-page",
-	imports: [
-		NgIcon,
-		HlmCardImports,
-		HlmSkeletonImports,
-		CardHeader,
-		TableError,
-		EmptyState,
-		ProviderMeTable,
-		ProviderMeCreateDialog,
-		ProviderMeEditDialog,
-	],
-	providers: [
-		provideIcons({
-			lucideAlertCircle,
-			lucideInbox,
-			lucidePlus,
-			lucideUsers,
-		}),
-	],
-	host: {
-		style: "display: block",
-	},
+	standalone: true,
+	imports: [CommonModule, ReactiveFormsModule, RouterLink],
 	templateUrl: "./provider-me-list-page.html",
 	styleUrl: "./provider-me-list-page.css",
 })
 export class ProviderMeListPage implements OnInit {
 	readonly store = inject(ProviderMeStore);
+	private readonly fb = inject(FormBuilder);
 
-	readonly createDialogOpen = signal(false);
-	readonly selectedTechnicianForEdit = signal<ProviderMeTechnician | null>(
-		null
-	);
+	readonly createFormOpen = signal(false);
+	readonly editFormOpen = signal(false);
+	readonly selectedTechnician = signal<ProviderMeTechnician | null>(null);
 
-	readonly editDialogOpen = signal(false);
+	readonly createForm = this.fb.nonNullable.group({
+		firstName: ["", [Validators.required, Validators.minLength(2)]],
+		lastName: ["", [Validators.required, Validators.minLength(2)]],
+		phoneNumber: [""],
+		specialty: ["", [Validators.maxLength(120)]],
+		isAvailable: [true],
+		currentLatitude: [0],
+		currentLongitude: [0],
+	});
 
-	ngOnInit(): void {
-		void this.store.loadMyTechnicians();
+	readonly editForm = this.fb.nonNullable.group({
+		firstName: ["", [Validators.required, Validators.minLength(2)]],
+		lastName: ["", [Validators.required, Validators.minLength(2)]],
+		fullName: [""],
+		phoneNumber: [""],
+		specialty: ["", [Validators.maxLength(120)]],
+		isActive: [true],
+		isAvailable: [true],
+		currentLatitude: [0],
+		currentLongitude: [0],
+	});
+
+	async ngOnInit(): Promise<void> {
+		await this.store.reloadProviderWorkspace();
 	}
 
 	onRetry(): void {
-		void this.store.loadMyTechnicians();
+		this.store.clearTechniciansError();
+		void this.store.reloadProviderWorkspace();
 	}
 
-	onOpenCreateDialog(): void {
+	onOpenCreateForm(): void {
 		this.store.clearCreatingTechnicianError();
-		this.createDialogOpen.set(true);
+		this.createForm.reset({
+			firstName: "",
+			lastName: "",
+			phoneNumber: "",
+			specialty: "",
+			isAvailable: true,
+			currentLatitude: this.store.myProvider()?.baseLatitude ?? 0,
+			currentLongitude: this.store.myProvider()?.baseLongitude ?? 0,
+		});
+		this.createFormOpen.set(true);
 	}
 
-	onCreateDialogOpenChange(isOpen: boolean): void {
-		this.createDialogOpen.set(isOpen);
+	onCancelCreateForm(): void {
+		this.createFormOpen.set(false);
+		this.store.clearCreatingTechnicianError();
+	}
 
-		if (!isOpen) {
-			this.store.clearCreatingTechnicianError();
+	async onCreateTechnician(): Promise<void> {
+		if (this.createForm.invalid) {
+			this.createForm.markAllAsTouched();
+			return;
 		}
-	}
 
-	async onCreateTechnician(
-		formValue: CreateProviderMeTechnicianFormValue
-	): Promise<void> {
-		const technician = await this.store.createMyTechnician(formValue);
+		const value = this.createForm.getRawValue();
+
+		const payload: CreateProviderMeTechnicianFormValue = {
+			firstName: value.firstName,
+			lastName: value.lastName,
+			phoneNumber: value.phoneNumber || null,
+			specialty: value.specialty,
+			isAvailable: value.isAvailable,
+			currentLatitude: Number(value.currentLatitude),
+			currentLongitude: Number(value.currentLongitude),
+		};
+
+		const technician = await this.store.createMyTechnician(payload);
 
 		if (!technician) {
 			toast("No se pudo registrar el técnico", {
@@ -93,44 +102,69 @@ export class ProviderMeListPage implements OnInit {
 					this.store.creatingTechnicianError()?.message ||
 					"Ocurrió un error inesperado.",
 			});
-
 			return;
 		}
 
-		this.createDialogOpen.set(false);
-
-		toast("Técnico registrado correctamente");
+		this.createFormOpen.set(false);
+		toast.success("Técnico registrado correctamente");
 	}
 
-	onEditTechnician(technician: ProviderMeTechnician): void {
+	onOpenEditForm(technician: ProviderMeTechnician): void {
 		this.store.clearUpdatingTechnicianError();
 		this.store.setSelectedTechnician(technician);
-		this.selectedTechnicianForEdit.set(technician);
-		this.editDialogOpen.set(true);
+		this.selectedTechnician.set(technician);
+
+		this.editForm.patchValue({
+			firstName: technician.firstName,
+			lastName: technician.lastName,
+			fullName: technician.fullName,
+			phoneNumber: technician.phoneNumber ?? "",
+			specialty: technician.specialty,
+			isActive: technician.isActive,
+			isAvailable: technician.isAvailable,
+			currentLatitude: technician.currentLatitude,
+			currentLongitude: technician.currentLongitude,
+		});
+
+		this.editFormOpen.set(true);
 	}
 
-	onEditDialogOpenChange(isOpen: boolean): void {
-		this.editDialogOpen.set(isOpen);
-
-		if (!isOpen) {
-			this.selectedTechnicianForEdit.set(null);
-			this.store.setSelectedTechnician(null);
-			this.store.clearUpdatingTechnicianError();
-		}
+	onCancelEditForm(): void {
+		this.editFormOpen.set(false);
+		this.selectedTechnician.set(null);
+		this.store.setSelectedTechnician(null);
+		this.store.clearUpdatingTechnicianError();
 	}
 
-	async onUpdateTechnician(
-		formValue: UpdateProviderMeTechnicianFormValue
-	): Promise<void> {
-		const technician = this.selectedTechnicianForEdit();
+	async onUpdateTechnician(): Promise<void> {
+		const technician = this.selectedTechnician();
 
 		if (!technician) {
 			return;
 		}
 
+		if (this.editForm.invalid) {
+			this.editForm.markAllAsTouched();
+			return;
+		}
+
+		const value = this.editForm.getRawValue();
+
+		const payload: UpdateProviderMeTechnicianFormValue = {
+			firstName: value.firstName,
+			lastName: value.lastName,
+			fullName: `${value.firstName} ${value.lastName}`.trim(),
+			phoneNumber: value.phoneNumber || null,
+			specialty: value.specialty,
+			isActive: value.isActive,
+			isAvailable: value.isAvailable,
+			currentLatitude: Number(value.currentLatitude),
+			currentLongitude: Number(value.currentLongitude),
+		};
+
 		const updatedTechnician = await this.store.updateMyTechnician(
 			technician.id,
-			formValue
+			payload
 		);
 
 		if (!updatedTechnician) {
@@ -139,12 +173,12 @@ export class ProviderMeListPage implements OnInit {
 					this.store.updatingTechnicianError()?.message ||
 					"Ocurrió un error inesperado.",
 			});
-
 			return;
 		}
 
-		this.selectedTechnicianForEdit.set(updatedTechnician);
-		this.editDialogOpen.set(false);
+		this.editFormOpen.set(false);
+		this.selectedTechnician.set(null);
+		this.store.setSelectedTechnician(null);
 
 		toast.success("Técnico actualizado correctamente");
 	}

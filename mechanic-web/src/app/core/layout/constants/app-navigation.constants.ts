@@ -15,29 +15,6 @@ export const APP_NAVIGATION: AppNavigationItem[] = [
 		},
 		allowedRoles: ["PLATFORM_ADMIN", "PROVIDER_ADMIN"],
 	},
-
-	{
-		label: "Mi empresa",
-		route: "/app/empresa/profile",
-		exact: true,
-		icon: {
-			type: "remix",
-			name: "ri-building2-line",
-		},
-		allowedRoles: ["PROVIDER_ADMIN"],
-	},
-
-	{
-		label: "Mis Tecnicos",
-		route: "/app/provider-me",
-		exact: true,
-		icon: {
-			type: "remix",
-			name: "ri-team-line",
-		},
-		allowedRoles: ["PROVIDER_ADMIN"],
-	},
-
 	{
 		label: "Usuarios",
 		route: "/app/users",
@@ -57,20 +34,6 @@ export const APP_NAVIGATION: AppNavigationItem[] = [
 		allowedRoles: ["PLATFORM_ADMIN"],
 	},
 	{
-		label: "Suscripciones",
-		route: "/app/subscriptions",
-		icon: {
-			type: "remix",
-			name: "ri-vip-crown-line",
-		},
-		allowedRoles: ["PLATFORM_ADMIN"],
-	},
-
-	// {
-	// 	type: "section",
-	// 	label: "Catálogo",
-	// },
-	{
 		label: "Catálogos",
 		route: "/app/catalogs",
 		icon: {
@@ -78,6 +41,31 @@ export const APP_NAVIGATION: AppNavigationItem[] = [
 			name: "ri-price-tag-3-line",
 		},
 		allowedRoles: ["PLATFORM_ADMIN"],
+	},
+
+	{
+		type: "section",
+		label: "Taller",
+	},
+	{
+		label: "Mi empresa",
+		route: "/app/empresa/profile",
+		exact: true,
+		icon: {
+			type: "remix",
+			name: "ri-building2-line",
+		},
+		allowedRoles: ["PROVIDER_ADMIN"],
+	},
+	{
+		label: "Mis técnicos",
+		route: "/app/provider-me",
+		exact: true,
+		icon: {
+			type: "remix",
+			name: "ri-team-line",
+		},
+		allowedRoles: ["PROVIDER_ADMIN"],
 	},
 	{
 		label: "Mis servicios",
@@ -88,19 +76,32 @@ export const APP_NAVIGATION: AppNavigationItem[] = [
 		},
 		allowedRoles: ["PROVIDER_ADMIN"],
 	},
-	{
-		label: "Vehículos",
-		route: "/app/vehicles",
-		icon: {
-			type: "remix",
-			name: "ri-file-list-3-line",
-		},
-		allowedRoles: ["CLIENT"],
+
+  {
+	label: "Suscripciones",
+	route: "/app/subscriptions",
+	icon: {
+		type: "remix",
+		name: "ri-shield-check-line",
 	},
+	allowedRoles: ["PROVIDER_ADMIN", "CLIENT", "PLATFORM_ADMIN"],
+},
+
+
+
 
 	{
 		type: "section",
 		label: "Operación",
+	},
+	{
+		label: "Solicitudes disponibles",
+		route: "/app/candidates",
+		icon: {
+			type: "lucide",
+			name: "target",
+		},
+		allowedRoles: ["PROVIDER_ADMIN"],
 	},
 	{
 		label: "Trabajo aceptado",
@@ -118,65 +119,121 @@ export const APP_NAVIGATION: AppNavigationItem[] = [
 			type: "remix",
 			name: "ri-dashboard-line",
 		},
-		allowedRoles: ["CLIENT", "PLATFORM_ADMIN"],
+		allowedRoles: ["PLATFORM_ADMIN"],
 	},
-	{
-		label: "Candidatos",
-		route: "/app/candidates",
-		icon: {
-			type: "lucide",
-			name: "target",
-		},
-		allowedRoles: ["PROVIDER_ADMIN"],
+  {
+	label: "Operaciones",
+	route: "/app/operations",
+	icon: {
+		type: "remix",
+		name: "ri-tools-line",
 	},
-	{
-		label: "Evidencias",
-		route: "/app/evidences",
-		icon: {
-			type: "remix",
-			name: "ri-file-list-3-line",
-		},
-		allowedRoles: ["PROVIDER_ADMIN", "PLATFORM_ADMIN"],
+	allowedRoles: ["PROVIDER_ADMIN"],
+},
+{
+	label: "Seguimiento",
+	route: "/app/tracking",
+	icon: {
+		type: "remix",
+		name: "ri-map-pin-line",
 	},
-	{
-		label: "Trabajos",
-		route: "/app/jobs",
-		icon: {
-			type: "remix",
-			name: "ri-shield-keyhole-line",
-		},
-		allowedRoles: ["PROVIDER_ADMIN", "PLATFORM_ADMIN"],
-	},
-	{
-		label: "Operaciones",
-		route: "/app/operations",
-		icon: {
-			type: "remix",
-			name: "ri-bar-chart-box-line",
-		},
-		allowedRoles: ["PROVIDER_ADMIN", "PLATFORM_ADMIN"],
-	},
-	{
-		label: "Seguimiento",
-		route: "/app/tracking",
-		icon: {
-			type: "remix",
-			name: "ri-key-line",
-		},
-		allowedRoles: ["CLIENT", "PROVIDER_ADMIN", "PLATFORM_ADMIN"],
-	},
+	allowedRoles: ["PROVIDER_ADMIN"],
+},
 
-	{
-		type: "section",
-		label: "Finanzas",
+{
+	label: "Cobros",
+	route: "/app/billing",
+	icon: {
+		type: "remix",
+		name: "ri-money-dollar-circle-line",
 	},
-	{
-		label: "Cobros",
-		route: "/app/payments",
-		icon: {
-			type: "remix",
-			name: "ri-price-tag-3-line",
-		},
-		allowedRoles: ["PROVIDER_ADMIN", "PLATFORM_ADMIN"],
+	allowedRoles: ["PROVIDER_ADMIN"],
+},
+
+{
+	type: "section",
+	label: "Sistema",
+},
+{
+	label: "Notificaciones",
+	route: "/app/notifications",
+	icon: {
+		type: "remix",
+		name: "ri-notification-3-line",
 	},
+	allowedRoles: ["PLATFORM_ADMIN", "PROVIDER_ADMIN", "TECHNICIAN", "CLIENT"],
+},
+
+
+{
+	type: "section",
+	label: "Plataforma",
+},
+
+{
+	label: "Asignación inteligente",
+	route: "/app/platform-assignment",
+	icon: {
+		type: "remix",
+		name: "ri-route-line",
+	},
+	allowedRoles: ["PLATFORM_ADMIN"],
+},
+
+
+{
+	label: "Admin técnico",
+	route: "/app/platform-admin",
+	icon: {
+		type: "remix",
+		name: "ri-terminal-box-line",
+	},
+	allowedRoles: ["PLATFORM_ADMIN"],
+},
+
+
+
+
+{
+	type: "section",
+	label: "Cliente",
+},
+{
+	label: "Portal cliente",
+	route: "/app/client-portal",
+	icon: {
+		type: "remix",
+		name: "ri-car-line",
+	},
+	allowedRoles: ["CLIENT"],
+},
+
+
+{
+	label: "Pagos y calificaciones",
+	route: "/app/client-payments",
+	icon: {
+		type: "remix",
+		name: "ri-bank-card-line",
+	},
+	allowedRoles: ["CLIENT"],
+},
+
+
+{
+	type: "section",
+	label: "Defensa",
+},
+{
+	label: "Flujo completo",
+	route: "/app/demo-flow",
+	icon: {
+		type: "remix",
+		name: "ri-presentation-line",
+	},
+	allowedRoles: ["PLATFORM_ADMIN", "PROVIDER_ADMIN", "CLIENT", "TECHNICIAN"],
+},
+
+
+
 ];

@@ -26,6 +26,11 @@ export type CatalogService = {
 	updatedAt: string;
 };
 
+export type CatalogServicesMetaDto = {
+	count: number;
+	include_inactive?: boolean;
+};
+
 export type CreateCatalogServiceRequest = {
 	code: string;
 	category: string;
@@ -49,13 +54,13 @@ export type CreateCatalogServiceFormValue = {
 };
 
 export type UpdateCatalogServiceRequest = {
-	category: string;
-	title: string;
+	category: string | null;
+	title: string | null;
 	description: string | null;
-	supports_mobile_service: boolean;
-	supports_emergency_service: boolean;
-	is_active: boolean;
-	sort_order: number;
+	supports_mobile_service: boolean | null;
+	supports_emergency_service: boolean | null;
+	is_active: boolean | null;
+	sort_order: number | null;
 };
 
 export type UpdateCatalogServiceFormValue = {
@@ -66,11 +71,6 @@ export type UpdateCatalogServiceFormValue = {
 	supportsEmergencyService: boolean;
 	isActive: boolean;
 	sortOrder: number;
-};
-
-export type CatalogServicesMetaDto = {
-	count: number;
-	include_inactive: boolean;
 };
 
 export type ApiResponse<TData, TMeta = null> = {

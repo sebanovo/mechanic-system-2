@@ -6,7 +6,7 @@ export function toUserRole(dto: RoleDto): UserRole {
 		id: dto.id,
 		code: dto.code,
 		name: dto.name,
-		description: dto.description,
+		description: dto.description ?? null,
 	};
 }
 
@@ -20,8 +20,8 @@ export function toAuthUser(dto: UserDto): AuthUser {
 		phoneNumber: dto.phone_number,
 		isActive: dto.is_active,
 		isSuperuser: dto.is_superuser,
-		roleCodes: dto.role_codes,
-		roles: dto.roles.map(toUserRole),
+		roleCodes: dto.role_codes ?? [],
+		roles: (dto.roles ?? []).map(toUserRole),
 		createdAt: dto.created_at,
 		updatedAt: dto.updated_at,
 	};

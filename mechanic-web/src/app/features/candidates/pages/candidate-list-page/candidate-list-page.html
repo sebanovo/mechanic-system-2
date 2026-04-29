@@ -1,69 +1,630 @@
 <section class="space-y-6">
-	<section hlmCard>
-		<app-card-header
-			title="Candidatos disponibles"
-			description="Revisa solicitudes de servicio recomendadas para tu empresa"
-			icon="lucideListChecks"
-			[showAction]="false"
-		/>
+  <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+    <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      <div>
+        <p class="text-sm font-semibold text-slate-500">Taller</p>
+        <h1 class="text-3xl font-bold text-slate-900">
+          Solicitudes disponibles
+        </h1>
+        <p class="mt-2 max-w-3xl text-sm text-slate-500">
+          Revisa las solicitudes recomendadas por el motor de asignación.
+          Cada candidato considera distancia, servicios compatibles,
+          capacidad, técnicos disponibles, prioridad y score.
+        </p>
+      </div>
 
-		<div hlmCardContent class="space-y-4">
-			@if (store.loading() && !store.hasLoaded()) {
-				<div class="space-y-4">
-					<hlm-skeleton class="h-10 w-full rounded-md" />
-					<hlm-skeleton class="h-10 w-full rounded-md" />
-					<hlm-skeleton class="h-10 w-full rounded-md" />
-					<hlm-skeleton class="h-10 w-full rounded-md" />
-				</div>
-			} @else if (store.hasError()) {
-				<app-table-error
-					variant="destructive"
-					icon="lucideAlertCircle"
-					[description]="
-						store.error()?.message || 'Ocurrió un error inesperado'
-					"
-					title="No se pudieron cargar los candidatos"
-					[showAction]="true"
-					actionLabel="Reintentar"
-					(actionClick)="onRetry()"
-				/>
-			} @else if (store.isEmpty()) {
-				<app-empty-state
-					title="Sin candidatos"
-					description="No existen candidatos disponibles para tu empresa en este momento."
-					icon="lucideInbox"
-					[showAction]="false"
-				/>
-			} @else {
-				<app-candidate-table
-					[candidates]="store.candidates()"
-					[actingCandidateIds]="store.actingCandidateIds()"
-					(viewCandidate)="onViewCandidate($event)"
-					(acceptCandidate)="onAcceptCandidate($event)"
-					(rejectCandidate)="onRejectCandidate($event)"
-				/>
+      <div class="flex flex-wrap gap-3">
+        <a routerLink="/app/service-me"
+          class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+          Mis servicios
+        </a>
 
-				<div class="border-t pt-4">
-					<p class="text-muted-foreground text-sm">
-						Total candidatos: {{ store.count() }}
-					</p>
-				</div>
-			}
-		</div>
-	</section>
+        <button type="button" (click)="onRefresh()" [disabled]="store.loading()"
+          class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60">
+          {{ store.loading() ? "Actualizando..." : "Actualizar" }}
+        </button>
+      </div>
+    </div>
 
-	<app-candidate-detail-dialog
-		[open]="detailDialogOpen()"
-		[candidate]="store.selectedCandidate()"
-		[loading]="store.selectedCandidateLoading()"
-		[error]="store.selectedCandidateError()"
-		[acting]="
-			store.selectedCandidate()
-				? store.isCandidateActing(store.selectedCandidate()!.id)
-				: false
-		"
-		(openChange)="onDetailDialogOpenChange($event)"
-		(acceptCandidate)="onAcceptCandidate($event)"
-		(rejectCandidate)="onRejectCandidate($event)"
-	/>
+    <div class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div class="rounded-2xl border border-slate-200 p-4">
+        <p class="text-xs font-semibold text-slate-500">
+          Solicitudes disponibles
+        </p>
+        <p class="mt-1 text-2xl font-bold text-slate-900">
+          {{ store.count() }}
+        </p>
+      </div>
+
+      <div class="rounded-2xl border border-slate-200 p-4">
+        <p class="text-xs font-semibold text-slate-500">
+          Prioridad alta/crítica
+        </p>
+        <p class="mt-1 text-2xl font-bold text-red-700">
+          {{ store.highPriorityCount() }}
+        </p>
+      </div>
+
+      <div class="rounded-2xl border border-slate-200 p-4">
+        <p class="text-xs font-semibold text-slate-500">Score promedio</p>
+        <p class="mt-1 text-2xl font-bold text-blue-700">
+          {{ store.averageScore() }}
+        </p>
+      </div>
+
+      <div class="rounded-2xl border border-slate-200 p-4">
+        <p class="text-xs font-semibold text-slate-500">Flujo siguiente</p>
+        <p class="mt-1 text-sm font-bold text-slate-900">
+          Aceptar → Operaciones
+        </p>
+      </div>
+    </div>
+  </section>
+
+  @if (store.loading() && !store.hasLoaded()) {
+  <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+    <p class="text-sm font-semibold text-slate-500">
+      Cargando solicitudes disponibles...
+    </p>
+    <div class="mt-4 space-y-3">
+      <div class="h-12 animate-pulse rounded-xl bg-slate-200"></div>
+      <div class="h-12 animate-pulse rounded-xl bg-slate-200"></div>
+      <div class="h-12 animate-pulse rounded-xl bg-slate-200"></div>
+    </div>
+  </section>
+  } @else if (store.hasError()) {
+  <section class="rounded-3xl border border-red-200 bg-red-50 p-6">
+    <h2 class="text-lg font-bold text-red-900">
+      No se pudieron cargar las solicitudes
+    </h2>
+    <p class="mt-2 text-sm text-red-700">
+      {{ store.error()?.message || "Ocurrió un error inesperado." }}
+    </p>
+
+    <button type="button" (click)="onRetry()"
+      class="mt-4 rounded-xl bg-red-700 px-4 py-2 text-sm font-semibold text-white hover:bg-red-600">
+      Reintentar
+    </button>
+  </section>
+  } @else if (store.isEmpty()) {
+  <section class="rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-sm">
+    <p class="text-lg font-bold text-slate-900">Sin solicitudes disponibles</p>
+    <p class="mx-auto mt-2 max-w-xl text-sm text-slate-500">
+      No existen solicitudes recomendadas para tu taller en este momento.
+      Verifica que tu perfil esté disponible, tengas técnicos disponibles y
+      servicios activos.
+    </p>
+
+    <div class="mt-6 flex justify-center gap-3">
+      <a routerLink="/app/empresa/profile"
+        class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+        Ver empresa
+      </a>
+
+      <a routerLink="/app/service-me"
+        class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700">
+        Configurar servicios
+      </a>
+    </div>
+  </section>
+  } @else {
+  <section class="rounded-3xl border border-slate-200 bg-white shadow-sm">
+    <div class="border-b border-slate-200 p-6">
+      <h2 class="text-xl font-bold text-slate-900">
+        Listado de solicitudes recomendadas
+      </h2>
+      <p class="text-sm text-slate-500">
+        Selecciona una solicitud para revisar el detalle antes de aceptar.
+      </p>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full min-w-[1100px] text-left text-sm">
+        <thead class="border-b border-slate-200 bg-slate-50">
+          <tr>
+            <th class="px-6 py-3 font-bold text-slate-700">Incidente</th>
+            <th class="px-6 py-3 font-bold text-slate-700">Prioridad</th>
+            <th class="px-6 py-3 font-bold text-slate-700">Servicios</th>
+            <th class="px-6 py-3 font-bold text-slate-700">Distancia</th>
+            <th class="px-6 py-3 font-bold text-slate-700">Score</th>
+            <th class="px-6 py-3 font-bold text-slate-700">Capacidad</th>
+            <th class="px-6 py-3 font-bold text-slate-700">Estado</th>
+            <th class="px-6 py-3 text-right font-bold text-slate-700">
+              Acciones
+            </th>
+          </tr>
+        </thead>
+
+        <tbody class="divide-y divide-slate-100">
+          @for (candidate of store.candidates(); track candidate.id) {
+          <tr class="hover:bg-slate-50">
+            <td class="px-6 py-4">
+              <p class="font-bold text-slate-900">
+                {{ candidate.incident.title }}
+              </p>
+              <p class="mt-1 max-w-md text-xs text-slate-500">
+                {{ candidate.incident.addressReference || "Sin referencia" }}
+              </p>
+              <p class="mt-1 text-xs text-slate-400">
+                Publicado: {{ candidate.publishedAt }}
+              </p>
+            </td>
+
+            <td class="px-6 py-4">
+              <span class="rounded-full px-3 py-1 text-xs font-bold"
+                [class]="getPriorityBadgeClass(candidate.incident.priority)">
+                {{ getPriorityLabel(candidate.incident.priority) }}
+              </span>
+            </td>
+
+            <td class="px-6 py-4">
+              <div class="flex max-w-xs flex-wrap gap-2">
+                @for (code of candidate.matchedServiceCodes; track code) {
+                <span class="rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-blue-700">
+                  {{ code }}
+                </span>
+                }
+              </div>
+            </td>
+
+            <td class="px-6 py-4 font-semibold text-slate-900">
+              {{ formatDistance(candidate.distanceKm) }}
+            </td>
+
+            <td class="px-6 py-4">
+              <span class="font-bold text-slate-900">
+                {{ formatScore(candidate.score) }}
+              </span>
+              <p class="text-xs text-slate-500">
+                Ranking #{{ candidate.recommendationRank }}
+              </p>
+            </td>
+
+            <td class="px-6 py-4">
+              <p class="font-bold text-slate-900">
+                {{ candidate.providerAvailableCapacitySnapshot }} cupos
+              </p>
+              <p class="text-xs text-slate-500">
+                {{ candidate.availableTechniciansCountSnapshot }} técnicos
+              </p>
+            </td>
+
+            <td class="px-6 py-4">
+              <span class="rounded-full px-3 py-1 text-xs font-bold" [class]="getStatusBadgeClass(candidate.status)">
+                {{ getStatusLabel(candidate.status) }}
+              </span>
+            </td>
+
+            <td class="px-6 py-4 text-right">
+              <div class="flex justify-end gap-2">
+                <button type="button" (click)="onViewCandidate(candidate)"
+                  class="rounded-xl border border-slate-300 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100">
+                  Ver
+                </button>
+
+                <button type="button" (click)="onRejectCandidate(candidate)" [disabled]="!canAct(candidate)"
+                  class="rounded-xl border border-red-200 px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50">
+                  {{
+                  isCandidateActing(candidate)
+                  ? "Procesando..."
+                  : "Rechazar"
+                  }}
+                </button>
+
+                <button type="button" (click)="onAcceptCandidate(candidate)" [disabled]="!canAct(candidate)"
+                  class="rounded-xl bg-emerald-700 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-50">
+                  {{
+                  isCandidateActing(candidate)
+                  ? "Procesando..."
+                  : "Aceptar"
+                  }}
+                </button>
+              </div>
+            </td>
+          </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+  }
+
+  @if (detailOpen()) {
+  <section class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+    <div class="max-h-[92vh] w-full max-w-5xl overflow-hidden rounded-3xl bg-white shadow-xl">
+      <div class="border-b border-slate-200 p-6">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <p class="text-sm font-semibold text-slate-500">
+              Detalle de solicitud
+            </p>
+            <h2 class="mt-1 text-2xl font-bold text-slate-900">
+              {{
+              selectedCandidate()?.incident?.title ||
+              "Solicitud recomendada"
+              }}
+            </h2>
+            <p class="mt-1 text-sm text-slate-500">
+              Información estructurada del incidente, IA y criterios de
+              recomendación.
+            </p>
+          </div>
+
+          <button type="button" (click)="onCloseDetail()"
+            class="rounded-xl border border-slate-300 px-3 py-1 text-sm font-bold text-slate-700">
+            X
+          </button>
+        </div>
+      </div>
+
+      <div class="max-h-[72vh] overflow-y-auto p-6">
+        @if (store.selectedCandidateLoading()) {
+        <div class="space-y-4">
+          <div class="h-20 animate-pulse rounded-2xl bg-slate-200"></div>
+          <div class="h-40 animate-pulse rounded-2xl bg-slate-200"></div>
+          <div class="h-32 animate-pulse rounded-2xl bg-slate-200"></div>
+        </div>
+        } @else if (store.hasSelectedCandidateError()) {
+        <div class="rounded-2xl border border-red-200 bg-red-50 p-6">
+          <h3 class="text-lg font-bold text-red-900">
+            No se pudo cargar el detalle
+          </h3>
+          <p class="mt-2 text-sm text-red-700">
+            {{
+            store.selectedCandidateError()?.message ||
+            "Ocurrió un error inesperado."
+            }}
+          </p>
+        </div>
+        } @else if (selectedCandidate()) {
+        @let candidate = selectedCandidate();
+
+        <div class="grid gap-4 md:grid-cols-4">
+          <div class="rounded-2xl border border-slate-200 p-4">
+            <p class="text-xs font-semibold text-slate-500">Prioridad</p>
+            <p class="mt-1 text-xl font-bold text-slate-900">
+              {{ getPriorityLabel(candidate?.incident?.priority ?? null) }}
+            </p>
+          </div>
+
+          <div class="rounded-2xl border border-slate-200 p-4">
+            <p class="text-xs font-semibold text-slate-500">Score</p>
+            <p class="mt-1 text-xl font-bold text-slate-900">
+              {{ formatScore(candidate?.score ?? 0) }}
+            </p>
+          </div>
+
+          <div class="rounded-2xl border border-slate-200 p-4">
+            <p class="text-xs font-semibold text-slate-500">Distancia</p>
+            <p class="mt-1 text-xl font-bold text-slate-900">
+              {{ formatDistance(candidate?.distanceKm ?? null) }}
+            </p>
+          </div>
+
+          <div class="rounded-2xl border border-slate-200 p-4">
+            <p class="text-xs font-semibold text-slate-500">Estado</p>
+            <p class="mt-1 text-xl font-bold text-slate-900">
+              {{ getStatusLabel(candidate!.status) }}
+            </p>
+          </div>
+        </div>
+
+        <div class="mt-6 flex flex-wrap gap-2 border-b border-slate-200 pb-4">
+          <button type="button" (click)="setActiveTab('summary')" class="rounded-xl px-4 py-2 text-sm font-bold"
+            [class.bg-slate-900]="activeTab() === 'summary'" [class.text-white]="activeTab() === 'summary'"
+            [class.bg-slate-100]="activeTab() !== 'summary'" [class.text-slate-700]="activeTab() !== 'summary'">
+            Resumen
+          </button>
+
+          <button type="button" (click)="setActiveTab('ai')" class="rounded-xl px-4 py-2 text-sm font-bold"
+            [class.bg-slate-900]="activeTab() === 'ai'" [class.text-white]="activeTab() === 'ai'"
+            [class.bg-slate-100]="activeTab() !== 'ai'" [class.text-slate-700]="activeTab() !== 'ai'">
+            IA
+          </button>
+
+          <button type="button" (click)="setActiveTab('provider')" class="rounded-xl px-4 py-2 text-sm font-bold"
+            [class.bg-slate-900]="activeTab() === 'provider'" [class.text-white]="activeTab() === 'provider'"
+            [class.bg-slate-100]="activeTab() !== 'provider'" [class.text-slate-700]="activeTab() !== 'provider'">
+            Taller
+          </button>
+
+          <button type="button" (click)="setActiveTab('rationale')" class="rounded-xl px-4 py-2 text-sm font-bold"
+            [class.bg-slate-900]="activeTab() === 'rationale'" [class.text-white]="activeTab() === 'rationale'"
+            [class.bg-slate-100]="activeTab() !== 'rationale'" [class.text-slate-700]="activeTab() !== 'rationale'">
+            Recomendación
+          </button>
+        </div>
+
+        @if (activeTab() === "summary") {
+        <section class="mt-6 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+          <div class="rounded-3xl border border-slate-200 p-6">
+            <h3 class="text-lg font-bold text-slate-900">
+              Información del incidente
+            </h3>
+
+            <div class="mt-4 space-y-4 text-sm">
+              <p>
+                <span class="font-bold text-slate-700">Título:</span>
+                {{ candidate?.incident?.title }}
+              </p>
+
+              <p>
+                <span class="font-bold text-slate-700">Descripción:</span>
+                {{ candidate?.incident?.description }}
+              </p>
+
+              <p>
+                <span class="font-bold text-slate-700">Categoría reportada:</span>
+                {{ candidate?.incident?.reportedCategory }}
+              </p>
+
+              <p>
+                <span class="font-bold text-slate-700">Dirección/referencia:</span>
+                {{
+                candidate?.incident?.addressReference ||
+                "Sin referencia"
+                }}
+              </p>
+
+              <p>
+                <span class="font-bold text-slate-700">Latitud:</span>
+                {{
+                formatCoordinate(
+                candidate?.incident?.incidentLatitude ?? null
+                )
+                }}
+              </p>
+
+              <p>
+                <span class="font-bold text-slate-700">Longitud:</span>
+                {{
+                formatCoordinate(
+                candidate?.incident?.incidentLongitude ?? null
+                )
+                }}
+              </p>
+            </div>
+          </div>
+
+          <div class="rounded-3xl border border-slate-200 p-6">
+            <h3 class="text-lg font-bold text-slate-900">
+              Servicios compatibles
+            </h3>
+
+            <div class="mt-4 space-y-4">
+              <div>
+                <p class="text-xs font-bold text-slate-500">
+                  Servicios requeridos
+                </p>
+                <div class="mt-2 flex flex-wrap gap-2">
+                  @for (
+                  code of candidate?.requiredServiceCodes ?? [];
+                  track code
+                  ) {
+                  <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">
+                    {{ code }}
+                  </span>
+                  }
+                </div>
+              </div>
+
+              <div>
+                <p class="text-xs font-bold text-slate-500">
+                  Servicios coincidentes
+                </p>
+                <div class="mt-2 flex flex-wrap gap-2">
+                  @for (
+                  code of candidate?.matchedServiceCodes ?? [];
+                  track code
+                  ) {
+                  <span class="rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-blue-700">
+                    {{ code }}
+                  </span>
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+        }
+
+        @if (activeTab() === "ai") {
+        <section class="mt-6 grid gap-6 lg:grid-cols-2">
+          <div class="rounded-3xl border border-slate-200 p-6">
+            <h3 class="text-lg font-bold text-slate-900">
+              Resumen automático IA
+            </h3>
+
+            <p class="mt-4 text-sm text-slate-600">
+              {{
+              candidate?.incident?.structuredSummary ||
+              "No existe resumen automático todavía."
+              }}
+            </p>
+
+            <div class="mt-5 grid gap-3 text-sm">
+              <p>
+                <span class="font-bold text-slate-700">Estado IA:</span>
+                {{ candidate?.incident?.aiSummaryStatus || "Sin estado" }}
+              </p>
+
+              <p>
+                <span class="font-bold text-slate-700">Requiere más información:</span>
+                {{
+                candidate?.incident?.requiresMoreInformation
+                ? "Sí"
+                : "No"
+                }}
+              </p>
+            </div>
+          </div>
+
+          <div class="rounded-3xl border border-slate-200 p-6">
+            <h3 class="text-lg font-bold text-slate-900">
+              Clasificación sugerida
+            </h3>
+
+            <div class="mt-4 space-y-4 text-sm">
+              <p>
+                <span class="font-bold text-slate-700">
+                  Categoría sugerida:
+                </span>
+                {{
+                candidate?.incident?.suggestedCategory ||
+                "Sin sugerencia"
+                }}
+              </p>
+
+              <p>
+                <span class="font-bold text-slate-700">
+                  Prioridad sugerida:
+                </span>
+                {{
+                getPriorityLabel(
+                candidate?.incident?.suggestedPriority ?? null
+                )
+                }}
+              </p>
+
+              <p>
+                <span class="font-bold text-slate-700">
+                  Prioridad usada:
+                </span>
+                {{
+                getPriorityLabel(
+                candidate?.incident?.priority ?? null
+                )
+                }}
+              </p>
+            </div>
+          </div>
+        </section>
+        }
+
+        @if (activeTab() === "provider") {
+        <section class="mt-6 grid gap-6 lg:grid-cols-2">
+          <div class="rounded-3xl border border-slate-200 p-6">
+            <h3 class="text-lg font-bold text-slate-900">
+              Datos del taller
+            </h3>
+
+            <div class="mt-4 space-y-4 text-sm">
+              <p>
+                <span class="font-bold text-slate-700">Nombre:</span>
+                {{ candidate?.provider?.businessName }}
+              </p>
+
+              <p>
+                <span class="font-bold text-slate-700">Ciudad:</span>
+                {{ candidate?.provider?.city || "Sin ciudad" }}
+              </p>
+
+              <p>
+                <span class="font-bold text-slate-700">Teléfono:</span>
+                {{ candidate?.provider?.contactPhone || "No registrado" }}
+              </p>
+
+              <p>
+                <span class="font-bold text-slate-700">Rating:</span>
+                {{ candidate?.provider?.averageRating }}
+              </p>
+
+              <p>
+                <span class="font-bold text-slate-700">Capacidad:</span>
+                {{ candidate?.provider?.availableCapacity }}
+              </p>
+
+              <p>
+                <span class="font-bold text-slate-700">Técnicos disponibles:</span>
+                {{ candidate?.provider?.availableTechniciansCount }}
+              </p>
+            </div>
+          </div>
+
+          <div class="rounded-3xl border border-slate-200 p-6">
+            <h3 class="text-lg font-bold text-slate-900">
+              Servicios coincidentes del taller
+            </h3>
+
+            <div class="mt-4 space-y-3">
+              @for (
+              service of candidate?.provider?.matchedServices ?? [];
+              track service.code
+              ) {
+              <div class="rounded-2xl border border-slate-200 p-4">
+                <p class="font-bold text-slate-900">
+                  {{ service.title }}
+                </p>
+                <p class="mt-1 text-xs text-slate-500">
+                  {{ service.category }} · {{ service.code }}
+                </p>
+              </div>
+              }
+            </div>
+          </div>
+        </section>
+        }
+
+        @if (activeTab() === "rationale") {
+        <section class="mt-6 rounded-3xl border border-slate-200 p-6">
+          <h3 class="text-lg font-bold text-slate-900">
+            Criterios de recomendación
+          </h3>
+
+          @if (rationaleEntries(candidate).length > 0) {
+          <div class="mt-4 grid gap-3 md:grid-cols-2">
+            @for (entry of rationaleEntries(candidate); track entry.key) {
+            <div class="rounded-2xl border border-slate-200 p-4">
+              <p class="text-xs font-bold uppercase text-slate-500">
+                {{ entry.key }}
+              </p>
+              <p class="mt-1 text-sm font-semibold text-slate-900">
+                {{ entry.value }}
+              </p>
+            </div>
+            }
+          </div>
+          } @else {
+          <p class="mt-4 text-sm text-slate-500">
+            No hay criterios adicionales registrados.
+          </p>
+          }
+        </section>
+        }
+        }
+      </div>
+
+      @if (selectedCandidate()) {
+      @let candidate = selectedCandidate();
+
+      <div class="border-t border-slate-200 p-6">
+        <div class="flex flex-col gap-3 sm:flex-row sm:justify-end">
+          <button type="button" (click)="onCloseDetail()"
+            class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+            Cerrar
+          </button>
+
+          <button type="button" (click)="onRejectCandidate(candidate!)" [disabled]="!canAct(candidate!)"
+            class="rounded-xl border border-red-200 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50">
+            {{
+            isCandidateActing(candidate!)
+            ? "Procesando..."
+            : "Rechazar solicitud"
+            }}
+          </button>
+
+          <button type="button" (click)="onAcceptCandidate(candidate!)" [disabled]="!canAct(candidate!)"
+            class="rounded-xl bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-50">
+            {{
+            isCandidateActing(candidate!)
+            ? "Procesando..."
+            : "Aceptar solicitud"
+            }}
+          </button>
+        </div>
+      </div>
+      }
+    </div>
+  </section>
+  }
 </section>

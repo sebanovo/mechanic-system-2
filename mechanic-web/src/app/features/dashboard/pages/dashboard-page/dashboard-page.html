@@ -1,113 +1,465 @@
-<div class="grid gap-6 p-6">
-	<!-- KPIs -->
-	<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-		<div class="rounded-xl border bg-white p-4 shadow-sm">
-			<p class="text-muted-foreground text-sm">Providers</p>
-			<p class="text-2xl font-bold">24</p>
-			<p class="text-xs text-green-600">+3 este mes</p>
-		</div>
+<section class="space-y-6">
+  <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+    <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      <div>
+        <p class="text-sm font-semibold text-slate-500">Dashboard</p>
+        <h1 class="text-3xl font-bold text-slate-900">
+          Bienvenido, {{ store.displayName() }}
+        </h1>
+        <p class="mt-2 max-w-3xl text-sm text-slate-500">
+          Panel principal conectado al backend.
+        </p>
 
-		<div class="rounded-xl border bg-white p-4 shadow-sm">
-			<p class="text-muted-foreground text-sm">Técnicos</p>
-			<p class="text-2xl font-bold">87</p>
-			<p class="text-xs text-blue-600">Activos</p>
-		</div>
+        <div class="mt-3 flex flex-wrap gap-2">
+          @for (role of store.roleCodes(); track role) {
+          <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">
+            {{ role }}
+          </span>
+          }
+        </div>
+      </div>
 
-		<div class="rounded-xl border bg-white p-4 shadow-sm">
-			<p class="text-muted-foreground text-sm">Incidentes</p>
-			<p class="text-2xl font-bold">12</p>
-			<p class="text-xs text-red-600">Pendientes</p>
-		</div>
+      <div class="flex flex-wrap gap-3">
+        <button type="button" (click)="onRefresh()" [disabled]="store.loading()"
+          class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60">
+          {{ store.loading() ? "Actualizando..." : "Actualizar" }}
+        </button>
 
-		<div class="rounded-xl border bg-white p-4 shadow-sm">
-			<p class="text-muted-foreground text-sm">Servicios</p>
-			<p class="text-2xl font-bold">156</p>
-			<p class="text-xs text-purple-600">Hoy</p>
-		</div>
-	</div>
+        @if (store.mode() === "platform") {
+        <button type="button" (click)="onCreateSnapshot()" [disabled]="store.creatingSnapshot()"
+          class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60">
+          {{ store.creatingSnapshot() ? "Guardando..." : "Crear snapshot" }}
+        </button>
+        }
+      </div>
+    </div>
+  </section>
 
-	<!-- Calendar + side panel -->
-	<div class="rounded-xl border bg-white p-4 shadow-sm">
-		<h2 class="mb-4 text-sm font-medium">Calendario</h2>
+  @if (store.loading() && !store.hasLoaded()) {
+  <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+    <p class="text-sm font-semibold text-slate-500">Cargando dashboard...</p>
+    <div class="mt-4 grid gap-4 md:grid-cols-4">
+      <div class="h-28 animate-pulse rounded-2xl bg-slate-200"></div>
+      <div class="h-28 animate-pulse rounded-2xl bg-slate-200"></div>
+      <div class="h-28 animate-pulse rounded-2xl bg-slate-200"></div>
+      <div class="h-28 animate-pulse rounded-2xl bg-slate-200"></div>
+    </div>
+  </section>
+  } @else if (store.hasError()) {
+  <section class="rounded-3xl border border-red-200 bg-red-50 p-6">
+    <h2 class="text-lg font-bold text-red-900">
+      No se pudo cargar el dashboard
+    </h2>
+    <p class="mt-2 text-sm text-red-700">
+      {{ store.error()?.message || "Ocurrió un error inesperado." }}
+    </p>
 
-		<div class="flex flex-col gap-6 lg:flex-row lg:items-start">
-			<!-- Calendario -->
-			<div class="flex w-full justify-center lg:w-auto">
-				<hlm-calendar [(date)]="selectedDate" [min]="minDate" [max]="maxDate" />
-			</div>
+    <button type="button" (click)="onRetry()"
+      class="mt-4 rounded-xl bg-red-700 px-4 py-2 text-sm font-semibold text-white hover:bg-red-600">
+      Reintentar
+    </button>
+  </section>
+  } @else if (store.mode() === "platform" && store.platformMetrics()) {
+  @let metrics = store.platformMetrics();
 
-			<!-- Panel derecho -->
-			<div class="flex w-full flex-col gap-3 lg:min-w-[180px]">
-				<div class="rounded-lg border p-3">
-					<p class="text-muted-foreground text-xs">Eventos hoy</p>
-					<p class="text-lg font-semibold">3</p>
-				</div>
+  <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+      <p class="text-xs font-semibold uppercase text-slate-500">
+        Incidentes
+      </p>
+      <p class="mt-2 text-3xl font-bold text-slate-900">
+        {{ store.platformTotalIncidents() }}
+      </p>
+      <p class="mt-1 text-xs text-slate-500">Total por estado</p>
+    </div>
 
-				<div class="rounded-lg border p-3">
-					<p class="text-muted-foreground text-xs">Incidentes</p>
-					<p class="text-lg font-semibold text-red-500">1</p>
-				</div>
+    <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+      <p class="text-xs font-semibold uppercase text-slate-500">
+        Proveedores
+      </p>
+      <p class="mt-2 text-3xl font-bold text-blue-700">
+        {{ metrics?.totalProviders }}
+      </p>
+      <p class="mt-1 text-xs text-slate-500">
+        {{ metrics?.availableProviders }} disponibles
+      </p>
+    </div>
 
-				<div class="rounded-lg border p-3">
-					<p class="text-muted-foreground text-xs">Servicios</p>
-					<p class="text-lg font-semibold text-green-600">8</p>
-				</div>
-			</div>
-		</div>
-	</div>
-</div>
+    <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+      <p class="text-xs font-semibold uppercase text-slate-500">
+        Técnicos
+      </p>
+      <p class="mt-2 text-3xl font-bold text-emerald-700">
+        {{ metrics?.totalTechnicians }}
+      </p>
+      <p class="mt-1 text-xs text-slate-500">
+        {{ metrics?.availableTechnicians }} disponibles
+      </p>
+    </div>
 
-<!-- <div class="grid gap-6 p-6">
+    <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+      <p class="text-xs font-semibold uppercase text-slate-500">
+        Auditoría 24h
+      </p>
+      <p class="mt-2 text-3xl font-bold text-orange-700">
+        {{ metrics?.auditEventsLast24h }}
+      </p>
+      <p class="mt-1 text-xs text-slate-500">eventos registrados</p>
+    </div>
+  </section>
 
-	<div class="grid grid-cols-1 gap-4 md:grid-cols-4">
-		<div class="rounded-xl border bg-white p-4 shadow-sm">
-			<p class="text-muted-foreground text-sm">Providers</p>
-			<p class="text-2xl font-bold">24</p>
-			<p class="text-xs text-green-600">+3 este mes</p>
-		</div>
+  <section class="grid gap-6 xl:grid-cols-[1fr_1fr]">
+    <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <h2 class="text-xl font-bold text-slate-900">
+        Estados de incidentes
+      </h2>
+      <p class="mt-1 text-sm text-slate-500">
+        Distribución operativa de la plataforma.
+      </p>
 
-		<div class="rounded-xl border bg-white p-4 shadow-sm">
-			<p class="text-muted-foreground text-sm">Técnicos</p>
-			<p class="text-2xl font-bold">87</p>
-			<p class="text-xs text-blue-600">Activos</p>
-		</div>
+      <div class="mt-5 space-y-3">
+        @for (entry of statusEntries(metrics?.incidentsByStatus); track entry.key) {
+        <div class="flex items-center justify-between rounded-2xl border border-slate-200 p-4">
+          <span class="rounded-full px-3 py-1 text-xs font-bold" [class]="getStatusBadgeClass(entry.key)">
+            {{ getStatusLabel(entry.key) }}
+          </span>
+          <span class="text-lg font-bold text-slate-900">
+            {{ entry.value }}
+          </span>
+        </div>
+        }
+      </div>
+    </section>
 
-		<div class="rounded-xl border bg-white p-4 shadow-sm">
-			<p class="text-muted-foreground text-sm">Incidentes</p>
-			<p class="text-2xl font-bold">12</p>
-			<p class="text-xs text-red-600">Pendientes</p>
-		</div>
+    <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <h2 class="text-xl font-bold text-slate-900">
+        Resumen financiero
+      </h2>
+      <p class="mt-1 text-sm text-slate-500">
+        Monto de servicios, pagos y comisión de plataforma.
+      </p>
 
-		<div class="rounded-xl border bg-white p-4 shadow-sm">
-			<p class="text-muted-foreground text-sm">Servicios</p>
-			<p class="text-2xl font-bold">156</p>
-			<p class="text-xs text-purple-600">Hoy</p>
-		</div>
-	</div>
+      <div class="mt-5 grid gap-4 sm:grid-cols-2">
+        <div class="rounded-2xl border border-slate-200 p-4">
+          <p class="text-xs font-bold uppercase text-slate-500">
+            Valor servicios
+          </p>
+          <p class="mt-2 text-xl font-bold text-slate-900">
+            {{ formatMoney(metrics?.totalServiceValue) }}
+          </p>
+        </div>
 
+        <div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+          <p class="text-xs font-bold uppercase text-emerald-700">
+            Pagado
+          </p>
+          <p class="mt-2 text-xl font-bold text-emerald-700">
+            {{ formatMoney(metrics?.totalPaidValue) }}
+          </p>
+        </div>
 
-	<div class="rounded-xl border bg-white p-4 shadow-sm">
-		<h2 class="mb-4 text-sm font-medium">Calendario</h2>
+        <div class="rounded-2xl border border-orange-200 bg-orange-50 p-4">
+          <p class="text-xs font-bold uppercase text-orange-700">
+            Comisión plataforma
+          </p>
+          <p class="mt-2 text-xl font-bold text-orange-700">
+            {{ formatMoney(metrics?.totalPlatformCommission) }}
+          </p>
+        </div>
 
-		<div class="flex items-start gap-6">
-			<hlm-calendar [(date)]="selectedDate" [min]="minDate" [max]="maxDate" />
+        <div class="rounded-2xl border border-blue-200 bg-blue-50 p-4">
+          <p class="text-xs font-bold uppercase text-blue-700">
+            Neto proveedores
+          </p>
+          <p class="mt-2 text-xl font-bold text-blue-700">
+            {{ formatMoney(metrics?.totalProviderNetAmount) }}
+          </p>
+        </div>
+      </div>
+    </section>
+  </section>
 
-			<div class="flex min-w-[180px] flex-col gap-3">
-				<div class="rounded-lg border p-3">
-					<p class="text-muted-foreground text-xs">Eventos hoy</p>
-					<p class="text-lg font-semibold">3</p>
-				</div>
+  <section class="grid gap-6 xl:grid-cols-3">
+    <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <h2 class="text-lg font-bold text-slate-900">Jobs</h2>
+      <div class="mt-4 space-y-3">
+        @for (entry of statusEntries(metrics?.backgroundJobsByStatus); track entry.key) {
+        <div class="flex justify-between rounded-2xl border border-slate-200 p-3">
+          <span class="text-sm font-semibold text-slate-700">
+            {{ getStatusLabel(entry.key) }}
+          </span>
+          <span class="font-bold">{{ entry.value }}</span>
+        </div>
+        }
+      </div>
+    </section>
 
-				<div class="rounded-lg border p-3">
-					<p class="text-muted-foreground text-xs">Incidentes</p>
-					<p class="text-lg font-semibold text-red-500">1</p>
-				</div>
+    <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <h2 class="text-lg font-bold text-slate-900">Push notifications</h2>
+      <div class="mt-4 space-y-3">
+        @for (entry of statusEntries(metrics?.pushDeliveriesByStatus); track entry.key) {
+        <div class="flex justify-between rounded-2xl border border-slate-200 p-3">
+          <span class="text-sm font-semibold text-slate-700">
+            {{ getStatusLabel(entry.key) }}
+          </span>
+          <span class="font-bold">{{ entry.value }}</span>
+        </div>
+        }
+      </div>
+    </section>
 
-				<div class="rounded-lg border p-3">
-					<p class="text-muted-foreground text-xs">Servicios</p>
-					<p class="text-lg font-semibold text-green-600">8</p>
-				</div>
-			</div>
-		</div>
-	</div>
-</div> -->
+    <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <h2 class="text-lg font-bold text-slate-900">Tiempos promedio</h2>
+      <div class="mt-4 space-y-3">
+        <div class="rounded-2xl border border-slate-200 p-4">
+          <p class="text-xs font-bold uppercase text-slate-500">
+            Asignación
+          </p>
+          <p class="mt-1 text-xl font-bold text-slate-900">
+            {{ formatSeconds(metrics?.averageAssignmentSeconds) }}
+          </p>
+        </div>
+
+        <div class="rounded-2xl border border-slate-200 p-4">
+          <p class="text-xs font-bold uppercase text-slate-500">
+            Finalización
+          </p>
+          <p class="mt-1 text-xl font-bold text-slate-900">
+            {{ formatSeconds(metrics?.averageCompletionSeconds) }}
+          </p>
+        </div>
+      </div>
+    </section>
+  </section>
+
+  <p class="text-xs text-slate-500">
+    Última actualización: {{ metrics?.timestamp }}
+  </p>
+  } @else if (store.mode() === "provider" && store.providerSummary()) {
+  @let summary = store.providerSummary();
+  @let profile = summary?.profile;
+
+  <section class="rounded-3xl border p-6 shadow-sm" [class.border-emerald-200]="store.providerIsReady()"
+    [class.bg-emerald-50]="store.providerIsReady()" [class.border-orange-200]="!store.providerIsReady()"
+    [class.bg-orange-50]="!store.providerIsReady()">
+    <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+      <div>
+        <p class="text-sm font-semibold text-slate-600">
+          Estado operativo del taller
+        </p>
+        <h2 class="mt-1 text-2xl font-bold text-slate-900">
+          {{ profile?.business_name || "Mi taller" }}
+        </h2>
+        <p class="mt-2 text-sm text-slate-700">
+          {{ store.providerReadinessMessage() }}
+        </p>
+      </div>
+
+      <a routerLink="/app/empresa/profile"
+        class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700">
+        Configurar taller
+      </a>
+    </div>
+  </section>
+
+  <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+      <p class="text-xs font-semibold uppercase text-slate-500">
+        Solicitudes disponibles
+      </p>
+      <p class="mt-2 text-3xl font-bold text-blue-700">
+        {{ summary?.availableCandidatesCount }}
+      </p>
+      <a routerLink="/app/candidates" class="mt-2 inline-block text-xs font-bold text-blue-700 hover:underline">
+        Ver solicitudes
+      </a>
+    </div>
+
+    <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+      <p class="text-xs font-semibold uppercase text-slate-500">
+        Operaciones activas
+      </p>
+      <p class="mt-2 text-3xl font-bold text-orange-700">
+        {{ summary?.activeOperationsCount }}
+      </p>
+      <a routerLink="/app/operations" class="mt-2 inline-block text-xs font-bold text-orange-700 hover:underline">
+        Ver operaciones
+      </a>
+    </div>
+
+    <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+      <p class="text-xs font-semibold uppercase text-slate-500">
+        Servicios activos
+      </p>
+      <p class="mt-2 text-3xl font-bold text-emerald-700">
+        {{ summary?.activeServicesCount }}
+      </p>
+      <a routerLink="/app/service-me" class="mt-2 inline-block text-xs font-bold text-emerald-700 hover:underline">
+        Configurar servicios
+      </a>
+    </div>
+
+    <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+      <p class="text-xs font-semibold uppercase text-slate-500">
+        Técnicos disponibles
+      </p>
+      <p class="mt-2 text-3xl font-bold text-slate-900">
+        {{ profile?.available_technicians_count ?? 0 }}
+      </p>
+      <a routerLink="/app/provider-me" class="mt-2 inline-block text-xs font-bold text-slate-700 hover:underline">
+        Gestionar técnicos
+      </a>
+    </div>
+  </section>
+
+  <section class="grid gap-6 xl:grid-cols-[1fr_1fr]">
+    <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <h2 class="text-xl font-bold text-slate-900">Operaciones activas</h2>
+      <p class="mt-1 text-sm text-slate-500">
+        Servicios aceptados en ejecución.
+      </p>
+
+      @if ((summary?.activeOperations?.length ?? 0) > 0) {
+      <div class="mt-5 space-y-3">
+        @for (operation of summary?.activeOperations ?? []; track operation.incident_id) {
+        <div class="rounded-2xl border border-slate-200 p-4">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <p class="font-bold text-slate-900">
+                {{ operation.title }}
+              </p>
+              <p class="mt-1 text-xs text-slate-500">
+                {{ operation.reported_category }}
+              </p>
+            </div>
+
+            <span class="rounded-full px-3 py-1 text-xs font-bold" [class]="getStatusBadgeClass(operation.status)">
+              {{ getStatusLabel(operation.status) }}
+            </span>
+          </div>
+
+          @if (operation.assigned_technician) {
+          <p class="mt-2 text-xs text-slate-500">
+            Técnico: {{ operation.assigned_technician.full_name }}
+          </p>
+          }
+        </div>
+        }
+      </div>
+      } @else {
+      <p class="mt-5 text-sm text-slate-500">
+        No tienes operaciones activas.
+      </p>
+      }
+    </section>
+
+    <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <h2 class="text-xl font-bold text-slate-900">Solicitudes recientes</h2>
+      <p class="mt-1 text-sm text-slate-500">
+        Candidatos disponibles para aceptar o rechazar.
+      </p>
+
+      @if ((summary?.recentCandidates?.length ?? 0) > 0) {
+      <div class="mt-5 space-y-3">
+        @for (candidate of summary?.recentCandidates ?? []; track candidate.id) {
+        <div class="rounded-2xl border border-slate-200 p-4">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <p class="font-bold text-slate-900">
+                {{ candidate.incident.title }}
+              </p>
+              <p class="mt-1 text-xs text-slate-500">
+                {{ candidate.incident.reported_category }}
+              </p>
+            </div>
+
+            <span class="rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-blue-700">
+              Score {{ candidate.score }}
+            </span>
+          </div>
+
+          <p class="mt-2 text-xs text-slate-500">
+            Distancia:
+            {{ candidate.distance_km !== null ? candidate.distance_km + " km" : "Sin distancia" }}
+          </p>
+        </div>
+        }
+      </div>
+      } @else {
+      <p class="mt-5 text-sm text-slate-500">
+        No hay solicitudes disponibles.
+      </p>
+      }
+    </section>
+  </section>
+
+  <section class="grid gap-6 xl:grid-cols-[0.8fr_1.2fr]">
+    <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <h2 class="text-xl font-bold text-slate-900">
+        Incidentes por estado
+      </h2>
+
+      <div class="mt-5 space-y-3">
+        @for (entry of statusEntries(summary?.incidentsByStatus); track entry.key) {
+        <div class="flex items-center justify-between rounded-2xl border border-slate-200 p-4">
+          <span class="rounded-full px-3 py-1 text-xs font-bold" [class]="getStatusBadgeClass(entry.key)">
+            {{ getStatusLabel(entry.key) }}
+          </span>
+
+          <span class="font-bold text-slate-900">
+            {{ entry.value }}
+          </span>
+        </div>
+        }
+      </div>
+    </section>
+
+    <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <h2 class="text-xl font-bold text-slate-900">Servicios activos</h2>
+
+      @if ((summary?.activeServices?.length ?? 0) > 0) {
+      <div class="mt-5 grid gap-3 md:grid-cols-2">
+        @for (service of summary?.activeServices ?? []; track service.id) {
+        <div class="rounded-2xl border border-slate-200 p-4">
+          <p class="font-bold text-slate-900">
+            {{ service.effective_title }}
+          </p>
+          <p class="mt-1 text-xs text-slate-500">
+            {{ service.service_category }} · {{ service.service_code }}
+          </p>
+
+          <div class="mt-3 flex flex-wrap gap-2">
+            @if (service.is_mobile_service_enabled) {
+            <span class="rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-blue-700">
+              Móvil
+            </span>
+            }
+
+            @if (service.is_emergency_service_enabled) {
+            <span class="rounded-full bg-orange-100 px-3 py-1 text-xs font-bold text-orange-700">
+              Emergencia
+            </span>
+            }
+          </div>
+        </div>
+        }
+      </div>
+      } @else {
+      <p class="mt-5 text-sm text-slate-500">
+        No hay servicios activos configurados.
+      </p>
+      }
+    </section>
+  </section>
+  } @else {
+  <section class="rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-sm">
+    <p class="text-lg font-bold text-slate-900">
+      Dashboard básico
+    </p>
+    <p class="mx-auto mt-2 max-w-xl text-sm text-slate-500">
+      Tu rol actual todavía no tiene un dashboard operativo específico en la
+      web. Usa las opciones habilitadas en el menú lateral.
+    </p>
+  </section>
+  }
+</section>

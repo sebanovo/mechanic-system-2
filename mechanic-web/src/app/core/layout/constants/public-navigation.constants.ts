@@ -29,4 +29,5 @@ export const PUBLIC_NAVIGATION: PublicNavigationItem[] = [
 		type: "section",
 		fragment: "contact",
 	},
+
 ];

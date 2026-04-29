@@ -27,25 +27,27 @@ export class CandidatesApi {
 		candidateId: string
 	): Observable<AssignmentCandidateDto> {
 		return this.http
-			.get<
-				ApiResponse<AssignmentCandidateDto>
-			>(`/api/assignment/provider/me/available/${candidateId}`)
+			.get<ApiResponse<AssignmentCandidateDto>>(
+				`/api/assignment/provider/me/available/${candidateId}`
+			)
 			.pipe(map(response => response.data));
 	}
 
 	acceptCandidate(candidateId: string): Observable<CandidateActionResultDto> {
 		return this.http
-			.post<
-				ApiResponse<CandidateActionResultDto>
-			>(`/api/assignment/provider/me/available/${candidateId}/accept`, {})
+			.post<ApiResponse<CandidateActionResultDto>>(
+				`/api/assignment/provider/me/available/${candidateId}/accept`,
+				{}
+			)
 			.pipe(map(response => response.data));
 	}
 
 	rejectCandidate(candidateId: string): Observable<CandidateActionResultDto> {
 		return this.http
-			.post<
-				ApiResponse<CandidateActionResultDto>
-			>(`/api/assignment/provider/me/available/${candidateId}/reject`, {})
+			.post<ApiResponse<CandidateActionResultDto>>(
+				`/api/assignment/provider/me/available/${candidateId}/reject`,
+				{}
+			)
 			.pipe(map(response => response.data));
 	}
 }

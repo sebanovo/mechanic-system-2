@@ -36,6 +36,25 @@ export class CandidatesStore {
 		() => this.hasLoaded() && !this.loading() && this.candidates().length === 0
 	);
 
+	readonly averageScore = computed(() => {
+		const items = this.candidates();
+
+		if (!items.length) {
+			return 0;
+		}
+
+		const total = items.reduce((sum, item) => sum + item.score, 0);
+
+		return Math.round((total / items.length) * 100) / 100;
+	});
+
+	readonly highPriorityCount = computed(
+		() =>
+			this.candidates().filter(candidate =>
+				["HIGH", "CRITICAL", "URGENT"].includes(candidate.incident.priority)
+			).length
+	);
+
 	readonly selectedCandidate = signal<AssignmentCandidate | null>(null);
 	readonly selectedCandidateLoading = signal(false);
 	readonly selectedCandidateError = signal<AppHttpError | null>(null);
@@ -45,9 +64,15 @@ export class CandidatesStore {
 
 	readonly acceptingCandidateIds = signal<string[]>([]);
 	readonly acceptingCandidateError = signal<AppHttpError | null>(null);
+	readonly hasAcceptingCandidateError = computed(
+		() => this.acceptingCandidateError() !== null
+	);
 
 	readonly rejectingCandidateIds = signal<string[]>([]);
 	readonly rejectingCandidateError = signal<AppHttpError | null>(null);
+	readonly hasRejectingCandidateError = computed(
+		() => this.rejectingCandidateError() !== null
+	);
 
 	readonly actingCandidateIds = computed(() => [
 		...this.acceptingCandidateIds(),
@@ -87,7 +112,6 @@ export class CandidatesStore {
 			const dto = await firstValueFrom(
 				this.candidatesApi.getAvailableCandidateById(candidateId)
 			);
-
 			const candidate = toAssignmentCandidate(dto);
 
 			this.selectedCandidate.set(candidate);
@@ -106,25 +130,23 @@ export class CandidatesStore {
 		candidateId: string
 	): Promise<CandidateActionResult | null> {
 		this.acceptingCandidateError.set(null);
-		this.acceptingCandidateIds.update(current => [...current, candidateId]);
+		this.addAcceptingCandidateId(candidateId);
 
 		try {
 			const dto = await firstValueFrom(
 				this.candidatesApi.acceptCandidate(candidateId)
 			);
-
 			const result = toCandidateActionResult(dto);
 
-			this.applyCandidateActionResult(result);
+			this.removeCandidateFromList(candidateId);
+			this.markSelectedCandidateAs(candidateId, result.candidateStatus);
 
 			return result;
 		} catch (error) {
 			this.acceptingCandidateError.set(error as AppHttpError);
 			return null;
 		} finally {
-			this.acceptingCandidateIds.update(current =>
-				current.filter(id => id !== candidateId)
-			);
+			this.removeAcceptingCandidateId(candidateId);
 		}
 	}
 
@@ -132,62 +154,28 @@ export class CandidatesStore {
 		candidateId: string
 	): Promise<CandidateActionResult | null> {
 		this.rejectingCandidateError.set(null);
-		this.rejectingCandidateIds.update(current => [...current, candidateId]);
+		this.addRejectingCandidateId(candidateId);
 
 		try {
 			const dto = await firstValueFrom(
 				this.candidatesApi.rejectCandidate(candidateId)
 			);
-
 			const result = toCandidateActionResult(dto);
 
-			this.applyCandidateActionResult(result);
+			this.removeCandidateFromList(candidateId);
+			this.markSelectedCandidateAs(candidateId, result.candidateStatus);
 
 			return result;
 		} catch (error) {
 			this.rejectingCandidateError.set(error as AppHttpError);
 			return null;
 		} finally {
-			this.rejectingCandidateIds.update(current =>
-				current.filter(id => id !== candidateId)
-			);
+			this.removeRejectingCandidateId(candidateId);
 		}
 	}
 
 	isCandidateActing(candidateId: string): boolean {
 		return this.actingCandidateIds().includes(candidateId);
-	}
-
-	private applyCandidateActionResult(result: CandidateActionResult): void {
-		this.candidates.update(current =>
-			current.map(candidate =>
-				candidate.id === result.candidateId
-					? {
-							...candidate,
-							status: result.candidateStatus,
-							respondedAt: result.assignedAt,
-							incident: {
-								...candidate.incident,
-								status: result.incidentStatus,
-							},
-						}
-					: candidate
-			)
-		);
-
-		const selected = this.selectedCandidate();
-
-		if (selected?.id === result.candidateId) {
-			this.selectedCandidate.set({
-				...selected,
-				status: result.candidateStatus,
-				respondedAt: result.assignedAt,
-				incident: {
-					...selected.incident,
-					status: result.incidentStatus,
-				},
-			});
-		}
 	}
 
 	clearError(): void {
@@ -208,5 +196,55 @@ export class CandidatesStore {
 
 	clearRejectingCandidateError(): void {
 		this.rejectingCandidateError.set(null);
+	}
+
+	private addAcceptingCandidateId(candidateId: string): void {
+		this.acceptingCandidateIds.update(ids =>
+			ids.includes(candidateId) ? ids : [...ids, candidateId]
+		);
+	}
+
+	private removeAcceptingCandidateId(candidateId: string): void {
+		this.acceptingCandidateIds.update(ids =>
+			ids.filter(id => id !== candidateId)
+		);
+	}
+
+	private addRejectingCandidateId(candidateId: string): void {
+		this.rejectingCandidateIds.update(ids =>
+			ids.includes(candidateId) ? ids : [...ids, candidateId]
+		);
+	}
+
+	private removeRejectingCandidateId(candidateId: string): void {
+		this.rejectingCandidateIds.update(ids =>
+			ids.filter(id => id !== candidateId)
+		);
+	}
+
+	private removeCandidateFromList(candidateId: string): void {
+		this.candidates.update(current =>
+			current.filter(candidate => candidate.id !== candidateId)
+		);
+
+		this.meta.set({
+			count: this.candidates().length,
+		});
+	}
+
+	private markSelectedCandidateAs(
+		candidateId: string,
+		status: AssignmentCandidate["status"]
+	): void {
+		const selected = this.selectedCandidate();
+
+		if (!selected || selected.id !== candidateId) {
+			return;
+		}
+
+		this.selectedCandidate.set({
+			...selected,
+			status,
+		});
 	}
 }

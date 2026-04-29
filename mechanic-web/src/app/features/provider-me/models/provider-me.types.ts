@@ -10,19 +10,33 @@ export type ProviderMeOwnerUserDto = {
 	is_active: boolean;
 };
 
+export type ProviderMeActiveServiceDto = {
+	id: string;
+	service_catalog_item_id: string;
+	code: string;
+	category: string;
+	title: string;
+	price_estimate_min: number | null;
+	price_estimate_max: number | null;
+	estimated_duration_minutes: number | null;
+	is_mobile_service_enabled: boolean;
+	is_emergency_service_enabled: boolean;
+	is_active: boolean;
+};
+
 export type ProviderMeDto = {
 	id: string;
 	owner_user_id: string;
 	provider_type: ProviderMeType;
 	business_name: string;
-	legal_name: string;
+	legal_name: string | null;
 	description: string | null;
-	contact_email: string;
+	contact_email: string | null;
 	contact_phone: string | null;
-	city: string;
-	address: string;
-	base_latitude: number;
-	base_longitude: number;
+	city: string | null;
+	address: string | null;
+	base_latitude: number | null;
+	base_longitude: number | null;
 	is_active: boolean;
 	is_available: boolean;
 	max_concurrent_services: number;
@@ -34,7 +48,7 @@ export type ProviderMeDto = {
 	available_technicians_count: number;
 	configured_services_count: number;
 	active_services_count: number;
-	active_services: unknown[];
+	active_services: ProviderMeActiveServiceDto[];
 	created_at: string;
 	updated_at: string;
 };
@@ -46,6 +60,20 @@ export type ProviderMeOwnerUser = {
 	lastName: string;
 	fullName: string;
 	phoneNumber: string | null;
+	isActive: boolean;
+};
+
+export type ProviderMeActiveService = {
+	id: string;
+	serviceCatalogItemId: string;
+	code: string;
+	category: string;
+	title: string;
+	priceEstimateMin: number | null;
+	priceEstimateMax: number | null;
+	estimatedDurationMinutes: number | null;
+	isMobileServiceEnabled: boolean;
+	isEmergencyServiceEnabled: boolean;
 	isActive: boolean;
 };
 
@@ -73,21 +101,21 @@ export type ProviderMe = {
 	availableTechniciansCount: number;
 	configuredServicesCount: number;
 	activeServicesCount: number;
-	activeServices: unknown[];
+	activeServices: ProviderMeActiveService[];
 	createdAt: string;
 	updatedAt: string;
 };
 
 export type UpdateProviderMeProfileRequest = {
 	business_name: string;
-	legal_name: string;
+	legal_name: string | null;
 	description: string | null;
-	contact_email: string;
+	contact_email: string | null;
 	contact_phone: string | null;
-	city: string;
-	address: string;
-	base_latitude: number;
-	base_longitude: number;
+	city: string | null;
+	address: string | null;
+	base_latitude: number | null;
+	base_longitude: number | null;
 	is_available: boolean;
 	max_concurrent_services: number;
 };
@@ -113,11 +141,11 @@ export type ProviderMeTechnicianDto = {
 	last_name: string;
 	full_name: string;
 	phone_number: string | null;
-	specialty: string;
+	specialty: string | null;
 	is_active: boolean;
 	is_available: boolean;
-	current_latitude: number;
-	current_longitude: number;
+	current_latitude: number | null;
+	current_longitude: number | null;
 	created_at: string;
 	updated_at: string;
 };
@@ -142,10 +170,10 @@ export type CreateProviderMeTechnicianRequest = {
 	first_name: string;
 	last_name: string;
 	phone_number: string | null;
-	specialty: string;
+	specialty: string | null;
 	is_available: boolean;
-	current_latitude: number;
-	current_longitude: number;
+	current_latitude: number | null;
+	current_longitude: number | null;
 };
 
 export type CreateProviderMeTechnicianFormValue = {
@@ -159,15 +187,14 @@ export type CreateProviderMeTechnicianFormValue = {
 };
 
 export type UpdateProviderMeTechnicianRequest = {
-	first_name: string;
-	last_name: string;
-	full_name: string;
+	first_name: string | null;
+	last_name: string | null;
 	phone_number: string | null;
-	specialty: string;
-	is_active: boolean;
-	is_available: boolean;
-	current_latitude: number;
-	current_longitude: number;
+	specialty: string | null;
+	is_active: boolean | null;
+	is_available: boolean | null;
+	current_latitude: number | null;
+	current_longitude: number | null;
 };
 
 export type UpdateProviderMeTechnicianFormValue = {

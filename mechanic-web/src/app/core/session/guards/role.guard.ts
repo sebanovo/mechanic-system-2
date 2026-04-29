@@ -1,16 +1,11 @@
+import { CanActivateFn, Router } from "@angular/router";
 import { inject } from "@angular/core";
-import { CanActivateFn, Router, UrlTree } from "@angular/router";
 
-import { RoleCode } from "../../../features/auth/models/auth.dto";
+import { RoleCode } from "../../../features/auth/models/auth.types";
+import { APP_FORBIDDEN_ROUTE } from "../utils/session-route.utils";
 import { SessionStore } from "../store/session.store";
 
-/**
- * Allows access only when user has one allowed role.
- * Requires route data.roles.
- */
-export const roleGuard: CanActivateFn = async (
-	route
-): Promise<boolean | UrlTree> => {
+export const roleGuard: CanActivateFn = async route => {
 	const sessionStore = inject(SessionStore);
 	const router = inject(Router);
 
@@ -28,13 +23,9 @@ export const roleGuard: CanActivateFn = async (
 		return true;
 	}
 
-	const userRoles = sessionStore.roles();
-
-	const hasAllowedRole = allowedRoles.some(role => userRoles.includes(role));
-
-	if (hasAllowedRole) {
+	if (sessionStore.hasAnyRole(allowedRoles)) {
 		return true;
 	}
 
-	return router.createUrlTree(["/app/forbidden"]);
+	return router.createUrlTree([APP_FORBIDDEN_ROUTE]);
 };

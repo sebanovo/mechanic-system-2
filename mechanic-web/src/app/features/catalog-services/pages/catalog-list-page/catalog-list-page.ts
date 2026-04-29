@@ -1,24 +1,8 @@
+import { CommonModule } from "@angular/common";
 import { Component, inject, OnInit, signal } from "@angular/core";
-import { NgIcon, provideIcons } from "@ng-icons/core";
-import {
-	lucideAlertCircle,
-	lucideInbox,
-	lucidePlus,
-	lucideSettings,
-} from "@ng-icons/lucide";
+import { FormBuilder, ReactiveFormsModule, Validators } from "@angular/forms";
 import { toast } from "@spartan-ng/brain/sonner";
 
-import { HlmCardImports } from "@shared/ui/card";
-import { HlmSkeletonImports } from "@shared/ui/skeleton";
-
-import { CardHeader } from "../../../../shared/custom-components/card-header/card-header";
-import { EmptyState } from "../../../../shared/custom-components/empty-state/empty-state";
-import { TableError } from "../../../../shared/custom-components/table-error/table-error";
-
-import { CatalogCreateDialog } from "../../components/catalog-create-dialog/catalog-create-dialog";
-import { CatalogDetailDialog } from "../../components/catalog-detail-dialog/catalog-detail-dialog";
-import { CatalogEditDialog } from "../../components/catalog-edit-dialog/catalog-edit-dialog";
-import { CatalogTable } from "../../components/catalog-table/catalog-table";
 import {
 	CatalogService,
 	CreateCatalogServiceFormValue,
@@ -28,155 +12,171 @@ import { CatalogServicesStore } from "../../store/catalog-service.store";
 
 @Component({
 	selector: "app-catalog-list-page",
-	imports: [
-		NgIcon,
-		HlmCardImports,
-		HlmSkeletonImports,
-		CardHeader,
-		TableError,
-		EmptyState,
-		CatalogTable,
-		CatalogCreateDialog,
-		CatalogEditDialog,
-		CatalogDetailDialog,
-	],
-	providers: [
-		provideIcons({
-			lucideAlertCircle,
-			lucideInbox,
-			lucidePlus,
-			lucideSettings,
-		}),
-	],
-	host: {
-		style: "display: block",
-	},
+	standalone: true,
+	imports: [CommonModule, ReactiveFormsModule],
 	templateUrl: "./catalog-list-page.html",
 	styleUrl: "./catalog-list-page.css",
 })
 export class CatalogListPage implements OnInit {
 	readonly store = inject(CatalogServicesStore);
+	private readonly fb = inject(FormBuilder);
 
-	readonly createDialogOpen = signal(false);
-	readonly editDialogOpen = signal(false);
-	readonly detailDialogOpen = signal(false);
+	readonly createFormOpen = signal(false);
+	readonly editFormOpen = signal(false);
+	readonly selectedService = signal<CatalogService | null>(null);
 
-	readonly selectedCatalogServiceForEdit = signal<CatalogService | null>(null);
+	readonly createForm = this.fb.nonNullable.group({
+		code: ["", [Validators.required, Validators.minLength(2)]],
+		category: ["", [Validators.required, Validators.minLength(2)]],
+		title: ["", [Validators.required, Validators.minLength(2)]],
+		description: [""],
+		supportsMobileService: [true],
+		supportsEmergencyService: [true],
+		isActive: [true],
+		sortOrder: [0, [Validators.required, Validators.min(0), Validators.max(1000)]],
+	});
 
-	ngOnInit(): void {
-		void this.store.loadCatalogServices();
+	readonly editForm = this.fb.nonNullable.group({
+		category: ["", [Validators.required, Validators.minLength(2)]],
+		title: ["", [Validators.required, Validators.minLength(2)]],
+		description: [""],
+		supportsMobileService: [true],
+		supportsEmergencyService: [true],
+		isActive: [true],
+		sortOrder: [0, [Validators.required, Validators.min(0), Validators.max(1000)]],
+	});
+
+	async ngOnInit(): Promise<void> {
+		await this.store.loadCatalogServices();
 	}
 
 	onRetry(): void {
+		this.store.clearError();
 		void this.store.loadCatalogServices();
 	}
 
-	onOpenCreateDialog(): void {
-		this.store.clearCreatingCatalogServiceError();
-		this.createDialogOpen.set(true);
+	async onToggleIncludeInactive(event: Event): Promise<void> {
+		const input = event.target as HTMLInputElement;
+		this.store.setIncludeInactive(input.checked);
+		await this.store.loadCatalogServices();
 	}
 
-	onCreateDialogOpenChange(isOpen: boolean): void {
-		this.createDialogOpen.set(isOpen);
+	onOpenCreateForm(): void {
+		this.store.clearCreateError();
+		this.createForm.reset({
+			code: "",
+			category: "",
+			title: "",
+			description: "",
+			supportsMobileService: true,
+			supportsEmergencyService: true,
+			isActive: true,
+			sortOrder: this.store.count() + 10,
+		});
+		this.createFormOpen.set(true);
+	}
 
-		if (!isOpen) {
-			this.store.clearCreatingCatalogServiceError();
+	onCancelCreateForm(): void {
+		this.createFormOpen.set(false);
+		this.store.clearCreateError();
+	}
+
+	async onCreateCatalogService(): Promise<void> {
+		if (this.createForm.invalid) {
+			this.createForm.markAllAsTouched();
+			return;
 		}
-	}
 
-	async onCreateCatalogService(
-		formValue: CreateCatalogServiceFormValue
-	): Promise<void> {
-		const catalogService = await this.store.createCatalogService(formValue);
+		const value = this.createForm.getRawValue();
 
-		if (!catalogService) {
+		const payload: CreateCatalogServiceFormValue = {
+			code: value.code,
+			category: value.category,
+			title: value.title,
+			description: value.description || null,
+			supportsMobileService: value.supportsMobileService,
+			supportsEmergencyService: value.supportsEmergencyService,
+			isActive: value.isActive,
+			sortOrder: Number(value.sortOrder),
+		};
+
+		const created = await this.store.createCatalogService(payload);
+
+		if (!created) {
 			toast("No se pudo crear el servicio", {
 				description:
-					this.store.creatingCatalogServiceError()?.message ||
-					"Ocurrió un error inesperado.",
+					this.store.createError()?.message || "Ocurrió un error inesperado.",
 			});
-
 			return;
 		}
 
-		this.createDialogOpen.set(false);
-		toast.success("Servicio creado correctamente");
+		this.createFormOpen.set(false);
+		toast.success("Servicio de catálogo creado correctamente");
 	}
 
-	async onViewCatalogService(catalogService: CatalogService): Promise<void> {
-		this.store.clearSelectedCatalogServiceError();
-		this.store.clearSelectedCatalogService();
-		this.detailDialogOpen.set(true);
+	onOpenEditForm(service: CatalogService): void {
+		this.store.clearUpdateError();
+		this.store.setSelectedCatalogService(service);
+		this.selectedService.set(service);
 
-		const loadedService = await this.store.loadCatalogServiceById(
-			catalogService.id
-		);
+		this.editForm.patchValue({
+			category: service.category,
+			title: service.title,
+			description: service.description ?? "",
+			supportsMobileService: service.supportsMobileService,
+			supportsEmergencyService: service.supportsEmergencyService,
+			isActive: service.isActive,
+			sortOrder: service.sortOrder,
+		});
 
-		if (!loadedService) {
-			toast("No se pudo cargar el servicio", {
-				description:
-					this.store.selectedCatalogServiceError()?.message ||
-					"Ocurrió un error inesperado.",
-			});
-		}
+		this.editFormOpen.set(true);
 	}
 
-	onDetailDialogOpenChange(isOpen: boolean): void {
-		this.detailDialogOpen.set(isOpen);
-
-		if (!isOpen) {
-			this.store.clearSelectedCatalogServiceError();
-			this.store.clearSelectedCatalogService();
-		}
+	onCancelEditForm(): void {
+		this.editFormOpen.set(false);
+		this.selectedService.set(null);
+		this.store.setSelectedCatalogService(null);
+		this.store.clearUpdateError();
 	}
 
-	onOpenEditDialog(catalogService: CatalogService): void {
-		this.store.clearUpdatingCatalogServiceError();
-		this.selectedCatalogServiceForEdit.set(catalogService);
-		this.editDialogOpen.set(true);
-	}
+	async onUpdateCatalogService(): Promise<void> {
+		const selected = this.selectedService();
 
-	onEditDialogOpenChange(isOpen: boolean): void {
-		this.editDialogOpen.set(isOpen);
-
-		if (!isOpen) {
-			this.selectedCatalogServiceForEdit.set(null);
-			this.store.clearUpdatingCatalogServiceError();
-		}
-	}
-
-	async onUpdateCatalogService(
-		formValue: UpdateCatalogServiceFormValue
-	): Promise<void> {
-		const catalogService = this.selectedCatalogServiceForEdit();
-
-		if (!catalogService) {
+		if (!selected) {
 			return;
 		}
 
-		const updatedService = await this.store.updateCatalogService(
-			catalogService.id,
-			formValue
-		);
+		if (this.editForm.invalid) {
+			this.editForm.markAllAsTouched();
+			return;
+		}
 
-		if (!updatedService) {
+		const value = this.editForm.getRawValue();
+
+		const payload: UpdateCatalogServiceFormValue = {
+			category: value.category,
+			title: value.title,
+			description: value.description || null,
+			supportsMobileService: value.supportsMobileService,
+			supportsEmergencyService: value.supportsEmergencyService,
+			isActive: value.isActive,
+			sortOrder: Number(value.sortOrder),
+		};
+
+		const updated = await this.store.updateCatalogService(selected.id, payload);
+
+		if (!updated) {
 			toast("No se pudo actualizar el servicio", {
 				description:
-					this.store.updatingCatalogServiceError()?.message ||
-					"Ocurrió un error inesperado.",
+					this.store.updateError()?.message || "Ocurrió un error inesperado.",
 			});
-
 			return;
 		}
 
-		this.selectedCatalogServiceForEdit.set(updatedService);
-		this.editDialogOpen.set(false);
+		this.editFormOpen.set(false);
+		this.selectedService.set(null);
+		this.store.setSelectedCatalogService(null);
 
 		toast.success("Servicio actualizado correctamente");
-	}
-
-	onEditFromDetail(catalogService: CatalogService): void {
-		this.detailDialogOpen.set(false);
-		this.onOpenEditDialog(catalogService);
 	}
 }

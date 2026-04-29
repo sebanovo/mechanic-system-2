@@ -26,7 +26,6 @@ import { ProviderMeApi } from "../services/provider-me.service";
 export class ProviderMeStore {
 	private readonly providerMeApi = inject(ProviderMeApi);
 
-	// MY PROVIDER PROFILE
 	readonly myProvider = signal<ProviderMe | null>(null);
 	readonly myProviderLoading = signal(false);
 	readonly myProviderError = signal<AppHttpError | null>(null);
@@ -38,7 +37,6 @@ export class ProviderMeStore {
 		() => this.updatingMyProviderError() !== null
 	);
 
-	// TECHNICIANS
 	readonly technicians = signal<ProviderMeTechnician[]>([]);
 	readonly techniciansMeta = signal<ProviderMeTechniciansMetaDto | null>(null);
 	readonly techniciansLoading = signal(false);
@@ -52,6 +50,14 @@ export class ProviderMeStore {
 		() => this.techniciansMeta()?.count ?? this.technicians().length
 	);
 
+	readonly availableTechniciansCount = computed(
+		() => this.technicians().filter(item => item.isActive && item.isAvailable).length
+	);
+
+	readonly inactiveTechniciansCount = computed(
+		() => this.technicians().filter(item => !item.isActive).length
+	);
+
 	readonly techniciansIsEmpty = computed(
 		() =>
 			this.techniciansHasLoaded() &&
@@ -59,14 +65,12 @@ export class ProviderMeStore {
 			this.technicians().length === 0
 	);
 
-	// CREATE TECHNICIAN
 	readonly creatingTechnician = signal(false);
 	readonly creatingTechnicianError = signal<AppHttpError | null>(null);
 	readonly hasCreatingTechnicianError = computed(
 		() => this.creatingTechnicianError() !== null
 	);
 
-	// UPDATE TECHNICIAN
 	readonly updatingTechnician = signal(false);
 	readonly updatingTechnicianError = signal<AppHttpError | null>(null);
 	readonly hasUpdatingTechnicianError = computed(
@@ -75,7 +79,6 @@ export class ProviderMeStore {
 
 	readonly selectedTechnician = signal<ProviderMeTechnician | null>(null);
 
-	// LOAD MY PROVIDER
 	async loadMyProviderProfile(): Promise<ProviderMe | null> {
 		this.myProviderLoading.set(true);
 		this.myProviderError.set(null);
@@ -84,7 +87,6 @@ export class ProviderMeStore {
 			const providerDto = await firstValueFrom(
 				this.providerMeApi.getMyProviderProfile()
 			);
-
 			const provider = toProviderMe(providerDto);
 
 			this.myProvider.set(provider);
@@ -99,7 +101,6 @@ export class ProviderMeStore {
 		}
 	}
 
-	// UPDATE MY PROVIDER
 	async updateMyProviderProfile(
 		formValue: UpdateProviderMeProfileFormValue
 	): Promise<ProviderMe | null> {
@@ -108,11 +109,9 @@ export class ProviderMeStore {
 
 		try {
 			const payload = toUpdateProviderMeProfileRequest(formValue);
-
 			const providerDto = await firstValueFrom(
 				this.providerMeApi.updateMyProviderProfile(payload)
 			);
-
 			const provider = toProviderMe(providerDto);
 
 			this.myProvider.set(provider);
@@ -126,15 +125,12 @@ export class ProviderMeStore {
 		}
 	}
 
-	// LOAD TECHNICIANS
 	async loadMyTechnicians(): Promise<void> {
 		this.techniciansLoading.set(true);
 		this.techniciansError.set(null);
 
 		try {
-			const response = await firstValueFrom(
-				this.providerMeApi.getMyTechnicians()
-			);
+			const response = await firstValueFrom(this.providerMeApi.getMyTechnicians());
 
 			this.technicians.set(toProviderMeTechnicians(response.data));
 			this.techniciansMeta.set(response.meta);
@@ -149,7 +145,10 @@ export class ProviderMeStore {
 		}
 	}
 
-	// CREATE TECHNICIAN
+	async reloadProviderWorkspace(): Promise<void> {
+		await Promise.all([this.loadMyProviderProfile(), this.loadMyTechnicians()]);
+	}
+
 	async createMyTechnician(
 		formValue: CreateProviderMeTechnicianFormValue
 	): Promise<ProviderMeTechnician | null> {
@@ -158,11 +157,9 @@ export class ProviderMeStore {
 
 		try {
 			const payload = toCreateProviderMeTechnicianRequest(formValue);
-
 			const technicianDto = await firstValueFrom(
 				this.providerMeApi.createMyTechnician(payload)
 			);
-
 			const technician = toProviderMeTechnician(technicianDto);
 
 			this.technicians.update(current => [technician, ...current]);
@@ -170,7 +167,7 @@ export class ProviderMeStore {
 				count: (current?.count ?? this.technicians().length - 1) + 1,
 			}));
 
-			this.syncMyProviderTechniciansCount(1, technician.isAvailable);
+			await this.loadMyProviderProfile();
 
 			return technician;
 		} catch (error) {
@@ -181,7 +178,6 @@ export class ProviderMeStore {
 		}
 	}
 
-	// UPDATE TECHNICIAN
 	async updateMyTechnician(
 		technicianId: string,
 		formValue: UpdateProviderMeTechnicianFormValue
@@ -191,16 +187,10 @@ export class ProviderMeStore {
 
 		try {
 			const payload = toUpdateProviderMeTechnicianRequest(formValue);
-
 			const technicianDto = await firstValueFrom(
 				this.providerMeApi.updateMyTechnician(technicianId, payload)
 			);
-
 			const technician = toProviderMeTechnician(technicianDto);
-
-			const previousTechnician = this.technicians().find(
-				item => item.id === technician.id
-			);
 
 			this.technicians.update(current =>
 				current.map(item => (item.id === technician.id ? technician : item))
@@ -210,10 +200,7 @@ export class ProviderMeStore {
 				this.selectedTechnician.set(technician);
 			}
 
-			this.syncMyProviderTechnicianAvailability(
-				previousTechnician?.isAvailable ?? technician.isAvailable,
-				technician.isAvailable
-			);
+			await this.loadMyProviderProfile();
 
 			return technician;
 		} catch (error) {
@@ -223,53 +210,6 @@ export class ProviderMeStore {
 			this.updatingTechnician.set(false);
 		}
 	}
-
-	// INTERNAL SYNC
-	private syncMyProviderTechniciansCount(
-		incrementBy: number,
-		isAvailable: boolean
-	): void {
-		this.myProvider.update(current => {
-			if (!current) {
-				return current;
-			}
-
-			return {
-				...current,
-				techniciansCount: current.techniciansCount + incrementBy,
-				availableTechniciansCount: isAvailable
-					? current.availableTechniciansCount + incrementBy
-					: current.availableTechniciansCount,
-			};
-		});
-	}
-
-	private syncMyProviderTechnicianAvailability(
-		previousIsAvailable: boolean,
-		nextIsAvailable: boolean
-	): void {
-		if (previousIsAvailable === nextIsAvailable) {
-			return;
-		}
-
-		this.myProvider.update(current => {
-			if (!current) {
-				return current;
-			}
-
-			const delta = nextIsAvailable ? 1 : -1;
-
-			return {
-				...current,
-				availableTechniciansCount: Math.max(
-					current.availableTechniciansCount + delta,
-					0
-				),
-			};
-		});
-	}
-
-	// CLEANERS
 
 	clearMyProviderError(): void {
 		this.myProviderError.set(null);

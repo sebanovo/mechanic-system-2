@@ -44,9 +44,10 @@ export class ProviderMeApi {
 		payload: CreateProviderMeTechnicianRequest
 	): Observable<ProviderMeTechnicianDto> {
 		return this.http
-			.post<
-				ApiResponse<ProviderMeTechnicianDto>
-			>("/api/providers/me/technicians", payload)
+			.post<ApiResponse<ProviderMeTechnicianDto>>(
+				"/api/providers/me/technicians",
+				payload
+			)
 			.pipe(map(response => response.data));
 	}
 
@@ -55,9 +56,10 @@ export class ProviderMeApi {
 		payload: UpdateProviderMeTechnicianRequest
 	): Observable<ProviderMeTechnicianDto> {
 		return this.http
-			.patch<
-				ApiResponse<ProviderMeTechnicianDto>
-			>(`/api/providers/me/technicians/${technicianId}`, payload)
+			.patch<ApiResponse<ProviderMeTechnicianDto>>(
+				`/api/providers/me/technicians/${technicianId}`,
+				payload
+			)
 			.pipe(map(response => response.data));
 	}
 }

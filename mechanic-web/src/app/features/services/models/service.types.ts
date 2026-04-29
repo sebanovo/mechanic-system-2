@@ -38,9 +38,9 @@ export type ProviderServiceDto = {
 	custom_description: string | null;
 	effective_title: string;
 	effective_description: string | null;
-	price_estimate_min: number;
-	price_estimate_max: number;
-	estimated_duration_minutes: number;
+	price_estimate_min: number | null;
+	price_estimate_max: number | null;
+	estimated_duration_minutes: number | null;
 	supports_mobile_service: boolean;
 	supports_emergency_service: boolean;
 	is_mobile_service_enabled: boolean;
@@ -62,9 +62,9 @@ export type ProviderService = {
 	customDescription: string | null;
 	effectiveTitle: string;
 	effectiveDescription: string | null;
-	priceEstimateMin: number;
-	priceEstimateMax: number;
-	estimatedDurationMinutes: number;
+	priceEstimateMin: number | null;
+	priceEstimateMax: number | null;
+	estimatedDurationMinutes: number | null;
 	supportsMobileService: boolean;
 	supportsEmergencyService: boolean;
 	isMobileServiceEnabled: boolean;
@@ -99,9 +99,9 @@ export type CreateProviderServiceRequest = {
 	service_catalog_item_id: string;
 	custom_title: string | null;
 	custom_description: string | null;
-	price_estimate_min: number;
-	price_estimate_max: number;
-	estimated_duration_minutes: number;
+	price_estimate_min: number | null;
+	price_estimate_max: number | null;
+	estimated_duration_minutes: number | null;
 	is_mobile_service_enabled: boolean;
 	is_emergency_service_enabled: boolean;
 	is_active: boolean;
@@ -111,9 +111,9 @@ export type CreateProviderServiceFormValue = {
 	serviceCatalogItemId: string;
 	customTitle: string | null;
 	customDescription: string | null;
-	priceEstimateMin: number;
-	priceEstimateMax: number;
-	estimatedDurationMinutes: number;
+	priceEstimateMin: number | null;
+	priceEstimateMax: number | null;
+	estimatedDurationMinutes: number | null;
 	isMobileServiceEnabled: boolean;
 	isEmergencyServiceEnabled: boolean;
 	isActive: boolean;
@@ -122,20 +122,20 @@ export type CreateProviderServiceFormValue = {
 export type UpdateProviderServiceRequest = {
 	custom_title: string | null;
 	custom_description: string | null;
-	price_estimate_min: number;
-	price_estimate_max: number;
-	estimated_duration_minutes: number;
-	is_mobile_service_enabled: boolean;
-	is_emergency_service_enabled: boolean;
-	is_active: boolean;
+	price_estimate_min: number | null;
+	price_estimate_max: number | null;
+	estimated_duration_minutes: number | null;
+	is_mobile_service_enabled: boolean | null;
+	is_emergency_service_enabled: boolean | null;
+	is_active: boolean | null;
 };
 
 export type UpdateProviderServiceFormValue = {
 	customTitle: string | null;
 	customDescription: string | null;
-	priceEstimateMin: number;
-	priceEstimateMax: number;
-	estimatedDurationMinutes: number;
+	priceEstimateMin: number | null;
+	priceEstimateMax: number | null;
+	estimatedDurationMinutes: number | null;
 	isMobileServiceEnabled: boolean;
 	isEmergencyServiceEnabled: boolean;
 	isActive: boolean;
