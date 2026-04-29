@@ -77,18 +77,15 @@ export const APP_NAVIGATION: AppNavigationItem[] = [
 		allowedRoles: ["PROVIDER_ADMIN"],
 	},
 
-  {
-	label: "Suscripciones",
-	route: "/app/subscriptions",
-	icon: {
-		type: "remix",
-		name: "ri-shield-check-line",
+	{
+		label: "Suscripciones",
+		route: "/app/subscriptions",
+		icon: {
+			type: "remix",
+			name: "ri-shield-check-line",
+		},
+		allowedRoles: ["PROVIDER_ADMIN", "CLIENT", "PLATFORM_ADMIN"],
 	},
-	allowedRoles: ["PROVIDER_ADMIN", "CLIENT", "PLATFORM_ADMIN"],
-},
-
-
-
 
 	{
 		type: "section",
@@ -112,128 +109,118 @@ export const APP_NAVIGATION: AppNavigationItem[] = [
 		},
 		allowedRoles: ["PROVIDER_ADMIN"],
 	},
+	// {
+	// 	label: "Incidentes",
+	// 	route: "/app/incidents",
+	// 	icon: {
+	// 		type: "remix",
+	// 		name: "ri-dashboard-line",
+	// 	},
+	// 	allowedRoles: ["PLATFORM_ADMIN"],
+	// },
 	{
-		label: "Incidentes",
-		route: "/app/incidents",
+		label: "Operaciones",
+		route: "/app/operations",
 		icon: {
 			type: "remix",
-			name: "ri-dashboard-line",
+			name: "ri-tools-line",
+		},
+		allowedRoles: ["PROVIDER_ADMIN"],
+	},
+	{
+		label: "Seguimiento",
+		route: "/app/tracking",
+		icon: {
+			type: "remix",
+			name: "ri-map-pin-line",
+		},
+		allowedRoles: ["PROVIDER_ADMIN"],
+	},
+
+	{
+		label: "Cobros",
+		route: "/app/billing",
+		icon: {
+			type: "remix",
+			name: "ri-money-dollar-circle-line",
+		},
+		allowedRoles: ["PROVIDER_ADMIN"],
+	},
+
+	{
+		type: "section",
+		label: "Sistema",
+	},
+	{
+		label: "Notificaciones",
+		route: "/app/notifications",
+		icon: {
+			type: "remix",
+			name: "ri-notification-3-line",
+		},
+		allowedRoles: ["PLATFORM_ADMIN", "PROVIDER_ADMIN", "TECHNICIAN", "CLIENT"],
+	},
+
+	{
+		type: "section",
+		label: "Plataforma",
+	},
+
+	{
+		label: "Asignación inteligente",
+		route: "/app/platform-assignment",
+		icon: {
+			type: "remix",
+			name: "ri-route-line",
 		},
 		allowedRoles: ["PLATFORM_ADMIN"],
 	},
-  {
-	label: "Operaciones",
-	route: "/app/operations",
-	icon: {
-		type: "remix",
-		name: "ri-tools-line",
+
+	{
+		label: "Admin técnico",
+		route: "/app/platform-admin",
+		icon: {
+			type: "remix",
+			name: "ri-terminal-box-line",
+		},
+		allowedRoles: ["PLATFORM_ADMIN"],
 	},
-	allowedRoles: ["PROVIDER_ADMIN"],
-},
-{
-	label: "Seguimiento",
-	route: "/app/tracking",
-	icon: {
-		type: "remix",
-		name: "ri-map-pin-line",
+
+	{
+		type: "section",
+		label: "Cliente",
 	},
-	allowedRoles: ["PROVIDER_ADMIN"],
-},
-
-{
-	label: "Cobros",
-	route: "/app/billing",
-	icon: {
-		type: "remix",
-		name: "ri-money-dollar-circle-line",
+	{
+		label: "Portal cliente",
+		route: "/app/client-portal",
+		icon: {
+			type: "remix",
+			name: "ri-car-line",
+		},
+		allowedRoles: ["CLIENT"],
 	},
-	allowedRoles: ["PROVIDER_ADMIN"],
-},
 
-{
-	type: "section",
-	label: "Sistema",
-},
-{
-	label: "Notificaciones",
-	route: "/app/notifications",
-	icon: {
-		type: "remix",
-		name: "ri-notification-3-line",
+	{
+		label: "Pagos y calificaciones",
+		route: "/app/client-payments",
+		icon: {
+			type: "remix",
+			name: "ri-bank-card-line",
+		},
+		allowedRoles: ["CLIENT"],
 	},
-	allowedRoles: ["PLATFORM_ADMIN", "PROVIDER_ADMIN", "TECHNICIAN", "CLIENT"],
-},
 
-
-{
-	type: "section",
-	label: "Plataforma",
-},
-
-{
-	label: "Asignación inteligente",
-	route: "/app/platform-assignment",
-	icon: {
-		type: "remix",
-		name: "ri-route-line",
+	{
+		type: "section",
+		label: "Defensa",
 	},
-	allowedRoles: ["PLATFORM_ADMIN"],
-},
-
-
-{
-	label: "Admin técnico",
-	route: "/app/platform-admin",
-	icon: {
-		type: "remix",
-		name: "ri-terminal-box-line",
+	{
+		label: "Flujo completo",
+		route: "/app/demo-flow",
+		icon: {
+			type: "remix",
+			name: "ri-presentation-line",
+		},
+		allowedRoles: ["PLATFORM_ADMIN", "PROVIDER_ADMIN", "CLIENT", "TECHNICIAN"],
 	},
-	allowedRoles: ["PLATFORM_ADMIN"],
-},
-
-
-
-
-{
-	type: "section",
-	label: "Cliente",
-},
-{
-	label: "Portal cliente",
-	route: "/app/client-portal",
-	icon: {
-		type: "remix",
-		name: "ri-car-line",
-	},
-	allowedRoles: ["CLIENT"],
-},
-
-
-{
-	label: "Pagos y calificaciones",
-	route: "/app/client-payments",
-	icon: {
-		type: "remix",
-		name: "ri-bank-card-line",
-	},
-	allowedRoles: ["CLIENT"],
-},
-
-
-{
-	type: "section",
-	label: "Defensa",
-},
-{
-	label: "Flujo completo",
-	route: "/app/demo-flow",
-	icon: {
-		type: "remix",
-		name: "ri-presentation-line",
-	},
-	allowedRoles: ["PLATFORM_ADMIN", "PROVIDER_ADMIN", "CLIENT", "TECHNICIAN"],
-},
-
-
-
 ];

@@ -87,7 +87,8 @@ export class AppHeader {
 	}
 
 	protected async onClickLogout(): Promise<void> {
-		await this.authStore.logout();
+		this.sessionStore.clearSession();
+		this.authStore.logout();
 	}
 
 	protected onClickChangePassword(): void {

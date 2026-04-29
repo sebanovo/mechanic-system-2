@@ -1,6 +1,7 @@
 import { computed, inject, Injectable, signal } from "@angular/core";
 import { firstValueFrom } from "rxjs";
 
+import { Router } from "@angular/router";
 import { AppHttpError } from "../../../core/http/models/app-http-error.model";
 import { SessionStore } from "../../../core/session/store/session.store";
 import { toAuthUser } from "../adapters/auth.adapter";
@@ -13,6 +14,7 @@ import { AuthService } from "../services/auth.service";
 export class AuthStore {
 	private readonly authService = inject(AuthService);
 	private readonly sessionStore = inject(SessionStore);
+	readonly router = inject(Router);
 
 	readonly loading = signal(false);
 	readonly error = signal<AppHttpError | null>(null);
@@ -50,7 +52,9 @@ export class AuthStore {
 		this.error.set(null);
 
 		try {
-			const sessionDto = await firstValueFrom(this.authService.register(payload));
+			const sessionDto = await firstValueFrom(
+				this.authService.register(payload)
+			);
 			const user = toAuthUser(sessionDto.user);
 
 			this.sessionStore.setAuthenticated(user);
@@ -64,8 +68,12 @@ export class AuthStore {
 		}
 	}
 
-	logout(): void {
+	async logout(): Promise<void> {
+		this.authService.logout(); // solo limpia tokens
+		// this.reset();
 		this.sessionStore.clearSession();
+
+		await this.router.navigate(["/auth/login"]);
 	}
 
 	clearError(): void {
@@ -82,7 +90,8 @@ export class AuthStore {
 
 			return {
 				code: "UNKNOWN",
-				status: typeof candidate["status"] === "number" ? candidate["status"] : null,
+				status:
+					typeof candidate["status"] === "number" ? candidate["status"] : null,
 				message:
 					typeof candidate["message"] === "string"
 						? candidate["message"]
