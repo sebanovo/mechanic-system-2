@@ -183,6 +183,34 @@ export const routes: Routes = [
 			      m => m.OPERATIONS_ROUTES
 		  ),
       },
+      {
+	path: "tracking",
+	canActivate: [roleGuard],
+	data: {
+		roles: ["PROVIDER_ADMIN"],
+	},
+	loadChildren: () =>
+		import("./features/tracking/tracking.routes").then(
+			m => m.TRACKING_ROUTES
+		),
+},
+
+{
+	path: "billing",
+	canActivate: [roleGuard],
+	data: {
+		roles: ["PROVIDER_ADMIN"],
+	},
+	loadChildren: () =>
+		import("./features/billing/billing.routes").then(m => m.BILLING_ROUTES),
+},
+{
+	path: "payments",
+	redirectTo: "billing",
+	pathMatch: "full",
+},
+
+
 
 
 			{

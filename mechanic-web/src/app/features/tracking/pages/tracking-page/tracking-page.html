@@ -1,0 +1,474 @@
+<section class="space-y-6">
+  <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+    <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      <div>
+        <p class="text-sm font-semibold text-slate-500">Taller</p>
+        <h1 class="text-3xl font-bold text-slate-900">
+          Seguimiento de servicios
+        </h1>
+        <p class="mt-2 max-w-3xl text-sm text-slate-500">
+          Visualiza ubicación del incidente, ubicación del técnico, ETA,
+          distancia e historial de movimientos.
+        </p>
+      </div>
+
+      <div class="flex flex-wrap gap-3">
+        <a routerLink="/app/operations"
+          class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+          Operaciones
+        </a>
+
+        <button type="button" (click)="onRefresh()" [disabled]="store.operationsLoading()"
+          class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60">
+          {{ store.operationsLoading() ? "Actualizando..." : "Actualizar" }}
+        </button>
+      </div>
+    </div>
+
+    <div class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div class="rounded-2xl border border-slate-200 p-4">
+        <p class="text-xs font-semibold text-slate-500">Operaciones</p>
+        <p class="mt-1 text-2xl font-bold text-slate-900">
+          {{ store.operationsCount() }}
+        </p>
+      </div>
+
+      <div class="rounded-2xl border border-slate-200 p-4">
+        <p class="text-xs font-semibold text-slate-500">Distancia</p>
+        <p class="mt-1 text-2xl font-bold text-blue-700">
+          {{ formatDistance(store.liveTracking()?.distanceKm ?? null) }}
+        </p>
+      </div>
+
+      <div class="rounded-2xl border border-slate-200 p-4">
+        <p class="text-xs font-semibold text-slate-500">ETA</p>
+        <p class="mt-1 text-2xl font-bold text-orange-700">
+          {{ formatEta(store.liveTracking()?.etaMinutes ?? null) }}
+        </p>
+      </div>
+
+      <div class="rounded-2xl border border-slate-200 p-4">
+        <p class="text-xs font-semibold text-slate-500">Última actualización</p>
+        <p class="mt-1 text-sm font-bold text-slate-900">
+          {{ store.liveTracking()?.lastUpdatedAt || "Sin actualización" }}
+        </p>
+      </div>
+    </div>
+  </section>
+
+  @if (store.operationsLoading() && !store.operationsHasLoaded()) {
+  <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+    <p class="text-sm font-semibold text-slate-500">
+      Cargando operaciones para tracking...
+    </p>
+    <div class="mt-4 space-y-3">
+      <div class="h-12 animate-pulse rounded-xl bg-slate-200"></div>
+      <div class="h-12 animate-pulse rounded-xl bg-slate-200"></div>
+    </div>
+  </section>
+  } @else if (store.hasOperationsError()) {
+  <section class="rounded-3xl border border-red-200 bg-red-50 p-6">
+    <h2 class="text-lg font-bold text-red-900">
+      No se pudieron cargar las operaciones
+    </h2>
+    <p class="mt-2 text-sm text-red-700">
+      {{ store.operationsError()?.message || "Ocurrió un error inesperado." }}
+    </p>
+
+    <button type="button" (click)="onRetry()"
+      class="mt-4 rounded-xl bg-red-700 px-4 py-2 text-sm font-semibold text-white hover:bg-red-600">
+      Reintentar
+    </button>
+  </section>
+  } @else if (store.operationsIsEmpty()) {
+  <section class="rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-sm">
+    <p class="text-lg font-bold text-slate-900">
+      Sin operaciones para seguimiento
+    </p>
+    <p class="mx-auto mt-2 max-w-xl text-sm text-slate-500">
+      Primero acepta una solicitud y despacha un técnico desde Operaciones.
+    </p>
+
+    <a routerLink="/app/candidates"
+      class="mt-5 inline-flex rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700">
+      Ver solicitudes disponibles
+    </a>
+  </section>
+  } @else {
+  <section class="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+    <section class="rounded-3xl border border-slate-200 bg-white shadow-sm">
+      <div class="border-b border-slate-200 p-6">
+        <h2 class="text-xl font-bold text-slate-900">
+          Operaciones activas
+        </h2>
+        <p class="text-sm text-slate-500">
+          Selecciona un incidente para ver su tracking.
+        </p>
+      </div>
+
+      <div class="divide-y divide-slate-100">
+        @for (operation of store.operations(); track operation.incidentId) {
+        <button type="button" (click)="onSelectOperation(operation)"
+          class="block w-full p-5 text-left transition hover:bg-slate-50" [class.bg-blue-50]="isSelected(operation)">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <p class="font-bold text-slate-900">
+                {{ operation.title }}
+              </p>
+              <p class="mt-1 text-xs text-slate-500">
+                {{ operation.addressReference || "Sin referencia" }}
+              </p>
+              <p class="mt-1 text-xs text-slate-400">
+                Cliente:
+                {{ operation.clientUser?.fullName || "No registrado" }}
+              </p>
+            </div>
+
+            <div class="flex flex-col items-end gap-2">
+              <span class="rounded-full px-3 py-1 text-xs font-bold" [class]="getStatusBadgeClass(operation.status)">
+                {{ getStatusLabel(operation.status) }}
+              </span>
+
+              <span class="rounded-full px-3 py-1 text-xs font-bold"
+                [class]="getPriorityBadgeClass(operation.priority)">
+                {{ getPriorityLabel(operation.priority) }}
+              </span>
+            </div>
+          </div>
+
+          <div class="mt-4 grid gap-2 text-xs text-slate-600 sm:grid-cols-2">
+            <p>
+              <span class="font-bold">Técnico:</span>
+              {{
+              operation.assignedTechnician?.fullName ||
+              "Sin técnico"
+              }}
+            </p>
+            <p>
+              <span class="font-bold">Asignado:</span>
+              {{ operation.assignedAt || "—" }}
+            </p>
+          </div>
+        </button>
+        }
+      </div>
+    </section>
+
+    <section class="space-y-6">
+      <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 class="text-xl font-bold text-slate-900">
+              Tracking en vivo
+            </h2>
+            <p class="text-sm text-slate-500">
+              {{ store.selectedOperation()?.title || "Seleccione operación" }}
+            </p>
+          </div>
+
+          <div class="flex flex-wrap gap-2">
+            <button type="button" (click)="onRefreshLive()"
+              [disabled]="store.liveTrackingLoading() || !store.selectedIncidentId()"
+              class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50">
+              {{ store.liveTrackingLoading() ? "Consultando..." : "Refrescar" }}
+            </button>
+
+            <button type="button" (click)="onRefreshRoute()"
+              [disabled]="store.refreshingRoute() || !store.selectedIncidentId()"
+              class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50">
+              {{
+              store.refreshingRoute()
+              ? "Recalculando..."
+              : "Recalcular ruta"
+              }}
+            </button>
+          </div>
+        </div>
+
+        @if (store.hasLiveTrackingError()) {
+        <div class="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4">
+          <p class="text-sm font-semibold text-red-900">
+            No se pudo cargar tracking
+          </p>
+          <p class="mt-1 text-sm text-red-700">
+            {{ store.liveTrackingError()?.message }}
+          </p>
+        </div>
+        }
+
+        @if (store.liveTrackingLoading()) {
+        <div class="mt-6 h-52 animate-pulse rounded-3xl bg-slate-200"></div>
+        } @else {
+        <div class="mt-6 rounded-3xl border border-slate-200 bg-slate-50 p-5">
+          <div class="grid gap-4 md:grid-cols-2">
+            <div class="rounded-2xl bg-white p-4">
+              <p class="text-xs font-bold uppercase text-slate-500">
+                Ubicación del incidente
+              </p>
+              <p class="mt-2 text-sm text-slate-700">
+                Latitud:
+                <strong>
+                  {{
+                  formatCoordinate(
+                  store.liveTracking()?.incidentLatitude ??
+                  store.selectedOperation()?.incidentLatitude ??
+                  null
+                  )
+                  }}
+                </strong>
+              </p>
+              <p class="mt-1 text-sm text-slate-700">
+                Longitud:
+                <strong>
+                  {{
+                  formatCoordinate(
+                  store.liveTracking()?.incidentLongitude ??
+                  store.selectedOperation()?.incidentLongitude ??
+                  null
+                  )
+                  }}
+                </strong>
+              </p>
+              <p class="mt-3 text-xs text-slate-500">
+                {{
+                store.selectedOperation()?.addressReference ||
+                "Sin referencia"
+                }}
+              </p>
+            </div>
+
+            <div class="rounded-2xl bg-white p-4">
+              <p class="text-xs font-bold uppercase text-slate-500">
+                Ubicación del técnico
+              </p>
+              <p class="mt-2 text-sm text-slate-700">
+                Latitud:
+                <strong>
+                  {{
+                  formatCoordinate(
+                  store.liveTracking()?.technicianLatitude ??
+                  store.selectedOperation()?.assignedTechnician
+                  ?.currentLatitude ??
+                  null
+                  )
+                  }}
+                </strong>
+              </p>
+              <p class="mt-1 text-sm text-slate-700">
+                Longitud:
+                <strong>
+                  {{
+                  formatCoordinate(
+                  store.liveTracking()?.technicianLongitude ??
+                  store.selectedOperation()?.assignedTechnician
+                  ?.currentLongitude ??
+                  null
+                  )
+                  }}
+                </strong>
+              </p>
+              <p class="mt-3 text-xs text-slate-500">
+                {{
+                store.selectedOperation()?.assignedTechnician?.fullName ||
+                "Sin técnico asignado"
+                }}
+              </p>
+            </div>
+          </div>
+
+          <div class="mt-4 grid gap-4 md:grid-cols-3">
+            <div class="rounded-2xl bg-white p-4">
+              <p class="text-xs font-bold uppercase text-slate-500">
+                Distancia
+              </p>
+              <p class="mt-2 text-xl font-bold text-slate-900">
+                {{ formatDistance(store.liveTracking()?.distanceKm ?? null) }}
+              </p>
+            </div>
+
+            <div class="rounded-2xl bg-white p-4">
+              <p class="text-xs font-bold uppercase text-slate-500">
+                ETA
+              </p>
+              <p class="mt-2 text-xl font-bold text-slate-900">
+                {{ formatEta(store.liveTracking()?.etaMinutes ?? null) }}
+              </p>
+            </div>
+
+            <div class="rounded-2xl bg-white p-4">
+              <p class="text-xs font-bold uppercase text-slate-500">
+                Estado
+              </p>
+              <p class="mt-2 text-xl font-bold text-slate-900">
+                {{
+                getStatusLabel(
+                store.liveTracking()?.status ??
+                store.selectedOperation()?.status ??
+                null
+                )
+                }}
+              </p>
+            </div>
+          </div>
+        </div>
+        }
+      </section>
+
+      <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 class="text-xl font-bold text-slate-900">
+          Actualizar ubicación del técnico
+        </h2>
+        <p class="mt-1 text-sm text-slate-500">
+          Registracion manualm de la ubicación. En móvil
+          esto se enviaría automáticamente desde GPS.
+        </p>
+
+        @if (store.hasUpdatingLocationError()) {
+        <div class="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4">
+          <p class="text-sm text-red-700">
+            {{ store.updatingLocationError()?.message }}
+          </p>
+        </div>
+        }
+
+        <form class="mt-5 grid gap-4 md:grid-cols-2" [formGroup]="locationForm" (ngSubmit)="onUpdateLocation()">
+          <label class="space-y-1">
+            <span class="text-sm font-semibold text-slate-700">Latitud</span>
+            <input type="number" step="0.000001" formControlName="latitude"
+              class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
+          </label>
+
+          <label class="space-y-1">
+            <span class="text-sm font-semibold text-slate-700">Longitud</span>
+            <input type="number" step="0.000001" formControlName="longitude"
+              class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
+          </label>
+
+          <label class="space-y-1">
+            <span class="text-sm font-semibold text-slate-700">
+              Precisión metros
+            </span>
+            <input type="number" min="0" formControlName="accuracyMeters"
+              class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
+          </label>
+
+          <label class="space-y-1">
+            <span class="text-sm font-semibold text-slate-700">
+              Velocidad km/h
+            </span>
+            <input type="number" min="0" formControlName="speedKmh"
+              class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
+          </label>
+
+          <label class="space-y-1">
+            <span class="text-sm font-semibold text-slate-700">
+              Dirección grados
+            </span>
+            <input type="number" min="0" max="360" formControlName="headingDegrees"
+              class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
+          </label>
+
+          <label class="space-y-1 md:col-span-2">
+            <span class="text-sm font-semibold text-slate-700">Nota</span>
+            <textarea rows="3" formControlName="note"
+              class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"></textarea>
+          </label>
+
+          <div class="flex justify-end md:col-span-2">
+            <button type="submit" [disabled]="store.updatingLocation() || !store.selectedIncidentId()"
+              class="rounded-xl bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-50">
+              {{
+              store.updatingLocation()
+              ? "Actualizando..."
+              : "Actualizar ubicación"
+              }}
+            </button>
+          </div>
+        </form>
+      </section>
+    </section>
+  </section>
+
+  <section class="rounded-3xl border border-slate-200 bg-white shadow-sm">
+    <div class="border-b border-slate-200 p-6">
+      <h2 class="text-xl font-bold text-slate-900">
+        Historial de ubicaciones
+      </h2>
+      <p class="text-sm text-slate-500">
+        Registros de movimiento asociados al incidente seleccionado.
+      </p>
+    </div>
+
+    @if (store.historyLoading()) {
+    <div class="p-6">
+      <p class="text-sm text-slate-500">Cargando historial...</p>
+    </div>
+    } @else if (store.hasHistoryError()) {
+    <div class="p-6">
+      <p class="text-sm text-red-700">
+        {{ store.historyError()?.message || "No se pudo cargar historial." }}
+      </p>
+    </div>
+    } @else if (store.history().length === 0) {
+    <div class="p-10 text-center">
+      <p class="font-bold text-slate-900">
+        Sin ubicaciones registradas
+      </p>
+      <p class="mt-1 text-sm text-slate-500">
+        Actualiza la ubicación para generar el primer registro.
+      </p>
+    </div>
+    } @else {
+    <div class="overflow-x-auto">
+      <table class="w-full min-w-[900px] text-left text-sm">
+        <thead class="border-b border-slate-200 bg-slate-50">
+          <tr>
+            <th class="px-6 py-3 font-bold text-slate-700">Fecha</th>
+            <th class="px-6 py-3 font-bold text-slate-700">Latitud</th>
+            <th class="px-6 py-3 font-bold text-slate-700">Longitud</th>
+            <th class="px-6 py-3 font-bold text-slate-700">Precisión</th>
+            <th class="px-6 py-3 font-bold text-slate-700">Velocidad</th>
+            <th class="px-6 py-3 font-bold text-slate-700">Fuente</th>
+            <th class="px-6 py-3 font-bold text-slate-700">Nota</th>
+          </tr>
+        </thead>
+
+        <tbody class="divide-y divide-slate-100">
+          @for (item of store.history(); track item.id) {
+          <tr class="hover:bg-slate-50">
+            <td class="px-6 py-4">
+              {{ item.recordedAt || item.createdAt }}
+            </td>
+            <td class="px-6 py-4">
+              {{ formatCoordinate(item.latitude) }}
+            </td>
+            <td class="px-6 py-4">
+              {{ formatCoordinate(item.longitude) }}
+            </td>
+            <td class="px-6 py-4">
+              {{
+              item.accuracyMeters !== null
+              ? item.accuracyMeters + " m"
+              : "—"
+              }}
+            </td>
+            <td class="px-6 py-4">
+              {{
+              item.speedKmh !== null ? item.speedKmh + " km/h" : "—"
+              }}
+            </td>
+            <td class="px-6 py-4">
+              {{ item.source || "WEB" }}
+            </td>
+            <td class="px-6 py-4">
+              {{ item.note || "—" }}
+            </td>
+          </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    }
+  </section>
+  }
+</section>

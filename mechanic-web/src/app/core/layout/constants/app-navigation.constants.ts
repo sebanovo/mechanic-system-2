@@ -117,5 +117,26 @@ export const APP_NAVIGATION: AppNavigationItem[] = [
 	},
 	allowedRoles: ["PROVIDER_ADMIN"],
 },
+{
+	label: "Seguimiento",
+	route: "/app/tracking",
+	icon: {
+		type: "remix",
+		name: "ri-map-pin-line",
+	},
+	allowedRoles: ["PROVIDER_ADMIN"],
+},
+
+{
+	label: "Cobros",
+	route: "/app/billing",
+	icon: {
+		type: "remix",
+		name: "ri-money-dollar-circle-line",
+	},
+	allowedRoles: ["PROVIDER_ADMIN"],
+},
+
+
 
 ];

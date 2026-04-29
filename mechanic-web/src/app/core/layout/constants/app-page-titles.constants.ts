@@ -60,5 +60,17 @@ export const APP_PAGE_TITLE: AppPageTitleItem[] = [
 	title: "Operaciones",
 	subtitle: "Gestión operativa de servicios aceptados",
 },
+  {
+	route: "/app/tracking",
+	title: "Seguimiento",
+	subtitle: "Tracking de técnico, incidente, distancia y ETA",
+},
+{
+	route: "/app/billing",
+	title: "Cobros",
+	subtitle: "Gestión de precios, pagos y comisión de plataforma",
+},
+
+
 
 ];
