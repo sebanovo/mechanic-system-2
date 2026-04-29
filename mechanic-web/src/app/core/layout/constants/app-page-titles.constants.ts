@@ -102,7 +102,17 @@ export const APP_PAGE_TITLE: AppPageTitleItem[] = [
 	subtitle: "Publicación de incidentes y ranking de talleres candidatos",
 },
 
+{
+	route: "/app/subscriptions",
+	title: "Suscripciones",
+	subtitle: "Planes de auxilio, coberturas y aplicaciones por incidente",
+},
 
+{
+	route: "/app/demo-flow",
+	title: "Flujo completo",
+	subtitle: "Centro de defensa, checklist funcional y mapa de módulos",
+},
 
 
 

@@ -77,6 +77,19 @@ export const APP_NAVIGATION: AppNavigationItem[] = [
 		allowedRoles: ["PROVIDER_ADMIN"],
 	},
 
+  {
+	label: "Suscripciones",
+	route: "/app/subscriptions",
+	icon: {
+		type: "remix",
+		name: "ri-shield-check-line",
+	},
+	allowedRoles: ["PROVIDER_ADMIN", "CLIENT", "PLATFORM_ADMIN"],
+},
+
+
+
+
 	{
 		type: "section",
 		label: "Operación",
@@ -204,6 +217,21 @@ export const APP_NAVIGATION: AppNavigationItem[] = [
 		name: "ri-bank-card-line",
 	},
 	allowedRoles: ["CLIENT"],
+},
+
+
+{
+	type: "section",
+	label: "Defensa",
+},
+{
+	label: "Flujo completo",
+	route: "/app/demo-flow",
+	icon: {
+		type: "remix",
+		name: "ri-presentation-line",
+	},
+	allowedRoles: ["PLATFORM_ADMIN", "PROVIDER_ADMIN", "CLIENT", "TECHNICIAN"],
 },
 
 

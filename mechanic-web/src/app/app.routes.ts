@@ -270,7 +270,29 @@ export const routes: Routes = [
 		),
 },
 
+{
+	path: "subscriptions",
+	canActivate: [roleGuard],
+	data: {
+		roles: ["PROVIDER_ADMIN", "CLIENT", "PLATFORM_ADMIN"],
+	},
+	loadChildren: () =>
+		import("./features/subscriptions/subscription.routes").then(
+			m => m.SUBSCRIPTION_ROUTES
+		),
+},
 
+{
+	path: "demo-flow",
+	canActivate: [roleGuard],
+	data: {
+		roles: ["PLATFORM_ADMIN", "PROVIDER_ADMIN", "CLIENT", "TECHNICIAN"],
+	},
+	loadChildren: () =>
+		import("./features/demo-flow/demo-flow.routes").then(
+			m => m.DEMO_FLOW_ROUTES
+		),
+},
 
 
 
