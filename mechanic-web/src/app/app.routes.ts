@@ -210,6 +210,70 @@ export const routes: Routes = [
 	pathMatch: "full",
 },
 
+{
+	path: "notifications",
+	canActivate: [roleGuard],
+	data: {
+		roles: ["PLATFORM_ADMIN", "PROVIDER_ADMIN", "TECHNICIAN", "CLIENT"],
+	},
+	loadChildren: () =>
+		import("./features/notifications/notification.routes").then(
+			m => m.NOTIFICATION_ROUTES
+		),
+},
+
+{
+	path: "platform-admin",
+	canActivate: [roleGuard],
+	data: {
+		roles: ["PLATFORM_ADMIN"],
+	},
+	loadChildren: () =>
+		import("./features/platform-admin/platform-admin.routes").then(
+			m => m.PLATFORM_ADMIN_ROUTES
+		),
+},
+
+{
+	path: "client-portal",
+	canActivate: [roleGuard],
+	data: {
+		roles: ["CLIENT"],
+	},
+	loadChildren: () =>
+		import("./features/client-portal/client-portal.routes").then(
+			m => m.CLIENT_PORTAL_ROUTES
+		),
+},
+
+{
+	path: "client-payments",
+	canActivate: [roleGuard],
+	data: {
+		roles: ["CLIENT"],
+	},
+	loadChildren: () =>
+		import("./features/client-payments/client-payment.routes").then(
+			m => m.CLIENT_PAYMENT_ROUTES
+		),
+},
+
+{
+	path: "platform-assignment",
+	canActivate: [roleGuard],
+	data: {
+		roles: ["PLATFORM_ADMIN"],
+	},
+	loadChildren: () =>
+		import("./features/platform-assignment/platform-assignment.routes").then(
+			m => m.PLATFORM_ASSIGNMENT_ROUTES
+		),
+},
+
+
+
+
+
 
 
 

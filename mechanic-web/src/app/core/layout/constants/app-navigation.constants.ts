@@ -137,6 +137,75 @@ export const APP_NAVIGATION: AppNavigationItem[] = [
 	allowedRoles: ["PROVIDER_ADMIN"],
 },
 
+{
+	type: "section",
+	label: "Sistema",
+},
+{
+	label: "Notificaciones",
+	route: "/app/notifications",
+	icon: {
+		type: "remix",
+		name: "ri-notification-3-line",
+	},
+	allowedRoles: ["PLATFORM_ADMIN", "PROVIDER_ADMIN", "TECHNICIAN", "CLIENT"],
+},
+
+
+{
+	type: "section",
+	label: "Plataforma",
+},
+
+{
+	label: "Asignación inteligente",
+	route: "/app/platform-assignment",
+	icon: {
+		type: "remix",
+		name: "ri-route-line",
+	},
+	allowedRoles: ["PLATFORM_ADMIN"],
+},
+
+
+{
+	label: "Admin técnico",
+	route: "/app/platform-admin",
+	icon: {
+		type: "remix",
+		name: "ri-terminal-box-line",
+	},
+	allowedRoles: ["PLATFORM_ADMIN"],
+},
+
+
+
+
+{
+	type: "section",
+	label: "Cliente",
+},
+{
+	label: "Portal cliente",
+	route: "/app/client-portal",
+	icon: {
+		type: "remix",
+		name: "ri-car-line",
+	},
+	allowedRoles: ["CLIENT"],
+},
+
+
+{
+	label: "Pagos y calificaciones",
+	route: "/app/client-payments",
+	icon: {
+		type: "remix",
+		name: "ri-bank-card-line",
+	},
+	allowedRoles: ["CLIENT"],
+},
+
 
 
 ];

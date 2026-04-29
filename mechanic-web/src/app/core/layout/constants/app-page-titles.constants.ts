@@ -71,6 +71,42 @@ export const APP_PAGE_TITLE: AppPageTitleItem[] = [
 	subtitle: "Gestión de precios, pagos y comisión de plataforma",
 },
 
+{
+	route: "/app/notifications",
+	title: "Notificaciones",
+	subtitle: "Dispositivos, tokens push y entregas de notificaciones",
+},
+
+{
+	route: "/app/platform-admin",
+	title: "Admin técnico",
+	subtitle: "Jobs IA, auditoría y snapshots de métricas",
+},
+
+
+{
+	route: "/app/client-portal",
+	title: "Portal cliente",
+	subtitle: "Vehículos, emergencias y evidencias del cliente",
+},
+
+{
+	route: "/app/client-payments",
+	title: "Pagos y calificaciones",
+	subtitle: "Checkout simulado, pago y rating del servicio",
+},
+
+{
+	route: "/app/platform-assignment",
+	title: "Asignación inteligente",
+	subtitle: "Publicación de incidentes y ranking de talleres candidatos",
+},
+
+
+
+
+
+
 
 
 ];
