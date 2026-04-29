@@ -2,7 +2,7 @@ import { Routes } from "@angular/router";
 
 export const MI_EMPRESA_ROUTES: Routes = [
 	{
-		path: "", //default route
+		path: "",
 		redirectTo: "profile",
 		pathMatch: "full",
 	},

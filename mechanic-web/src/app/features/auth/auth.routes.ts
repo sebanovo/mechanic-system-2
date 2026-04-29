@@ -1,8 +1,13 @@
 import { Routes } from "@angular/router";
+
 import { guestGuard } from "../../core/session/guards/guest.guard";
 
 export const AUTH_ROUTES: Routes = [
-	// Public auth routes
+	{
+		path: "",
+		redirectTo: "login",
+		pathMatch: "full",
+	},
 	{
 		path: "login",
 		canActivate: [guestGuard],
@@ -15,14 +20,17 @@ export const AUTH_ROUTES: Routes = [
 		loadComponent: () =>
 			import("./pages/signup-page/signup-page").then(m => m.SignupPage),
 	},
-	//path: "forgot-password"
-	//path: "register"
 ];
 
-// Superadmin routes
 export const ADMIN_ROUTES: Routes = [
 	{
+		path: "",
+		redirectTo: "login",
+		pathMatch: "full",
+	},
+	{
 		path: "login",
+		canActivate: [guestGuard],
 		loadComponent: () =>
 			import("./pages/login-admin-page/login-admin-page").then(
 				m => m.LoginAdminPage

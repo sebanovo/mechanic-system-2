@@ -27,13 +27,27 @@ export class MiEmpresaStore {
 	readonly updateError = signal<AppHttpError | null>(null);
 	readonly hasUpdateError = computed(() => this.updateError() !== null);
 
+	readonly isReadyToReceiveRequests = computed(() => {
+		const empresa = this.miEmpresa();
+
+		if (!empresa) {
+			return false;
+		}
+
+		return (
+			empresa.isActive &&
+			empresa.isAvailable &&
+			empresa.availableCapacity > 0 &&
+			empresa.activeServicesCount > 0
+		);
+	});
+
 	async loadMiEmpresa(): Promise<MiEmpresa | null> {
 		this.loading.set(true);
 		this.error.set(null);
 
 		try {
 			const dto = await firstValueFrom(this.miEmpresaApi.getMiEmpresaProfile());
-
 			const empresa = toMiEmpresa(dto);
 
 			this.miEmpresa.set(empresa);
@@ -56,11 +70,9 @@ export class MiEmpresaStore {
 
 		try {
 			const payload = toUpdateMiEmpresaRequest(formValue);
-
 			const dto = await firstValueFrom(
 				this.miEmpresaApi.updateMiEmpresaProfile(payload)
 			);
-
 			const empresa = toMiEmpresa(dto);
 
 			this.miEmpresa.set(empresa);

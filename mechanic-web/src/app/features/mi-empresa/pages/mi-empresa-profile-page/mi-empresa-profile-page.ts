@@ -1,36 +1,16 @@
+import { CommonModule } from "@angular/common";
 import { Component, inject, OnInit, signal } from "@angular/core";
 import { FormBuilder, ReactiveFormsModule, Validators } from "@angular/forms";
-import { NgIcon, provideIcons } from "@ng-icons/core";
-import { lucideX } from "@ng-icons/lucide";
+import { RouterLink } from "@angular/router";
 import { toast } from "@spartan-ng/brain/sonner";
 
-import { HlmSkeletonImports } from "@shared/ui/skeleton";
-import { TableError } from "../../../../shared/custom-components/table-error/table-error";
-
-import { MiEmpresaActivityCard } from "../../components/mi-empresa-activity-card/mi-empresa-activity-card";
-import { MiEmpresaFormCard } from "../../components/mi-empresa-form-card/mi-empresa-form-card";
-import { MiEmpresaHero } from "../../components/mi-empresa-hero/mi-empresa-hero";
-import { MiEmpresaMetricsCard } from "../../components/mi-empresa-metrics-card/mi-empresa-metrics-card";
-import { MiEmpresaOwnerCard } from "../../components/mi-empresa-owner-card/mi-empresa-owner-card";
+import { MiEmpresa } from "../../models/mi-empresa.types";
 import { MiEmpresaStore } from "../../store/mi-empresa.store";
 
 @Component({
 	selector: "app-mi-empresa-profile-page",
-	imports: [
-		ReactiveFormsModule,
-		NgIcon,
-		HlmSkeletonImports,
-		TableError,
-		MiEmpresaHero,
-		MiEmpresaFormCard,
-		MiEmpresaOwnerCard,
-		MiEmpresaMetricsCard,
-		MiEmpresaActivityCard,
-	],
-	providers: [provideIcons({ lucideX })],
-	host: {
-		style: "display: block",
-	},
+	standalone: true,
+	imports: [CommonModule, ReactiveFormsModule, RouterLink],
 	templateUrl: "./mi-empresa-profile-page.html",
 	styleUrl: "./mi-empresa-profile-page.css",
 })
@@ -41,17 +21,20 @@ export class MiEmpresaProfilePage implements OnInit {
 	readonly editMode = signal(false);
 
 	readonly form = this.fb.nonNullable.group({
-		businessName: ["", [Validators.required, Validators.maxLength(160)]],
-		legalName: ["", [Validators.required, Validators.maxLength(160)]],
-		description: ["" as string | null, [Validators.maxLength(500)]],
-		contactEmail: ["", [Validators.required, Validators.email]],
-		contactPhone: ["" as string | null, [Validators.maxLength(30)]],
-		city: ["", [Validators.required, Validators.maxLength(80)]],
-		address: ["", [Validators.required, Validators.maxLength(200)]],
+		businessName: ["", [Validators.required, Validators.maxLength(150)]],
+		legalName: ["", [Validators.maxLength(180)]],
+		description: ["", [Validators.maxLength(700)]],
+		contactEmail: ["", [Validators.email, Validators.maxLength(255)]],
+		contactPhone: ["", [Validators.maxLength(30)]],
+		city: ["", [Validators.maxLength(100)]],
+		address: ["", [Validators.maxLength(255)]],
 		baseLatitude: [0, [Validators.required]],
 		baseLongitude: [0, [Validators.required]],
 		isAvailable: [true],
-		maxConcurrentServices: [1, [Validators.required, Validators.min(1)]],
+		maxConcurrentServices: [
+			1,
+			[Validators.required, Validators.min(1), Validators.max(100)],
+		],
 	});
 
 	async ngOnInit(): Promise<void> {
@@ -66,13 +49,16 @@ export class MiEmpresaProfilePage implements OnInit {
 		}
 
 		this.form.disable();
+		this.editMode.set(false);
 	}
 
 	onRetry(): void {
+		this.store.clearError();
 		void this.loadEmpresa();
 	}
 
 	onEnableEdit(): void {
+		this.store.clearUpdateError();
 		this.editMode.set(true);
 		this.form.enable();
 	}
@@ -95,18 +81,20 @@ export class MiEmpresaProfilePage implements OnInit {
 			return;
 		}
 
+		const value = this.form.getRawValue();
+
 		const updatedEmpresa = await this.store.updateMiEmpresa({
-			businessName: this.form.controls.businessName.value,
-			legalName: this.form.controls.legalName.value,
-			description: this.form.controls.description.value || null,
-			contactEmail: this.form.controls.contactEmail.value,
-			contactPhone: this.form.controls.contactPhone.value || null,
-			city: this.form.controls.city.value,
-			address: this.form.controls.address.value,
-			baseLatitude: this.form.controls.baseLatitude.value,
-			baseLongitude: this.form.controls.baseLongitude.value,
-			isAvailable: this.form.controls.isAvailable.value,
-			maxConcurrentServices: this.form.controls.maxConcurrentServices.value,
+			businessName: value.businessName,
+			legalName: value.legalName,
+			description: value.description || null,
+			contactEmail: value.contactEmail,
+			contactPhone: value.contactPhone || null,
+			city: value.city,
+			address: value.address,
+			baseLatitude: Number(value.baseLatitude),
+			baseLongitude: Number(value.baseLongitude),
+			isAvailable: value.isAvailable,
+			maxConcurrentServices: Number(value.maxConcurrentServices),
 		});
 
 		if (!updatedEmpresa) {
@@ -114,7 +102,6 @@ export class MiEmpresaProfilePage implements OnInit {
 				description:
 					this.store.updateError()?.message || "Ocurrió un error inesperado.",
 			});
-
 			return;
 		}
 
@@ -125,15 +112,13 @@ export class MiEmpresaProfilePage implements OnInit {
 		toast.success("Empresa actualizada correctamente");
 	}
 
-	private patchForm(
-		empresa: NonNullable<ReturnType<MiEmpresaStore["miEmpresa"]>>
-	): void {
+	private patchForm(empresa: MiEmpresa): void {
 		this.form.patchValue({
 			businessName: empresa.businessName,
 			legalName: empresa.legalName,
-			description: empresa.description,
+			description: empresa.description ?? "",
 			contactEmail: empresa.contactEmail,
-			contactPhone: empresa.contactPhone,
+			contactPhone: empresa.contactPhone ?? "",
 			city: empresa.city,
 			address: empresa.address,
 			baseLatitude: empresa.baseLatitude,

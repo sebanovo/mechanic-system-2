@@ -1,16 +1,9 @@
+import { CanActivateFn, Router } from "@angular/router";
 import { inject } from "@angular/core";
-import { CanActivateFn, Router, UrlTree } from "@angular/router";
 
 import { SessionStore } from "../store/session.store";
 
-/**
- * Allows access only to authenticated users.
- * Bootstraps session before checking access.
- */
-export const authGuard: CanActivateFn = async (
-	_route,
-	state
-): Promise<boolean | UrlTree> => {
+export const authGuard: CanActivateFn = async (_route, state) => {
 	const sessionStore = inject(SessionStore);
 	const router = inject(Router);
 

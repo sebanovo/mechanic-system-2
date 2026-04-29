@@ -1,14 +1,10 @@
 import { computed, inject, Injectable, signal } from "@angular/core";
-import { Router } from "@angular/router";
 import { firstValueFrom } from "rxjs";
 
 import { AppHttpError } from "../../../core/http/models/app-http-error.model";
 import { SessionStore } from "../../../core/session/store/session.store";
-
 import { toAuthUser } from "../adapters/auth.adapter";
-
 import { LoginRequest, RegisterRequest } from "../models/auth.dto";
-import { AuthUser } from "../models/auth.types";
 import { AuthService } from "../services/auth.service";
 
 @Injectable({
@@ -17,114 +13,107 @@ import { AuthService } from "../services/auth.service";
 export class AuthStore {
 	private readonly authService = inject(AuthService);
 	private readonly sessionStore = inject(SessionStore);
-	private readonly router = inject(Router);
 
-	private readonly loadingSignal = signal(false);
-	private readonly errorSignal = signal<AppHttpError | null>(null);
-	private readonly userSignal = signal<AuthUser | null>(null);
+	readonly loading = signal(false);
+	readonly error = signal<AppHttpError | null>(null);
 
-	readonly loading = this.loadingSignal.asReadonly();
-	readonly error = this.errorSignal.asReadonly();
-	readonly user = this.userSignal.asReadonly();
+	readonly errorMessage = computed(() => this.error()?.message ?? null);
 
-	readonly isAuthenticated = computed(() => this.userSignal() !== null);
-	readonly errorMessage = computed(() => this.errorSignal()?.message ?? null);
+	readonly user = this.sessionStore.user;
+	readonly isAuthenticated = this.sessionStore.isAuthenticated;
 
-	/**
-	 * Executes login and stores only the authenticated user.
-	 */
 	async login(payload: LoginRequest): Promise<boolean> {
-		this.startRequest();
+		this.loading.set(true);
+		this.error.set(null);
 
 		try {
-			const session = await firstValueFrom(this.authService.login(payload));
+			const sessionDto = await firstValueFrom(this.authService.login(payload));
+			const user = toAuthUser(sessionDto.user);
 
-			const user = toAuthUser(session.user);
-
-			this.userSignal.set(user);
 			this.sessionStore.setAuthenticated(user);
 
 			return true;
-		} catch (error: unknown) {
-			this.setRequestError(error);
+		} catch (error) {
+			this.error.set(this.toAppHttpError(error));
 			return false;
 		} finally {
-			this.loadingSignal.set(false);
+			this.loading.set(false);
 		}
 	}
 
-	/**
-	 * Executes register and stores only the authenticated user.
-	 */
+	async loginAdmin(payload: LoginRequest): Promise<boolean> {
+		return this.login(payload);
+	}
+
 	async register(payload: RegisterRequest): Promise<boolean> {
-		this.startRequest();
+		this.loading.set(true);
+		this.error.set(null);
 
 		try {
-			const session = await firstValueFrom(this.authService.register(payload));
+			const sessionDto = await firstValueFrom(this.authService.register(payload));
+			const user = toAuthUser(sessionDto.user);
 
-			const user = toAuthUser(session.user);
-
-			this.userSignal.set(user);
 			this.sessionStore.setAuthenticated(user);
 
 			return true;
-		} catch (error: unknown) {
-			this.setRequestError(error);
+		} catch (error) {
+			this.error.set(this.toAppHttpError(error));
 			return false;
 		} finally {
-			this.loadingSignal.set(false);
+			this.loading.set(false);
 		}
 	}
 
-	/**
-	 * Loads current user from backend.
-	 */
-	async loadMe(): Promise<boolean> {
-		this.startRequest();
-
-		try {
-			const userDto = await firstValueFrom(this.authService.getMe());
-			const user = toAuthUser(userDto);
-
-			this.userSignal.set(user);
-			this.sessionStore.setAuthenticated(user);
-
-			return true;
-		} catch (error: unknown) {
-			this.setRequestError(error);
-			return false;
-		} finally {
-			this.loadingSignal.set(false);
-		}
-	}
-
-	/**
-	 * Clears session locally.
-	 */
-	async logout(): Promise<void> {
-		this.authService.logout(); // solo limpia tokens
-		this.reset();
+	logout(): void {
 		this.sessionStore.clearSession();
-
-		await this.router.navigate(["/auth/login"]);
 	}
 
 	clearError(): void {
-		this.errorSignal.set(null);
+		this.error.set(null);
 	}
 
-	reset(): void {
-		this.loadingSignal.set(false);
-		this.errorSignal.set(null);
-		this.userSignal.set(null);
+	private toAppHttpError(error: unknown): AppHttpError {
+		if (this.isAppHttpError(error)) {
+			return error;
+		}
+
+		if (error && typeof error === "object") {
+			const candidate = error as Record<string, unknown>;
+
+			return {
+				code: "UNKNOWN",
+				status: typeof candidate["status"] === "number" ? candidate["status"] : null,
+				message:
+					typeof candidate["message"] === "string"
+						? candidate["message"]
+						: "No se pudo completar la operación.",
+				fieldErrors: [],
+				timestamp: null,
+				requestId: null,
+			};
+		}
+
+		return {
+			code: "UNKNOWN",
+			status: null,
+			message: "No se pudo completar la operación.",
+			fieldErrors: [],
+			timestamp: null,
+			requestId: null,
+		};
 	}
 
-	private startRequest(): void {
-		this.loadingSignal.set(true);
-		this.errorSignal.set(null);
-	}
+	private isAppHttpError(error: unknown): error is AppHttpError {
+		if (!error || typeof error !== "object") {
+			return false;
+		}
 
-	private setRequestError(error: unknown): void {
-		this.errorSignal.set(error as AppHttpError);
+		const candidate = error as Record<string, unknown>;
+
+		return (
+			typeof candidate["message"] === "string" &&
+			"code" in candidate &&
+			"fieldErrors" in candidate
+		);
 	}
 }

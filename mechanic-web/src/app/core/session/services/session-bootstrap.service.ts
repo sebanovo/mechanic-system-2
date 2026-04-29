@@ -1,17 +1,14 @@
 import { inject, Injectable } from "@angular/core";
+
 import { SessionStore } from "../store/session.store";
 
 @Injectable({
-  providedIn: "root",
+	providedIn: "root",
 })
 export class SessionBootstrapService {
-  private readonly sessionStore = inject(SessionStore);
+	private readonly sessionStore = inject(SessionStore);
 
-  /**
-   * Runs the session bootstrap process.
-   * @returns A promise that resolves when the bootstrap process is complete.
-   */
-  async runBootstrap(): Promise<void> {
-    return this.sessionStore.bootstrap();
-  }
+	async runBootstrap(): Promise<void> {
+		await this.sessionStore.bootstrap();
+	}
 }

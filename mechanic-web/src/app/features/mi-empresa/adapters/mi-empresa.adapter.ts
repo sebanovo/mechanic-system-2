@@ -1,5 +1,7 @@
 import {
 	MiEmpresa,
+	MiEmpresaActiveService,
+	MiEmpresaActiveServiceDto,
 	MiEmpresaDto,
 	MiEmpresaOwnerUser,
 	MiEmpresaOwnerUserDto,
@@ -21,20 +23,38 @@ export function toMiEmpresaOwnerUser(
 	};
 }
 
+export function toMiEmpresaActiveService(
+	dto: MiEmpresaActiveServiceDto
+): MiEmpresaActiveService {
+	return {
+		id: dto.id,
+		serviceCatalogItemId: dto.service_catalog_item_id,
+		code: dto.code,
+		category: dto.category,
+		title: dto.title,
+		priceEstimateMin: dto.price_estimate_min,
+		priceEstimateMax: dto.price_estimate_max,
+		estimatedDurationMinutes: dto.estimated_duration_minutes,
+		isMobileServiceEnabled: dto.is_mobile_service_enabled,
+		isEmergencyServiceEnabled: dto.is_emergency_service_enabled,
+		isActive: dto.is_active,
+	};
+}
+
 export function toMiEmpresa(dto: MiEmpresaDto): MiEmpresa {
 	return {
 		id: dto.id,
 		ownerUserId: dto.owner_user_id,
 		providerType: dto.provider_type,
 		businessName: dto.business_name,
-		legalName: dto.legal_name,
+		legalName: dto.legal_name ?? "",
 		description: dto.description,
-		contactEmail: dto.contact_email,
+		contactEmail: dto.contact_email ?? "",
 		contactPhone: dto.contact_phone,
-		city: dto.city,
-		address: dto.address,
-		baseLatitude: dto.base_latitude,
-		baseLongitude: dto.base_longitude,
+		city: dto.city ?? "",
+		address: dto.address ?? "",
+		baseLatitude: dto.base_latitude ?? 0,
+		baseLongitude: dto.base_longitude ?? 0,
 		isActive: dto.is_active,
 		isAvailable: dto.is_available,
 		maxConcurrentServices: dto.max_concurrent_services,
@@ -46,9 +66,9 @@ export function toMiEmpresa(dto: MiEmpresaDto): MiEmpresa {
 		availableTechniciansCount: dto.available_technicians_count,
 		configuredServicesCount: dto.configured_services_count,
 		activeServicesCount: dto.active_services_count,
-		activeServices: dto.active_services,
-		createdAt: new Date(dto.created_at).toDateString(),
-		updatedAt: new Date(dto.updated_at).toDateString(),
+		activeServices: (dto.active_services ?? []).map(toMiEmpresaActiveService),
+		createdAt: formatDate(dto.created_at),
+		updatedAt: formatDate(dto.updated_at),
 	};
 }
 
@@ -57,15 +77,39 @@ export function toUpdateMiEmpresaRequest(
 ): UpdateMiEmpresaRequest {
 	return {
 		business_name: formValue.businessName.trim(),
-		legal_name: formValue.legalName.trim(),
-		description: formValue.description?.trim() || null,
-		contact_email: formValue.contactEmail.trim(),
-		contact_phone: formValue.contactPhone?.trim() || null,
-		city: formValue.city.trim(),
-		address: formValue.address.trim(),
-		base_latitude: formValue.baseLatitude,
-		base_longitude: formValue.baseLongitude,
+		legal_name: cleanOptional(formValue.legalName),
+		description: cleanOptional(formValue.description),
+		contact_email: cleanOptional(formValue.contactEmail),
+		contact_phone: cleanOptional(formValue.contactPhone),
+		city: cleanOptional(formValue.city),
+		address: cleanOptional(formValue.address),
+		base_latitude: Number.isFinite(formValue.baseLatitude)
+			? formValue.baseLatitude
+			: null,
+		base_longitude: Number.isFinite(formValue.baseLongitude)
+			? formValue.baseLongitude
+			: null,
 		is_available: formValue.isAvailable,
-		max_concurrent_services: formValue.maxConcurrentServices,
+		max_concurrent_services: Math.max(1, formValue.maxConcurrentServices),
 	};
+}
+
+function cleanOptional(value: string | null | undefined): string | null {
+	const cleanedValue = value?.trim();
+
+	return cleanedValue ? cleanedValue : null;
+}
+
+function formatDate(value: string): string {
+	const date = new Date(value);
+
+	if (Number.isNaN(date.getTime())) {
+		return value;
+	}
+
+	return date.toLocaleDateString("es-BO", {
+		year: "numeric",
+		month: "2-digit",
+		day: "2-digit",
+	});
 }

@@ -1,10 +1,14 @@
-export type RoleCode = "CLIENT" | "PROVIDER_ADMIN" | "PLATFORM_ADMIN";
+export type RoleCode =
+	| "CLIENT"
+	| "PROVIDER_ADMIN"
+	| "PLATFORM_ADMIN"
+	| "TECHNICIAN";
 
 export type UserRole = {
 	id: string;
 	code: RoleCode;
 	name: string;
-	description: string;
+	description: string | null;
 };
 
 export type AuthUser = {

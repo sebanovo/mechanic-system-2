@@ -1,74 +1,369 @@
 <section class="space-y-6">
-	<section hlmCard>
-		<app-card-header
-			title="Técnicos"
-			description="Gestiona los técnicos registrados para tu proveedor"
-			icon="lucideUsers"
-			[showAction]="!store.techniciansIsEmpty()"
-			actionLabel="Nuevo"
-			actionIcon="lucidePlus"
-			(actionClick)="onOpenCreateDialog()"
-		/>
+  <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+    <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      <div>
+        <p class="text-sm font-semibold text-slate-500">Taller</p>
+        <h1 class="text-3xl font-bold text-slate-900">
+          {{ store.myProvider()?.businessName || "Mis técnicos" }}
+        </h1>
+        <p class="mt-2 max-w-2xl text-sm text-slate-500">
+          Gestiona los técnicos que pueden ser despachados a incidentes.
+        </p>
+      </div>
 
-		<div hlmCardContent class="space-y-4">
-			@if (store.techniciansLoading() && !store.techniciansHasLoaded()) {
-				<div class="space-y-4">
-					<hlm-skeleton class="h-10 w-full rounded-md" />
-					<hlm-skeleton class="h-10 w-full rounded-md" />
-					<hlm-skeleton class="h-10 w-full rounded-md" />
-					<hlm-skeleton class="h-10 w-full rounded-md" />
-				</div>
-			} @else if (store.hasTechniciansError()) {
-				<app-table-error
-					variant="destructive"
-					icon="lucideAlertCircle"
-					[description]="
-						store.techniciansError()?.message || 'Ocurrió un error inesperado'
-					"
-					title="No se pudieron cargar los técnicos"
-					[showAction]="true"
-					actionLabel="Reintentar"
-					(actionClick)="onRetry()"
-				/>
-			} @else if (store.techniciansIsEmpty()) {
-				<app-empty-state
-					title="Sin técnicos"
-					description="Aún no existen técnicos registrados para tu proveedor."
-					icon="lucideInbox"
-					[showAction]="true"
-					actionLabel="Registrar primer técnico"
-					actionIcon="lucidePlus"
-					(actionClick)="onOpenCreateDialog()"
-				/>
-			} @else {
-				<app-provider-me-table
-					[technicians]="store.technicians()"
-					(editTechnician)="onEditTechnician($event)"
-				/>
+      <div class="flex flex-wrap gap-3">
+        <a routerLink="/app/empresa/profile"
+          class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+          Ver empresa
+        </a>
 
-				<div class="border-t pt-4">
-					<p class="text-muted-foreground text-sm">
-						Total técnicos: {{ store.techniciansCount() }}
-					</p>
-				</div>
-			}
-		</div>
-	</section>
+        <button type="button" (click)="onOpenCreateForm()"
+          class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700">
+          Nuevo técnico
+        </button>
+      </div>
+    </div>
 
-	<app-provider-me-create-dialog
-		[open]="createDialogOpen()"
-		[loading]="store.creatingTechnician()"
-		[error]="store.creatingTechnicianError()"
-		(openChange)="onCreateDialogOpenChange($event)"
-		(createTechnician)="onCreateTechnician($event)"
-	/>
+    <div class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div class="rounded-2xl border border-slate-200 p-4">
+        <p class="text-xs font-semibold text-slate-500">Total técnicos</p>
+        <p class="mt-1 text-2xl font-bold text-slate-900">
+          {{ store.techniciansCount() }}
+        </p>
+      </div>
 
-	<app-provider-me-edit-dialog
-		[open]="editDialogOpen()"
-		[technician]="selectedTechnicianForEdit()"
-		[loading]="store.updatingTechnician()"
-		[error]="store.updatingTechnicianError()"
-		(openChange)="onEditDialogOpenChange($event)"
-		(updateTechnician)="onUpdateTechnician($event)"
-	/>
+      <div class="rounded-2xl border border-slate-200 p-4">
+        <p class="text-xs font-semibold text-slate-500">Disponibles</p>
+        <p class="mt-1 text-2xl font-bold text-emerald-700">
+          {{ store.availableTechniciansCount() }}
+        </p>
+      </div>
+
+      <div class="rounded-2xl border border-slate-200 p-4">
+        <p class="text-xs font-semibold text-slate-500">Inactivos</p>
+        <p class="mt-1 text-2xl font-bold text-slate-900">
+          {{ store.inactiveTechniciansCount() }}
+        </p>
+      </div>
+
+      <div class="rounded-2xl border border-slate-200 p-4">
+        <p class="text-xs font-semibold text-slate-500">
+          Capacidad disponible
+        </p>
+        <p class="mt-1 text-2xl font-bold text-blue-700">
+          {{ store.myProvider()?.availableCapacity ?? 0 }}
+        </p>
+      </div>
+    </div>
+  </section>
+
+  @if (store.techniciansLoading() && !store.techniciansHasLoaded()) {
+  <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+    <p class="text-sm font-semibold text-slate-500">Cargando técnicos...</p>
+    <div class="mt-4 space-y-3">
+      <div class="h-10 animate-pulse rounded-xl bg-slate-200"></div>
+      <div class="h-10 animate-pulse rounded-xl bg-slate-200"></div>
+      <div class="h-10 animate-pulse rounded-xl bg-slate-200"></div>
+    </div>
+  </div>
+  } @else if (store.hasTechniciansError()) {
+  <div class="rounded-3xl border border-red-200 bg-red-50 p-6">
+    <h2 class="text-lg font-bold text-red-900">
+      No se pudieron cargar los técnicos
+    </h2>
+    <p class="mt-2 text-sm text-red-700">
+      {{ store.techniciansError()?.message || "Ocurrió un error inesperado." }}
+    </p>
+    <button type="button" (click)="onRetry()"
+      class="mt-4 rounded-xl bg-red-700 px-4 py-2 text-sm font-semibold text-white hover:bg-red-600">
+      Reintentar
+    </button>
+  </div>
+  } @else {
+  <section class="rounded-3xl border border-slate-200 bg-white shadow-sm">
+    <div class="flex flex-col gap-2 border-b border-slate-200 p-6 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h2 class="text-xl font-bold text-slate-900">
+          Listado de técnicos
+        </h2>
+        <p class="text-sm text-slate-500">
+          Disponibilidad, ubicación y especialidad del equipo operativo.
+        </p>
+      </div>
+    </div>
+
+    @if (store.techniciansIsEmpty()) {
+    <div class="p-10 text-center">
+      <p class="text-lg font-bold text-slate-900">Sin técnicos</p>
+      <p class="mt-2 text-sm text-slate-500">
+        Registra técnicos para poder despacharlos cuando aceptes una
+        solicitud.
+      </p>
+      <button type="button" (click)="onOpenCreateForm()"
+        class="mt-5 rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700">
+        Registrar primer técnico
+      </button>
+    </div>
+    } @else {
+    <div class="overflow-x-auto">
+      <table class="w-full min-w-[900px] text-left text-sm">
+        <thead class="border-b border-slate-200 bg-slate-50">
+          <tr>
+            <th class="px-6 py-3 font-bold text-slate-700">Técnico</th>
+            <th class="px-6 py-3 font-bold text-slate-700">
+              Especialidad
+            </th>
+            <th class="px-6 py-3 font-bold text-slate-700">Teléfono</th>
+            <th class="px-6 py-3 font-bold text-slate-700">
+              Disponibilidad
+            </th>
+            <th class="px-6 py-3 font-bold text-slate-700">Ubicación</th>
+            <th class="px-6 py-3 text-right font-bold text-slate-700">
+              Acciones
+            </th>
+          </tr>
+        </thead>
+
+        <tbody class="divide-y divide-slate-100">
+          @for (technician of store.technicians(); track technician.id) {
+          <tr class="hover:bg-slate-50">
+            <td class="px-6 py-4">
+              <p class="font-bold text-slate-900">
+                {{ technician.fullName }}
+              </p>
+              <p class="text-xs text-slate-500">
+                Actualizado: {{ technician.updatedAt }}
+              </p>
+            </td>
+
+            <td class="px-6 py-4">
+              {{ technician.specialty || "Sin especialidad" }}
+            </td>
+
+            <td class="px-6 py-4">
+              {{ technician.phoneNumber || "No registrado" }}
+            </td>
+
+            <td class="px-6 py-4">
+              <div class="flex flex-wrap gap-2">
+                <span class="rounded-full px-3 py-1 text-xs font-bold" [class.bg-emerald-100]="technician.isActive"
+                  [class.text-emerald-700]="technician.isActive" [class.bg-slate-200]="!technician.isActive"
+                  [class.text-slate-700]="!technician.isActive">
+                  {{ technician.isActive ? "Activo" : "Inactivo" }}
+                </span>
+
+                <span class="rounded-full px-3 py-1 text-xs font-bold" [class.bg-blue-100]="technician.isAvailable"
+                  [class.text-blue-700]="technician.isAvailable" [class.bg-slate-200]="!technician.isAvailable"
+                  [class.text-slate-700]="!technician.isAvailable">
+                  {{
+                  technician.isAvailable
+                  ? "Disponible"
+                  : "No disponible"
+                  }}
+                </span>
+              </div>
+            </td>
+
+            <td class="px-6 py-4 text-xs text-slate-600">
+              {{ technician.currentLatitude }},
+              {{ technician.currentLongitude }}
+            </td>
+
+            <td class="px-6 py-4 text-right">
+              <button type="button" (click)="onOpenEditForm(technician)"
+                class="rounded-xl border border-slate-300 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100">
+                Editar
+              </button>
+            </td>
+          </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    }
+  </section>
+  }
+
+  @if (createFormOpen()) {
+  <section class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+    <div class="w-full max-w-2xl rounded-3xl bg-white p-6 shadow-xl">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <h2 class="text-xl font-bold text-slate-900">Nuevo técnico</h2>
+          <p class="mt-1 text-sm text-slate-500">
+            Registra un técnico para atención de emergencias.
+          </p>
+        </div>
+
+        <button type="button" (click)="onCancelCreateForm()"
+          class="rounded-xl border border-slate-300 px-3 py-1 text-sm font-bold">
+          X
+        </button>
+      </div>
+
+      @if (store.hasCreatingTechnicianError()) {
+      <div class="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4">
+        <p class="text-sm text-red-700">
+          {{ store.creatingTechnicianError()?.message }}
+        </p>
+      </div>
+      }
+
+      <form class="mt-6 grid gap-4 sm:grid-cols-2" [formGroup]="createForm" (ngSubmit)="onCreateTechnician()">
+        <label class="space-y-1">
+          <span class="text-sm font-semibold text-slate-700">Nombre</span>
+          <input type="text" formControlName="firstName"
+            class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
+        </label>
+
+        <label class="space-y-1">
+          <span class="text-sm font-semibold text-slate-700">Apellido</span>
+          <input type="text" formControlName="lastName"
+            class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
+        </label>
+
+        <label class="space-y-1">
+          <span class="text-sm font-semibold text-slate-700">Teléfono</span>
+          <input type="text" formControlName="phoneNumber"
+            class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
+        </label>
+
+        <label class="space-y-1">
+          <span class="text-sm font-semibold text-slate-700">
+            Especialidad
+          </span>
+          <input type="text" formControlName="specialty"
+            class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
+        </label>
+
+        <label class="space-y-1">
+          <span class="text-sm font-semibold text-slate-700">Latitud</span>
+          <input type="number" step="0.000001" formControlName="currentLatitude"
+            class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
+        </label>
+
+        <label class="space-y-1">
+          <span class="text-sm font-semibold text-slate-700">Longitud</span>
+          <input type="number" step="0.000001" formControlName="currentLongitude"
+            class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
+        </label>
+
+        <label class="flex items-center gap-3 rounded-2xl border border-slate-200 p-4 sm:col-span-2">
+          <input type="checkbox" formControlName="isAvailable" />
+          <span class="text-sm font-semibold text-slate-700">
+            Técnico disponible
+          </span>
+        </label>
+
+        <div class="flex justify-end gap-3 sm:col-span-2">
+          <button type="button" (click)="onCancelCreateForm()"
+            class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700">
+            Cancelar
+          </button>
+
+          <button type="submit" [disabled]="store.creatingTechnician()"
+            class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">
+            {{
+            store.creatingTechnician()
+            ? "Registrando..."
+            : "Registrar técnico"
+            }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </section>
+  }
+
+  @if (editFormOpen()) {
+  <section class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+    <div class="w-full max-w-2xl rounded-3xl bg-white p-6 shadow-xl">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <h2 class="text-xl font-bold text-slate-900">Editar técnico</h2>
+          <p class="mt-1 text-sm text-slate-500">
+            Actualiza disponibilidad, estado y ubicación.
+          </p>
+        </div>
+
+        <button type="button" (click)="onCancelEditForm()"
+          class="rounded-xl border border-slate-300 px-3 py-1 text-sm font-bold">
+          X
+        </button>
+      </div>
+
+      @if (store.hasUpdatingTechnicianError()) {
+      <div class="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4">
+        <p class="text-sm text-red-700">
+          {{ store.updatingTechnicianError()?.message }}
+        </p>
+      </div>
+      }
+
+      <form class="mt-6 grid gap-4 sm:grid-cols-2" [formGroup]="editForm" (ngSubmit)="onUpdateTechnician()">
+        <label class="space-y-1">
+          <span class="text-sm font-semibold text-slate-700">Nombre</span>
+          <input type="text" formControlName="firstName"
+            class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
+        </label>
+
+        <label class="space-y-1">
+          <span class="text-sm font-semibold text-slate-700">Apellido</span>
+          <input type="text" formControlName="lastName"
+            class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
+        </label>
+
+        <label class="space-y-1">
+          <span class="text-sm font-semibold text-slate-700">Teléfono</span>
+          <input type="text" formControlName="phoneNumber"
+            class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
+        </label>
+
+        <label class="space-y-1">
+          <span class="text-sm font-semibold text-slate-700">
+            Especialidad
+          </span>
+          <input type="text" formControlName="specialty"
+            class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
+        </label>
+
+        <label class="space-y-1">
+          <span class="text-sm font-semibold text-slate-700">Latitud</span>
+          <input type="number" step="0.000001" formControlName="currentLatitude"
+            class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
+        </label>
+
+        <label class="space-y-1">
+          <span class="text-sm font-semibold text-slate-700">Longitud</span>
+          <input type="number" step="0.000001" formControlName="currentLongitude"
+            class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
+        </label>
+
+        <label class="flex items-center gap-3 rounded-2xl border border-slate-200 p-4">
+          <input type="checkbox" formControlName="isActive" />
+          <span class="text-sm font-semibold text-slate-700">Activo</span>
+        </label>
+
+        <label class="flex items-center gap-3 rounded-2xl border border-slate-200 p-4">
+          <input type="checkbox" formControlName="isAvailable" />
+          <span class="text-sm font-semibold text-slate-700">
+            Disponible
+          </span>
+        </label>
+
+        <div class="flex justify-end gap-3 sm:col-span-2">
+          <button type="button" (click)="onCancelEditForm()"
+            class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700">
+            Cancelar
+          </button>
+
+          <button type="submit" [disabled]="store.updatingTechnician()"
+            class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">
+            {{ store.updatingTechnician() ? "Guardando..." : "Guardar" }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </section>
+  }
 </section>

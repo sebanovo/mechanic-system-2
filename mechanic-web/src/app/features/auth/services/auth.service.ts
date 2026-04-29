@@ -1,6 +1,7 @@
 import { HttpClient } from "@angular/common/http";
 import { inject, Injectable } from "@angular/core";
 import { map, Observable, tap } from "rxjs";
+
 import { AccessTokenService } from "../../../core/http/services/access-token.service";
 import {
 	AuthResponse,
@@ -15,51 +16,43 @@ import {
 })
 export class AuthService {
 	private readonly http = inject(HttpClient);
-	private readonly tokenService = inject(AccessTokenService);
+	private readonly accessTokenService = inject(AccessTokenService);
 
-	private readonly basePath = "/api/auth";
-
-	/**
-	 * Handles authentication endpoints and manages session tokens.
-	 * Wraps register, login and user retrieval.
-	 * Persists access token on successful authentication.
-	 */
 	register(payload: RegisterRequest): Observable<AuthSessionDto> {
 		return this.http
-			.post<AuthResponse<AuthSessionDto>>(`${this.basePath}/register`, payload)
+			.post<AuthResponse<AuthSessionDto>>("/api/auth/register", payload)
 			.pipe(
-				map(res => res.data),
-				tap(session => {
-					this.tokenService.setTokens(session);
-				})
+				map(response => response.data),
+				tap(session => this.saveSessionTokens(session))
 			);
 	}
 
 	login(payload: LoginRequest): Observable<AuthSessionDto> {
-		console.log("login request", payload);
-		return this.http
-			.post<AuthResponse<AuthSessionDto>>(`${this.basePath}/login`, payload)
-			.pipe(
-				map(res => res.data),
-				tap(session => {
-					console.log("respuesta", session);
-					this.tokenService.setTokens(session);
-				})
-			);
+		return this.http.post<AuthResponse<AuthSessionDto>>("/api/auth/login", payload).pipe(
+			map(response => response.data),
+			tap(session => this.saveSessionTokens(session))
+		);
 	}
 
 	getMe(): Observable<UserDto> {
 		return this.http
-			.get<AuthResponse<UserDto>>(`${this.basePath}/me`)
-			.pipe(map(res => res.data));
+			.get<AuthResponse<UserDto>>("/api/auth/me")
+			.pipe(map(response => response.data));
 	}
 
 	logout(): void {
-		this.tokenService.clearTokens();
+		this.accessTokenService.clearTokens();
 	}
 
 	hasToken(): boolean {
-		const tokens = this.tokenService.getTokens();
-		return !!tokens?.access_token;
+		return this.accessTokenService.hasAccessToken();
+	}
+
+	private saveSessionTokens(session: AuthSessionDto): void {
+		this.accessTokenService.setTokens({
+			access_token: session.access_token,
+			token_type: session.token_type || "Bearer",
+			expires_in_minutes: session.expires_in_minutes,
+		});
 	}
 }

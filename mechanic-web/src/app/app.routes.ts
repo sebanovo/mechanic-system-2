@@ -1,12 +1,13 @@
 import { Routes } from "@angular/router";
+
+import { authGuard } from "./core/session/guards/auth.guard";
+import { roleGuard } from "./core/session/guards/role.guard";
 import { AdminAuthLayout } from "./core/layout/layouts/admin-auth-layout/admin-auth-layout";
 import { AppLayout } from "./core/layout/layouts/app-layout/app-layout";
 import { AuthLayout } from "./core/layout/layouts/auth-layout/auth-layout";
 import { PublicLayout } from "./core/layout/layouts/public-layout/public-layout";
-import { authGuard } from "./core/session/guards/auth.guard";
 
 export const routes: Routes = [
-	// Public
 	{
 		path: "",
 		component: PublicLayout,
@@ -19,12 +20,10 @@ export const routes: Routes = [
 		],
 	},
 
-	// Authentication
 	{
 		path: "auth",
 		component: AuthLayout,
 		children: [
-			// public login
 			{
 				path: "",
 				loadChildren: () =>
@@ -36,9 +35,7 @@ export const routes: Routes = [
 	{
 		path: "",
 		component: AdminAuthLayout,
-		// canActivateChild: [adminGuestGuard],
 		children: [
-			// hidden login
 			{
 				path: "platform/auth",
 				loadChildren: () =>
@@ -47,27 +44,35 @@ export const routes: Routes = [
 		],
 	},
 
-	// Private
 	{
 		path: "app",
 		canActivate: [authGuard],
 		component: AppLayout,
 		children: [
 			{
-				path: "", //default route
+				path: "",
 				redirectTo: "dashboard",
 				pathMatch: "full",
 			},
 
 			{
 				path: "dashboard",
+				canActivate: [roleGuard],
+				data: {
+					roles: ["PLATFORM_ADMIN", "PROVIDER_ADMIN", "CLIENT", "TECHNICIAN"],
+				},
 				loadChildren: () =>
 					import("./features/dashboard/dashboard.routes").then(
 						m => m.DASHBOARD_ROUTES
 					),
 			},
+
 			{
 				path: "empresa",
+				canActivate: [roleGuard],
+				data: {
+					roles: ["PROVIDER_ADMIN"],
+				},
 				loadChildren: () =>
 					import("./features/mi-empresa/mi-empresa.routes").then(
 						m => m.MI_EMPRESA_ROUTES
@@ -75,35 +80,23 @@ export const routes: Routes = [
 			},
 
 			{
-				path: "providers",
-				loadChildren: () =>
-					import("./features/providers/provider.routes").then(
-						m => m.PROVIDERS_ROUTES
-					),
-			},
-
-			{
 				path: "provider-me",
+				canActivate: [roleGuard],
+				data: {
+					roles: ["PROVIDER_ADMIN"],
+				},
 				loadChildren: () =>
 					import("./features/provider-me/provider-me.routes").then(
 						m => m.PROVIDER_ME_ROUTES
 					),
 			},
-			{
-				path: "users",
-				loadChildren: () =>
-					import("./features/users/users.routes").then(m => m.USERS_ROUTES),
-			},
 
 			{
-				path: "catalogs",
-				loadChildren: () =>
-					import("./features/catalog-services/catalog-service.routes").then(
-						m => m.CATALOG_ROUTES
-					),
-			},
-			{
 				path: "service-me",
+				canActivate: [roleGuard],
+				data: {
+					roles: ["PROVIDER_ADMIN"],
+				},
 				loadChildren: () =>
 					import("./features/services/service.routes").then(
 						m => m.SERVICE_ROUTES
@@ -111,15 +104,11 @@ export const routes: Routes = [
 			},
 
 			{
-				path: "incidents-me",
-				loadChildren: () =>
-					import("./features/provider-incidents/incident.routes").then(
-						m => m.INCIDENT_ROUTES
-					),
-			},
-
-			{
 				path: "candidates",
+				canActivate: [roleGuard],
+				data: {
+					roles: ["PROVIDER_ADMIN"],
+				},
 				loadChildren: () =>
 					import("./features/candidates/candidate.routes").then(
 						m => m.CANDIDATE_ROUTES
@@ -127,33 +116,86 @@ export const routes: Routes = [
 			},
 
 			{
+				path: "incidents-me",
+				canActivate: [roleGuard],
+				data: {
+					roles: ["PROVIDER_ADMIN"],
+				},
+				loadChildren: () =>
+					import("./features/provider-incidents/incident.routes").then(
+						m => m.INCIDENT_ROUTES
+					),
+			},
+
+			{
+				path: "providers",
+				canActivate: [roleGuard],
+				data: {
+					roles: ["PLATFORM_ADMIN"],
+				},
+				loadChildren: () =>
+					import("./features/providers/provider.routes").then(
+						m => m.PROVIDERS_ROUTES
+					),
+			},
+
+			{
+				path: "catalogs",
+				canActivate: [roleGuard],
+				data: {
+					roles: ["PLATFORM_ADMIN"],
+				},
+				loadChildren: () =>
+					import("./features/catalog-services/catalog-service.routes").then(
+						m => m.CATALOG_ROUTES
+					),
+			},
+
+			{
+				path: "users",
+				canActivate: [roleGuard],
+				data: {
+					roles: ["PLATFORM_ADMIN"],
+				},
+				loadChildren: () =>
+					import("./features/users/users.routes").then(m => m.USERS_ROUTES),
+			},
+
+			{
+				path: "incidents",
+				canActivate: [roleGuard],
+				data: {
+					roles: ["PLATFORM_ADMIN"],
+				},
+				loadChildren: () =>
+					import("./features/provider-incidents/incident.routes").then(
+						m => m.INCIDENT_ROUTES
+					),
+			},
+
+			{
+				path: "forbidden",
+				loadComponent: () =>
+					import(
+						"./features/not-found/pages/private-not-found-page/private-not-found-page"
+					).then(m => m.PrivateNotFoundPage),
+			},
+
+			{
 				path: "**",
 				loadComponent: () =>
-					import("./features/not-found/pages/private-not-found-page/private-not-found-page").then(
-						m => m.PrivateNotFoundPage
-					),
+					import(
+						"./features/not-found/pages/private-not-found-page/private-not-found-page"
+					).then(m => m.PrivateNotFoundPage),
 			},
 		],
 	},
 
-	//unknown routes
 	{
 		path: "**",
 		loadComponent: () =>
-			import("./features/not-found/pages/public-not-found-page/public-not-found-page").then(
-				m => m.PublicNotFoundPage
-			),
+			import(
+				"./features/not-found/pages/public-not-found-page/public-not-found-page"
+			).then(m => m.PublicNotFoundPage),
 	},
 ];
-
-// EXAMPLE
-// {
-// 	path: "tenants",
-// 	canActivate: [roleGuard],
-// 	data: {
-// 		roles: ["PROVIDER_ADMIN", "CLIENT", "PLATFORM_ADMIN"],
-// 	},
-// 	loadChildren: () =>
-// 		import("./features/tanants/tenants.routes").then(
-// 			m => m.TENANTS_ROUTES),
-// },

@@ -8,26 +8,51 @@ export const APP_PAGE_TITLE: AppPageTitleItem[] = [
 	{
 		route: "/app/dashboard",
 		title: "Dashboard",
-		subtitle: "Vista general",
+		subtitle: "Vista general de la plataforma",
 	},
 	{
 		route: "/app/users",
 		title: "Usuarios",
-		subtitle: "Gestión de usuarios",
+		subtitle: "Gestión de usuarios del sistema",
 	},
 	{
-		route: "/app/products",
-		title: "Productos",
-		subtitle: "Gestión de productos",
+		route: "/app/providers",
+		title: "Proveedores",
+		subtitle: "Gestión de talleres y mecánicos independientes",
 	},
 	{
-		route: "/app/reports",
-		title: "Reportes",
-		subtitle: "Indicadores y métricas",
+		route: "/app/catalogs",
+		title: "Catálogos",
+		subtitle: "Servicios maestros de auxilio mecánico",
 	},
 	{
-		route: "/app/settings",
-		title: "Configuración",
-		subtitle: "Preferencias del sistema",
+		route: "/app/empresa/profile",
+		title: "Mi empresa",
+		subtitle: "Perfil operativo del taller",
+	},
+	{
+		route: "/app/provider-me",
+		title: "Mis técnicos",
+		subtitle: "Gestión de técnicos disponibles",
+	},
+	{
+		route: "/app/service-me",
+		title: "Mis servicios",
+		subtitle: "Servicios ofrecidos por el taller",
+	},
+	{
+		route: "/app/candidates",
+		title: "Solicitudes disponibles",
+		subtitle: "Incidentes recomendados para aceptar o rechazar",
+	},
+	{
+		route: "/app/incidents-me",
+		title: "Trabajo aceptado",
+		subtitle: "Incidentes asignados al taller",
+	},
+	{
+		route: "/app/incidents",
+		title: "Incidentes",
+		subtitle: "Monitoreo administrativo de incidentes",
 	},
 ];

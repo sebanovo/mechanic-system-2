@@ -1,6 +1,10 @@
 import { ChangeDetectionStrategy, Component, inject } from "@angular/core";
 import { ActivatedRoute, Router } from "@angular/router";
 
+import {
+	getDefaultRouteForUser,
+	isSafeLocalReturnUrl,
+} from "../../../../core/session/utils/session-route.utils";
 import { LoginForm } from "../../components/login-form/login-form";
 import { LoginRequest } from "../../models/auth.dto";
 import { AuthStore } from "../../store/auth.store";
@@ -26,17 +30,21 @@ export class LoginPage {
 			return;
 		}
 
-		await this.navigateToReturnUrl();
+		await this.navigateAfterLogin();
 	}
 
 	onFormEdited(): void {
 		this.authStore.clearError();
 	}
 
-	private async navigateToReturnUrl(): Promise<void> {
-		const returnUrl =
-			this.route.snapshot.queryParamMap.get("returnUrl") || "/app";
+	private async navigateAfterLogin(): Promise<void> {
+		const returnUrl = this.route.snapshot.queryParamMap.get("returnUrl");
 
-		await this.router.navigateByUrl(returnUrl);
+		if (isSafeLocalReturnUrl(returnUrl)) {
+			await this.router.navigateByUrl(returnUrl);
+			return;
+		}
+
+		await this.router.navigateByUrl(getDefaultRouteForUser(this.authStore.user()));
 	}
 }
