@@ -1,6 +1,5 @@
 import '../../domain/entities/user.dart';
 import '../../domain/repositories/auth_repository.dart';
-
 import '../datasources/auth_remote_data_source.dart';
 import '../../core/network/api_client.dart';
 
@@ -24,6 +23,7 @@ class AuthRepositoryImpl implements AuthRepository {
     return user;
   }
 
+  // ✅ Implementar getMe
   @override
   Future<User> getMe() async {
     return await remote.me();

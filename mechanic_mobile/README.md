@@ -17,13 +17,11 @@ A new Flutter project.
     └── 📁data
         └── 📁datasources
             ├── mock_auth_data_source.dart
-            ├── mock_service_data_source.dart
         └── 📁models
             ├── service_request_model.dart
             ├── user_model.dart
         └── 📁repositories
             ├── auth_repository_impl.dart
-            ├── service_request_repository_impl.dart
     └── 📁domain
         └── 📁entities
             ├── service_request.dart
@@ -49,4 +47,29 @@ A new Flutter project.
             └── 📁pages
                 ├── request_detail_page.dart
     └── main.dart
+```
+
+```bash
+Clean Code Flow
+domain:
+(entities)vehicle 
+|  |
+|  |->(repositories)vehicle_repository "interface"
+|  |
+|--|->(usecases)get_vehicles_usecase
+
+
+infrastructure:
+(models)vehicle
+  |
+  |->(datasources)vehicle_remote_datasource "interface" + "class" -> (class implements inteface)
+  |
+  |->(repositories)vehicle_repository_impl (class implements interface off domain/repositories)
+
+
+presentation:
+(viewmodels)vehicles_viewmodel usa domain/entities y domain/usecases
+  |
+  |->(pages)vehicles_page usa core/di
+
 ```

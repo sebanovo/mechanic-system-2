@@ -6,6 +6,12 @@ from app.common.responses import success_response
 from app.core.dependencies import get_db_session
 from app.core.security import get_current_active_user, require_roles
 from app.services.auth.models import User
+from app.services.billing.payment_schemas import (
+    ClientCreateCheckoutRequest,
+    ClientSimulatePaymentFailureRequest,
+    ClientSimulatePaymentSuccessRequest,
+)
+from app.services.billing.payment_service import PaymentSimulationService
 from app.services.billing.repository import BillingRepository
 from app.services.billing.schemas import (
     ClientCheckoutPreviewRequest,
@@ -45,6 +51,54 @@ def create_client_checkout_preview(
 
     return success_response(
         message="Client checkout preview created successfully.",
+        data=result.model_dump(mode="json"),
+    )
+
+
+@router.post("/client/incidents/{incident_id}/checkout")
+def create_client_checkout(
+    incident_id: str,
+    payload: ClientCreateCheckoutRequest,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db_session),
+) -> dict:
+    service = PaymentSimulationService(BillingRepository(db))
+    result = service.create_client_checkout(current_user, incident_id, payload)
+
+    return success_response(
+        message="Mock checkout created successfully.",
+        data=result.model_dump(mode="json"),
+    )
+
+
+@router.post("/client/incidents/{incident_id}/simulate-success")
+def simulate_client_payment_success(
+    incident_id: str,
+    payload: ClientSimulatePaymentSuccessRequest,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db_session),
+) -> dict:
+    service = PaymentSimulationService(BillingRepository(db))
+    result = service.simulate_client_payment_success(current_user, incident_id, payload)
+
+    return success_response(
+        message="Mock payment approved successfully.",
+        data=result.model_dump(mode="json"),
+    )
+
+
+@router.post("/client/incidents/{incident_id}/simulate-failure")
+def simulate_client_payment_failure(
+    incident_id: str,
+    payload: ClientSimulatePaymentFailureRequest,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db_session),
+) -> dict:
+    service = PaymentSimulationService(BillingRepository(db))
+    result = service.simulate_client_payment_failure(current_user, incident_id, payload)
+
+    return success_response(
+        message="Mock payment failure simulated successfully.",
         data=result.model_dump(mode="json"),
     )
 

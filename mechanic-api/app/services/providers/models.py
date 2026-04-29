@@ -88,6 +88,14 @@ class Technician(Base):
         index=True,
     )
 
+    user_id: Mapped[str | None] = mapped_column(
+    UUID(as_uuid=True),
+    ForeignKey("users.id", ondelete="SET NULL"),
+    nullable=True,
+    unique=True,
+    index=True,
+    )
+
     first_name: Mapped[str] = mapped_column(String(120), nullable=False)
     last_name: Mapped[str] = mapped_column(String(120), nullable=False)
     phone_number: Mapped[str | None] = mapped_column(String(30), nullable=True)
@@ -113,6 +121,7 @@ class Technician(Base):
     )
 
     provider: Mapped[Provider] = relationship(back_populates="technicians", lazy="selectin")
+    user = relationship("User", foreign_keys=[user_id], lazy="selectin")
 
     @property
     def full_name(self) -> str:

@@ -24,15 +24,5 @@ class MyApp extends StatelessWidget {
       ),
       routerConfig: appRouter,
     );
-    // return const MyWidget();
   }
 }
-
-// class MyWidget extends StatelessWidget {
-//   const MyWidget({super.key});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return const MaterialApp(home: Center(child: Text("Hello world")));
-//   }
-// }

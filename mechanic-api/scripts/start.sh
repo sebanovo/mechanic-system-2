@@ -16,5 +16,16 @@ echo "Running migrations..."
 
 alembic upgrade head
 
+if [ "${DEMO_SEED_ENABLED:-false}" = "true" ]; then
+  echo "DEMO_SEED_ENABLED=true"
+  echo "Running demo seed data..."
+
+  python -m app.bootstrap.demo_seed
+
+  echo "Demo seed data completed successfully."
+else
+  echo "DEMO_SEED_ENABLED is disabled. Skipping demo seed data."
+fi
+
 echo "Starting FastAPI application..."
 exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload

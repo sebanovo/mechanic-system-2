@@ -58,5 +58,19 @@
 	<string>Necesitamos usar la cámara para tomar fotos de las piezas dañadas.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Se requiere el micrófono si vas a grabar videos del motor.</string>
+
+	<!-- Permisos para notificaciones push -->
+	<key>FirebaseAppDelegateProxyEnabled</key>
+	<false/>
+	<key>FirebaseMessagingAutoInitEnabled</key>
+	<true/>
+
+	<!-- Permisos para geolocalización -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Esta aplicación necesita tu ubicación para mostrarte el mapa y el tracking del técnico.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Esta aplicación necesita tu ubicación incluso en segundo plano para actualizar tu posición.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>Esta aplicación necesita tu ubicación para funcionar correctamente.</string>
 </dict>
 </plist>

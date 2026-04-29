@@ -8,6 +8,7 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from app.bootstrap.seed import seed_initial_platform_admin
 from app.common.exceptions import register_exception_handlers
+from app.common.openapi import API_DESCRIPTION, OPENAPI_TAGS, configure_openapi
 from app.common.responses import success_response
 from app.core.config import settings
 from app.core.database import SessionLocal
@@ -24,9 +25,11 @@ from app.services.jobs.router import router as jobs_router
 from app.services.notifications.router import router as notifications_router
 from app.services.operations.router import router as operations_router
 from app.services.providers.router import router as providers_router
+from app.services.ratings.router import router as ratings_router
 from app.services.subscriptions.router import router as subscriptions_router
 from app.services.system.router import router as system_router
 from app.services.tracking.router import router as tracking_router
+from app.services.technician_mobile.router import router as technician_mobile_router
 from app.services.users.router import router as users_router
 from app.services.vehicles.router import router as vehicles_router
 
@@ -46,8 +49,15 @@ async def lifespan(_: FastAPI):
 
 def create_application() -> FastAPI:
     application = FastAPI(
-        title=settings.app_name,
+        title="Mechanic System Emergency Assistance API",
         version=settings.app_version,
+        summary="API backend para atención inteligente de emergencias vehiculares.",
+        description=API_DESCRIPTION,
+        contact={
+            "name": "Mechanic System Backend Team",
+            "email": "backend@mechanic.local",
+        },
+        openapi_tags=OPENAPI_TAGS,
         docs_url="/docs" if settings.docs_enabled else None,
         redoc_url="/redoc" if settings.docs_enabled else None,
         openapi_url="/openapi.json" if settings.docs_enabled else None,
@@ -85,6 +95,7 @@ def create_application() -> FastAPI:
     application.include_router(auth_router, prefix=settings.api_v1_prefix)
     application.include_router(users_router, prefix=settings.api_v1_prefix)
     application.include_router(providers_router, prefix=settings.api_v1_prefix)
+    application.include_router(ratings_router, prefix=settings.api_v1_prefix)
     application.include_router(catalog_router, prefix=settings.api_v1_prefix)
     application.include_router(vehicles_router, prefix=settings.api_v1_prefix)
     application.include_router(incidents_router, prefix=settings.api_v1_prefix)
@@ -93,6 +104,7 @@ def create_application() -> FastAPI:
     application.include_router(assignment_router, prefix=settings.api_v1_prefix)
     application.include_router(operations_router, prefix=settings.api_v1_prefix)
     application.include_router(tracking_router, prefix=settings.api_v1_prefix)
+    application.include_router(technician_mobile_router, prefix=settings.api_v1_prefix)
     application.include_router(notifications_router, prefix=settings.api_v1_prefix)
     application.include_router(billing_router, prefix=settings.api_v1_prefix)
     application.include_router(subscriptions_router, prefix=settings.api_v1_prefix)
@@ -129,7 +141,10 @@ def create_application() -> FastAPI:
             },
         )
 
+    configure_openapi(application)
+
     return application
 
 
 app = create_application()
+application = app

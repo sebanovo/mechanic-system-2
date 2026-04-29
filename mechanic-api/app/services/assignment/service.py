@@ -713,15 +713,24 @@ class AssignmentService:
         dispatcher = PushNotificationDispatcher(self.repository.db)
         candidates = self.repository.list_candidates_by_incident_id(incident_id)
 
+        notified_user_ids: set[str] = set()
+
         for candidate in candidates:
             if candidate.provider is None or candidate.provider.owner_user is None:
                 continue
+
+            owner_user_id = str(candidate.provider.owner_user.id)
+
+            if owner_user_id in notified_user_ids:
+                continue
+
+        notified_user_ids.add(owner_user_id)
 
         dispatcher.enqueue_event_for_user_ids(
             requested_by_user_id=None,
             incident_id=incident_id,
             event_code=PUSH_EVENT_NEW_ASSIGNMENT_AVAILABLE,
-            recipient_user_ids=[str(candidate.provider.owner_user.id)],
+            recipient_user_ids=[owner_user_id],
             title="Nueva solicitud disponible",
             body=(
                 f"Hay una nueva solicitud de auxilio: {candidate.incident.title}. "
@@ -731,6 +740,7 @@ class AssignmentService:
                 "event_code": PUSH_EVENT_NEW_ASSIGNMENT_AVAILABLE,
                 "incident_id": str(candidate.incident_id),
                 "candidate_id": str(candidate.id),
+                "provider_id": str(candidate.provider_id),
                 "reported_category": candidate.incident.reported_category,
                 "priority": candidate.incident.priority,
                 "status": candidate.incident.status,

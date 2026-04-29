@@ -6,6 +6,8 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    #expose:
+    #  - "5432"
     ports:
       - "${POSTGRES_HOST_PORT}:5432"
     volumes:
@@ -13,7 +15,7 @@ services:
     networks:
       - mechanic-net
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -21,13 +23,13 @@ services:
   serv-mech-redis:
     image: redis:7-alpine
     restart: unless-stopped
-    command: ["redis-server", "--appendonly", "yes"]
+    command: [ "redis-server", "--appendonly", "yes" ]
     networks:
       - mechanic-net
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -46,6 +48,8 @@ services:
     depends_on:
       serv-mech-db:
         condition: service_healthy
+      serv-mech-redis:
+        condition: service_healthy
     networks:
       - mechanic-net
     healthcheck:
@@ -54,7 +58,9 @@ services:
           "CMD",
           "python",
           "-c",
-          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/system/health', timeout=5).read()",
+          "import urllib.request;
+            urllib.request.urlopen('http://127.0.0.1:8000/api/system/health',
+            timeout=5).read()",
         ]
       interval: 15s
       timeout: 5s
@@ -66,7 +72,7 @@ services:
       context: ./mechanic-api
       dockerfile: Dockerfile.dev
     restart: unless-stopped
-    command: ["/app/scripts/start_worker.sh"]
+    command: [ "/app/scripts/start_worker.sh" ]
     env_file:
       - .env
     volumes:
