@@ -24,8 +24,8 @@ export function toServiceCatalogItem(
 		supportsEmergencyService: dto.supports_emergency_service,
 		isActive: dto.is_active,
 		sortOrder: dto.sort_order,
-		createdAt: new Date(dto.created_at).toDateString(),
-		updatedAt: new Date(dto.updated_at).toDateString(),
+		createdAt: formatDate(dto.created_at),
+		updatedAt: formatDate(dto.updated_at),
 	};
 }
 
@@ -50,8 +50,8 @@ export function toProviderService(dto: ProviderServiceDto): ProviderService {
 		isMobileServiceEnabled: dto.is_mobile_service_enabled,
 		isEmergencyServiceEnabled: dto.is_emergency_service_enabled,
 		isActive: dto.is_active,
-		createdAt: new Date(dto.created_at).toDateString(),
-		updatedAt: new Date(dto.updated_at).toDateString(),
+		createdAt: formatDate(dto.created_at),
+		updatedAt: formatDate(dto.updated_at),
 	};
 }
 
@@ -84,11 +84,13 @@ export function toCreateProviderServiceRequest(
 ): CreateProviderServiceRequest {
 	return {
 		service_catalog_item_id: formValue.serviceCatalogItemId,
-		custom_title: formValue.customTitle?.trim() || null,
-		custom_description: formValue.customDescription?.trim() || null,
-		price_estimate_min: formValue.priceEstimateMin,
-		price_estimate_max: formValue.priceEstimateMax,
-		estimated_duration_minutes: formValue.estimatedDurationMinutes,
+		custom_title: cleanOptional(formValue.customTitle),
+		custom_description: cleanOptional(formValue.customDescription),
+		price_estimate_min: normalizeNullableNumber(formValue.priceEstimateMin),
+		price_estimate_max: normalizeNullableNumber(formValue.priceEstimateMax),
+		estimated_duration_minutes: normalizeNullableNumber(
+			formValue.estimatedDurationMinutes
+		),
 		is_mobile_service_enabled: formValue.isMobileServiceEnabled,
 		is_emergency_service_enabled: formValue.isEmergencyServiceEnabled,
 		is_active: formValue.isActive,
@@ -99,13 +101,43 @@ export function toUpdateProviderServiceRequest(
 	formValue: UpdateProviderServiceFormValue
 ): UpdateProviderServiceRequest {
 	return {
-		custom_title: formValue.customTitle?.trim() || null,
-		custom_description: formValue.customDescription?.trim() || null,
-		price_estimate_min: formValue.priceEstimateMin,
-		price_estimate_max: formValue.priceEstimateMax,
-		estimated_duration_minutes: formValue.estimatedDurationMinutes,
+		custom_title: cleanOptional(formValue.customTitle),
+		custom_description: cleanOptional(formValue.customDescription),
+		price_estimate_min: normalizeNullableNumber(formValue.priceEstimateMin),
+		price_estimate_max: normalizeNullableNumber(formValue.priceEstimateMax),
+		estimated_duration_minutes: normalizeNullableNumber(
+			formValue.estimatedDurationMinutes
+		),
 		is_mobile_service_enabled: formValue.isMobileServiceEnabled,
 		is_emergency_service_enabled: formValue.isEmergencyServiceEnabled,
 		is_active: formValue.isActive,
 	};
+}
+
+function cleanOptional(value: string | null | undefined): string | null {
+	const cleanedValue = value?.trim();
+
+	return cleanedValue ? cleanedValue : null;
+}
+
+function normalizeNullableNumber(value: number | null | undefined): number | null {
+	if (value === null || value === undefined || Number.isNaN(Number(value))) {
+		return null;
+	}
+
+	return Number(value);
+}
+
+function formatDate(value: string): string {
+	const date = new Date(value);
+
+	if (Number.isNaN(date.getTime())) {
+		return value;
+	}
+
+	return date.toLocaleDateString("es-BO", {
+		year: "numeric",
+		month: "2-digit",
+		day: "2-digit",
+	});
 }

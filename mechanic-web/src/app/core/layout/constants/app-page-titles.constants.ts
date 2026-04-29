@@ -55,4 +55,10 @@ export const APP_PAGE_TITLE: AppPageTitleItem[] = [
 		title: "Incidentes",
 		subtitle: "Monitoreo administrativo de incidentes",
 	},
+  {
+	route: "/app/operations",
+	title: "Operaciones",
+	subtitle: "Gestión operativa de servicios aceptados",
+},
+
 ];

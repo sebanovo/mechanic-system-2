@@ -1,4 +1,4 @@
-import { HttpClient } from "@angular/common/http";
+import { HttpClient, HttpParams } from "@angular/common/http";
 import { inject, Injectable } from "@angular/core";
 import { map, Observable } from "rxjs";
 
@@ -18,18 +18,25 @@ import {
 export class ServicesApi {
 	private readonly http = inject(HttpClient);
 
-	getMyCatalogWithConfiguration(): Observable<
+	getMyCatalogWithConfiguration(
+		includeInactiveCatalog = false
+	): Observable<
 		ApiResponse<
 			ProviderServiceCatalogConfigurationDto[],
 			ProviderServiceCatalogMetaDto
 		>
 	> {
+		const params = new HttpParams().set(
+			"include_inactive_catalog",
+			String(includeInactiveCatalog)
+		);
+
 		return this.http.get<
 			ApiResponse<
 				ProviderServiceCatalogConfigurationDto[],
 				ProviderServiceCatalogMetaDto
 			>
-		>("/api/catalog/me/services/catalog");
+		>("/api/catalog/me/services/catalog", { params });
 	}
 
 	getMyProviderServices(): Observable<
@@ -44,9 +51,7 @@ export class ServicesApi {
 		payload: CreateProviderServiceRequest
 	): Observable<ProviderServiceDto> {
 		return this.http
-			.post<
-				ApiResponse<ProviderServiceDto>
-			>("/api/catalog/me/services", payload)
+			.post<ApiResponse<ProviderServiceDto>>("/api/catalog/me/services", payload)
 			.pipe(map(response => response.data));
 	}
 
@@ -55,9 +60,10 @@ export class ServicesApi {
 		payload: UpdateProviderServiceRequest
 	): Observable<ProviderServiceDto> {
 		return this.http
-			.patch<
-				ApiResponse<ProviderServiceDto>
-			>(`/api/catalog/me/services/${providerServiceId}`, payload)
+			.patch<ApiResponse<ProviderServiceDto>>(
+				`/api/catalog/me/services/${providerServiceId}`,
+				payload
+			)
 			.pipe(map(response => response.data));
 	}
 }

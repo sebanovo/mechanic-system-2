@@ -108,4 +108,14 @@ export const APP_NAVIGATION: AppNavigationItem[] = [
 		},
 		allowedRoles: ["PLATFORM_ADMIN"],
 	},
+  {
+	label: "Operaciones",
+	route: "/app/operations",
+	icon: {
+		type: "remix",
+		name: "ri-tools-line",
+	},
+	allowedRoles: ["PROVIDER_ADMIN"],
+},
+
 ];

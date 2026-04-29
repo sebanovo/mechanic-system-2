@@ -1,98 +1,446 @@
 <section class="space-y-6">
-	<section hlmCard>
-		<app-card-header
-			title="Mis servicios"
-			description="Configura los servicios que ofrece tu empresa"
-			icon="lucideSettings"
-			[showAction]="!store.providerServicesIsEmpty()"
-			actionLabel="Nuevo"
-			actionIcon="lucidePlus"
-			(actionClick)="onOpenCreateDialog()"
-		/>
+  <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+    <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      <div>
+        <p class="text-sm font-semibold text-slate-500">Taller</p>
+        <h1 class="text-3xl font-bold text-slate-900">Mis servicios</h1>
+        <p class="mt-2 max-w-3xl text-sm text-slate-500">
+          Configura qué servicios ofrece tu taller. Esto permite que el motor
+          de asignación te recomiende en incidentes compatibles.
+        </p>
+      </div>
 
-		<div hlmCardContent class="space-y-4">
-			@if (
-				(store.providerServicesLoading() &&
-					!store.providerServicesHasLoaded()) ||
-				(store.catalogLoading() && !store.catalogHasLoaded())
-			) {
-				<div class="space-y-4">
-					<hlm-skeleton class="h-10 w-full rounded-md" />
-					<hlm-skeleton class="h-10 w-full rounded-md" />
-					<hlm-skeleton class="h-10 w-full rounded-md" />
-					<hlm-skeleton class="h-10 w-full rounded-md" />
-				</div>
-			} @else if (store.hasProviderServicesError() || store.hasCatalogError()) {
-				<app-table-error
-					variant="destructive"
-					icon="lucideAlertCircle"
-					[description]="
-						store.providerServicesError()?.message ||
-						store.catalogError()?.message ||
-						'Ocurrió un error inesperado'
-					"
-					title="No se pudieron cargar los servicios"
-					[showAction]="true"
-					actionLabel="Reintentar"
-					(actionClick)="onRetry()"
-				/>
-			} @else if (store.providerServicesIsEmpty()) {
-				<app-empty-state
-					title="Sin servicios configurados"
-					description="Aún no configuraste servicios para tu empresa."
-					icon="lucideInbox"
-					[showAction]="store.availableCatalogOptions().length > 0"
-					actionLabel="Configurar primer servicio"
-					actionIcon="lucidePlus"
-					(actionClick)="onOpenCreateDialog()"
-				/>
+      <div class="flex flex-wrap items-center gap-3">
+        <label class="flex items-center gap-2 rounded-xl border border-slate-300 px-3 py-2 text-sm">
+          <input type="checkbox" [checked]="store.includeInactiveCatalog()"
+            (change)="onToggleIncludeInactiveCatalog($event)" />
+          Ver catálogo inactivo
+        </label>
 
-				@if (store.availableCatalogOptions().length === 0) {
-					<div class="bg-muted/30 rounded-xl border p-4">
-						<p class="text-muted-foreground text-sm">
-							No hay servicios disponibles para configurar o todos los servicios
-							del catálogo ya están configurados.
-						</p>
-					</div>
-				}
-			} @else {
-				<app-service-table
-					[services]="store.providerServices()"
-					(editService)="onOpenEditDialog($event)"
-				/>
+        <button type="button" (click)="onRetry()"
+          class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+          Actualizar
+        </button>
+      </div>
+    </div>
 
-				<div
-					class="flex flex-col gap-2 border-t pt-4 sm:flex-row sm:items-center sm:justify-between"
-				>
-					<p class="text-muted-foreground text-sm">
-						Total servicios configurados: {{ store.providerServicesCount() }}
-					</p>
+    <div class="mt-6 grid gap-4 sm:grid-cols-3">
+      <div class="rounded-2xl border border-slate-200 p-4">
+        <p class="text-xs font-semibold text-slate-500">Servicios configurados</p>
+        <p class="mt-1 text-2xl font-bold text-slate-900">
+          {{ store.providerServicesCount() }}
+        </p>
+      </div>
 
-					@if (store.availableCatalogOptions().length === 0) {
-						<p class="text-muted-foreground text-sm">
-							Todos los servicios del catálogo ya fueron configurados.
-						</p>
-					}
-				</div>
-			}
-		</div>
-	</section>
+      <div class="rounded-2xl border border-slate-200 p-4">
+        <p class="text-xs font-semibold text-slate-500">Servicios activos</p>
+        <p class="mt-1 text-2xl font-bold text-emerald-700">
+          {{ store.activeProviderServicesCount() }}
+        </p>
+      </div>
 
-	<app-service-create-dialog
-		[open]="createDialogOpen()"
-		[catalogOptions]="store.availableCatalogOptions()"
-		[loading]="store.creatingProviderService()"
-		[error]="store.creatingProviderServiceError()"
-		(openChange)="onCreateDialogOpenChange($event)"
-		(createService)="onCreateService($event)"
-	/>
+      <div class="rounded-2xl border border-slate-200 p-4">
+        <p class="text-xs font-semibold text-slate-500">Catálogo disponible</p>
+        <p class="mt-1 text-2xl font-bold text-blue-700">
+          {{ store.catalogMeta()?.count ?? store.catalogConfigurations().length }}
+        </p>
+      </div>
+    </div>
+  </section>
 
-	<app-service-edit-dialog
-		[open]="editDialogOpen()"
-		[providerService]="selectedServiceForEdit()"
-		[loading]="store.updatingProviderService()"
-		[error]="store.updatingProviderServiceError()"
-		(openChange)="onEditDialogOpenChange($event)"
-		(updateService)="onUpdateService($event)"
-	/>
+  @if (
+  (store.catalogLoading() && !store.catalogHasLoaded()) ||
+  (store.providerServicesLoading() && !store.providerServicesHasLoaded())
+  ) {
+  <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+    <p class="text-sm font-semibold text-slate-500">Cargando servicios...</p>
+    <div class="mt-4 space-y-3">
+      <div class="h-10 animate-pulse rounded-xl bg-slate-200"></div>
+      <div class="h-10 animate-pulse rounded-xl bg-slate-200"></div>
+      <div class="h-10 animate-pulse rounded-xl bg-slate-200"></div>
+    </div>
+  </section>
+  } @else if (store.hasCatalogError() || store.hasProviderServicesError()) {
+  <section class="rounded-3xl border border-red-200 bg-red-50 p-6">
+    <h2 class="text-lg font-bold text-red-900">
+      No se pudieron cargar los servicios
+    </h2>
+    <p class="mt-2 text-sm text-red-700">
+      {{
+      store.catalogError()?.message ||
+      store.providerServicesError()?.message ||
+      "Ocurrió un error inesperado."
+      }}
+    </p>
+    <button type="button" (click)="onRetry()"
+      class="mt-4 rounded-xl bg-red-700 px-4 py-2 text-sm font-semibold text-white hover:bg-red-600">
+      Reintentar
+    </button>
+  </section>
+  } @else {
+  <section class="rounded-3xl border border-slate-200 bg-white shadow-sm">
+    <div class="border-b border-slate-200 p-6">
+      <h2 class="text-xl font-bold text-slate-900">
+        Catálogo disponible para mi taller
+      </h2>
+      <p class="text-sm text-slate-500">
+        Activa los servicios que tu taller puede atender.
+      </p>
+    </div>
+
+    <div class="grid gap-4 p-6 lg:grid-cols-2">
+      @for (
+      configuration of store.catalogConfigurations();
+      track configuration.catalogItem.id
+      ) {
+      <div class="rounded-3xl border border-slate-200 p-5 transition hover:border-slate-300 hover:shadow-sm">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-blue-700">
+                {{ configuration.catalogItem.category }}
+              </span>
+
+              @if (configuration.isConfigured) {
+              <span class="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700">
+                Configurado
+              </span>
+              } @else {
+              <span class="rounded-full bg-slate-200 px-3 py-1 text-xs font-bold text-slate-700">
+                Sin configurar
+              </span>
+              }
+            </div>
+
+            <h3 class="mt-3 text-lg font-bold text-slate-900">
+              {{ configuration.catalogItem.title }}
+            </h3>
+
+            <p class="mt-1 text-sm text-slate-500">
+              {{
+              configuration.catalogItem.description ||
+              "Sin descripción registrada."
+              }}
+            </p>
+
+            <p class="mt-3 font-mono text-xs text-slate-400">
+              {{ configuration.catalogItem.code }}
+            </p>
+          </div>
+        </div>
+
+        @if (configuration.providerService) {
+        <div class="mt-4 rounded-2xl border border-slate-100 bg-slate-50 p-4">
+          <p class="text-sm font-bold text-slate-900">
+            {{ configuration.providerService.effectiveTitle }}
+          </p>
+
+          <p class="mt-1 text-xs text-slate-500">
+            {{
+            configuration.providerService.effectiveDescription ||
+            "Sin descripción personalizada."
+            }}
+          </p>
+
+          <div class="mt-3 grid gap-2 text-xs sm:grid-cols-3">
+            <div>
+              <p class="font-semibold text-slate-500">Precio mín.</p>
+              <p class="font-bold text-slate-900">
+                {{
+                configuration.providerService.priceEstimateMin
+                ? "Bs. " +
+                configuration.providerService.priceEstimateMin
+                : "Sin definir"
+                }}
+              </p>
+            </div>
+
+            <div>
+              <p class="font-semibold text-slate-500">Precio máx.</p>
+              <p class="font-bold text-slate-900">
+                {{
+                configuration.providerService.priceEstimateMax
+                ? "Bs. " +
+                configuration.providerService.priceEstimateMax
+                : "Sin definir"
+                }}
+              </p>
+            </div>
+
+            <div>
+              <p class="font-semibold text-slate-500">Duración</p>
+              <p class="font-bold text-slate-900">
+                {{
+                configuration.providerService.estimatedDurationMinutes
+                ? configuration.providerService
+                .estimatedDurationMinutes + " min"
+                : "Sin definir"
+                }}
+              </p>
+            </div>
+          </div>
+
+          <div class="mt-4 flex flex-wrap gap-2">
+            <span class="rounded-full px-3 py-1 text-xs font-bold" [class.bg-emerald-100]="
+											configuration.providerService.isActive
+										" [class.text-emerald-700]="
+											configuration.providerService.isActive
+										" [class.bg-slate-200]="
+											!configuration.providerService.isActive
+										" [class.text-slate-700]="
+											!configuration.providerService.isActive
+										">
+              {{
+              configuration.providerService.isActive
+              ? "Activo"
+              : "Inactivo"
+              }}
+            </span>
+
+            @if (configuration.providerService.isMobileServiceEnabled) {
+            <span class="rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-blue-700">
+              Móvil
+            </span>
+            }
+
+            @if (
+            configuration.providerService.isEmergencyServiceEnabled
+            ) {
+            <span class="rounded-full bg-orange-100 px-3 py-1 text-xs font-bold text-orange-700">
+              Emergencia
+            </span>
+            }
+          </div>
+        </div>
+
+        <div class="mt-4 flex justify-end">
+          <button type="button" (click)="onOpenEditForm(configuration.providerService)"
+            class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+            Editar configuración
+          </button>
+        </div>
+        } @else {
+        <div class="mt-4 flex justify-end">
+          <button type="button" (click)="onOpenConfigureForm(configuration)"
+            [disabled]="!configuration.catalogItem.isActive"
+            class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50">
+            Configurar servicio
+          </button>
+        </div>
+        }
+      </div>
+      }
+    </div>
+  </section>
+  }
+
+  @if (configureFormOpen()) {
+  <section class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+    <div class="w-full max-w-2xl rounded-3xl bg-white p-6 shadow-xl">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <h2 class="text-xl font-bold text-slate-900">
+            Configurar servicio
+          </h2>
+          <p class="mt-1 text-sm text-slate-500">
+            {{ selectedConfiguration()?.catalogItem?.title }}
+          </p>
+        </div>
+
+        <button type="button" (click)="onCancelConfigureForm()"
+          class="rounded-xl border border-slate-300 px-3 py-1 text-sm font-bold">
+          X
+        </button>
+      </div>
+
+      @if (store.hasCreatingProviderServiceError()) {
+      <div class="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4">
+        <p class="text-sm text-red-700">
+          {{ store.creatingProviderServiceError()?.message }}
+        </p>
+      </div>
+      }
+
+      <form class="mt-6 grid gap-4 sm:grid-cols-2" [formGroup]="configureForm" (ngSubmit)="onCreateProviderService()">
+        <label class="space-y-1 sm:col-span-2">
+          <span class="text-sm font-semibold text-slate-700">
+            Título personalizado
+          </span>
+          <input type="text" formControlName="customTitle" placeholder="Opcional"
+            class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
+        </label>
+
+        <label class="space-y-1 sm:col-span-2">
+          <span class="text-sm font-semibold text-slate-700">
+            Descripción personalizada
+          </span>
+          <textarea rows="3" formControlName="customDescription"
+            class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"></textarea>
+        </label>
+
+        <label class="space-y-1">
+          <span class="text-sm font-semibold text-slate-700">
+            Precio mínimo Bs.
+          </span>
+          <input type="number" min="0" formControlName="priceEstimateMin"
+            class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
+        </label>
+
+        <label class="space-y-1">
+          <span class="text-sm font-semibold text-slate-700">
+            Precio máximo Bs.
+          </span>
+          <input type="number" min="0" formControlName="priceEstimateMax"
+            class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
+        </label>
+
+        <label class="space-y-1">
+          <span class="text-sm font-semibold text-slate-700">
+            Duración estimada
+          </span>
+          <input type="number" min="1" formControlName="estimatedDurationMinutes"
+            class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
+        </label>
+
+        <div class="space-y-2 rounded-2xl border border-slate-200 p-4">
+          <label class="flex items-center gap-2 text-sm font-semibold">
+            <input type="checkbox" formControlName="isMobileServiceEnabled" />
+            Servicio móvil
+          </label>
+
+          <label class="flex items-center gap-2 text-sm font-semibold">
+            <input type="checkbox" formControlName="isEmergencyServiceEnabled" />
+            Servicio de emergencia
+          </label>
+
+          <label class="flex items-center gap-2 text-sm font-semibold">
+            <input type="checkbox" formControlName="isActive" />
+            Activo
+          </label>
+        </div>
+
+        <div class="flex justify-end gap-3 sm:col-span-2">
+          <button type="button" (click)="onCancelConfigureForm()"
+            class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700">
+            Cancelar
+          </button>
+
+          <button type="submit" [disabled]="store.creatingProviderService()"
+            class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">
+            {{
+            store.creatingProviderService()
+            ? "Guardando..."
+            : "Guardar servicio"
+            }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </section>
+  }
+
+  @if (editFormOpen()) {
+  <section class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+    <div class="w-full max-w-2xl rounded-3xl bg-white p-6 shadow-xl">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <h2 class="text-xl font-bold text-slate-900">
+            Editar servicio ofrecido
+          </h2>
+          <p class="mt-1 text-sm text-slate-500">
+            {{ selectedProviderService()?.catalogTitle }}
+          </p>
+        </div>
+
+        <button type="button" (click)="onCancelEditForm()"
+          class="rounded-xl border border-slate-300 px-3 py-1 text-sm font-bold">
+          X
+        </button>
+      </div>
+
+      @if (store.hasUpdatingProviderServiceError()) {
+      <div class="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4">
+        <p class="text-sm text-red-700">
+          {{ store.updatingProviderServiceError()?.message }}
+        </p>
+      </div>
+      }
+
+      <form class="mt-6 grid gap-4 sm:grid-cols-2" [formGroup]="editForm" (ngSubmit)="onUpdateProviderService()">
+        <label class="space-y-1 sm:col-span-2">
+          <span class="text-sm font-semibold text-slate-700">
+            Título personalizado
+          </span>
+          <input type="text" formControlName="customTitle"
+            class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
+        </label>
+
+        <label class="space-y-1 sm:col-span-2">
+          <span class="text-sm font-semibold text-slate-700">
+            Descripción personalizada
+          </span>
+          <textarea rows="3" formControlName="customDescription"
+            class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"></textarea>
+        </label>
+
+        <label class="space-y-1">
+          <span class="text-sm font-semibold text-slate-700">
+            Precio mínimo Bs.
+          </span>
+          <input type="number" min="0" formControlName="priceEstimateMin"
+            class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
+        </label>
+
+        <label class="space-y-1">
+          <span class="text-sm font-semibold text-slate-700">
+            Precio máximo Bs.
+          </span>
+          <input type="number" min="0" formControlName="priceEstimateMax"
+            class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
+        </label>
+
+        <label class="space-y-1">
+          <span class="text-sm font-semibold text-slate-700">
+            Duración estimada
+          </span>
+          <input type="number" min="1" formControlName="estimatedDurationMinutes"
+            class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
+        </label>
+
+        <div class="space-y-2 rounded-2xl border border-slate-200 p-4">
+          <label class="flex items-center gap-2 text-sm font-semibold">
+            <input type="checkbox" formControlName="isMobileServiceEnabled" />
+            Servicio móvil
+          </label>
+
+          <label class="flex items-center gap-2 text-sm font-semibold">
+            <input type="checkbox" formControlName="isEmergencyServiceEnabled" />
+            Servicio de emergencia
+          </label>
+
+          <label class="flex items-center gap-2 text-sm font-semibold">
+            <input type="checkbox" formControlName="isActive" />
+            Activo
+          </label>
+        </div>
+
+        <div class="flex justify-end gap-3 sm:col-span-2">
+          <button type="button" (click)="onCancelEditForm()"
+            class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700">
+            Cancelar
+          </button>
+
+          <button type="submit" [disabled]="store.updatingProviderService()"
+            class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">
+            {{
+            store.updatingProviderService()
+            ? "Guardando..."
+            : "Guardar cambios"
+            }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </section>
+  }
 </section>

@@ -172,6 +172,18 @@ export const routes: Routes = [
 						m => m.INCIDENT_ROUTES
 					),
 			},
+      {
+	      path: "operations",
+	      canActivate: [roleGuard],
+	      data: {
+		      roles: ["PROVIDER_ADMIN"],
+	      },
+	      loadChildren: () =>
+		      import("./features/operations/operations.routes").then(
+			      m => m.OPERATIONS_ROUTES
+		  ),
+      },
+
 
 			{
 				path: "forbidden",

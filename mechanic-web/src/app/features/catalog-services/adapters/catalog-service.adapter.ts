@@ -18,8 +18,8 @@ export function toCatalogService(dto: CatalogServiceDto): CatalogService {
 		supportsEmergencyService: dto.supports_emergency_service,
 		isActive: dto.is_active,
 		sortOrder: dto.sort_order,
-		createdAt: new Date(dto.created_at).toDateString(),
-		updatedAt: new Date(dto.updated_at).toDateString(),
+		createdAt: formatDate(dto.created_at),
+		updatedAt: formatDate(dto.updated_at),
 	};
 }
 
@@ -31,14 +31,14 @@ export function toCreateCatalogServiceRequest(
 	formValue: CreateCatalogServiceFormValue
 ): CreateCatalogServiceRequest {
 	return {
-		code: formValue.code.trim().toUpperCase(),
-		category: formValue.category.trim().toUpperCase(),
+		code: normalizeCode(formValue.code),
+		category: normalizeCode(formValue.category),
 		title: formValue.title.trim(),
-		description: formValue.description?.trim() || null,
+		description: cleanOptional(formValue.description),
 		supports_mobile_service: formValue.supportsMobileService,
 		supports_emergency_service: formValue.supportsEmergencyService,
 		is_active: formValue.isActive,
-		sort_order: formValue.sortOrder,
+		sort_order: Number(formValue.sortOrder),
 	};
 }
 
@@ -46,12 +46,36 @@ export function toUpdateCatalogServiceRequest(
 	formValue: UpdateCatalogServiceFormValue
 ): UpdateCatalogServiceRequest {
 	return {
-		category: formValue.category.trim().toUpperCase(),
+		category: normalizeCode(formValue.category),
 		title: formValue.title.trim(),
-		description: formValue.description?.trim() || null,
+		description: cleanOptional(formValue.description),
 		supports_mobile_service: formValue.supportsMobileService,
 		supports_emergency_service: formValue.supportsEmergencyService,
 		is_active: formValue.isActive,
-		sort_order: formValue.sortOrder,
+		sort_order: Number(formValue.sortOrder),
 	};
+}
+
+function normalizeCode(value: string): string {
+	return value.trim().toUpperCase().replace(/\s+/g, "_");
+}
+
+function cleanOptional(value: string | null | undefined): string | null {
+	const cleanedValue = value?.trim();
+
+	return cleanedValue ? cleanedValue : null;
+}
+
+function formatDate(value: string): string {
+	const date = new Date(value);
+
+	if (Number.isNaN(date.getTime())) {
+		return value;
+	}
+
+	return date.toLocaleDateString("es-BO", {
+		year: "numeric",
+		month: "2-digit",
+		day: "2-digit",
+	});
 }

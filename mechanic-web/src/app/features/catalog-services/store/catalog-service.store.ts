@@ -30,12 +30,10 @@ export class CatalogServicesStore {
 	readonly error = signal<AppHttpError | null>(null);
 	readonly hasError = computed(() => this.error() !== null);
 
+	readonly includeInactive = signal(true);
+
 	readonly count = computed(
 		() => this.meta()?.count ?? this.catalogServices().length
-	);
-
-	readonly includeInactive = computed(
-		() => this.meta()?.include_inactive ?? false
 	);
 
 	readonly isEmpty = computed(
@@ -43,21 +41,15 @@ export class CatalogServicesStore {
 			this.hasLoaded() && !this.loading() && this.catalogServices().length === 0
 	);
 
+	readonly creating = signal(false);
+	readonly createError = signal<AppHttpError | null>(null);
+	readonly hasCreateError = computed(() => this.createError() !== null);
+
+	readonly updating = signal(false);
+	readonly updateError = signal<AppHttpError | null>(null);
+	readonly hasUpdateError = computed(() => this.updateError() !== null);
+
 	readonly selectedCatalogService = signal<CatalogService | null>(null);
-	readonly selectedCatalogServiceLoading = signal(false);
-	readonly selectedCatalogServiceError = signal<AppHttpError | null>(null);
-
-	readonly creatingCatalogService = signal(false);
-	readonly creatingCatalogServiceError = signal<AppHttpError | null>(null);
-	readonly hasCreatingCatalogServiceError = computed(
-		() => this.creatingCatalogServiceError() !== null
-	);
-
-	readonly updatingCatalogService = signal(false);
-	readonly updatingCatalogServiceError = signal<AppHttpError | null>(null);
-	readonly hasUpdatingCatalogServiceError = computed(
-		() => this.updatingCatalogServiceError() !== null
-	);
 
 	async loadCatalogServices(): Promise<void> {
 		this.loading.set(true);
@@ -65,7 +57,7 @@ export class CatalogServicesStore {
 
 		try {
 			const response = await firstValueFrom(
-				this.catalogServicesApi.getCatalogServices()
+				this.catalogServicesApi.getCatalogServices(this.includeInactive())
 			);
 
 			this.catalogServices.set(toCatalogServices(response.data));
@@ -81,59 +73,31 @@ export class CatalogServicesStore {
 		}
 	}
 
-	async loadCatalogServiceById(
-		serviceCatalogItemId: string
-	): Promise<CatalogService | null> {
-		this.selectedCatalogServiceLoading.set(true);
-		this.selectedCatalogServiceError.set(null);
-		this.selectedCatalogService.set(null);
-
-		try {
-			const dto = await firstValueFrom(
-				this.catalogServicesApi.getCatalogServiceById(serviceCatalogItemId)
-			);
-
-			const catalogService = toCatalogService(dto);
-
-			this.selectedCatalogService.set(catalogService);
-
-			return catalogService;
-		} catch (error) {
-			this.selectedCatalogServiceError.set(error as AppHttpError);
-			this.selectedCatalogService.set(null);
-			return null;
-		} finally {
-			this.selectedCatalogServiceLoading.set(false);
-		}
-	}
-
 	async createCatalogService(
 		formValue: CreateCatalogServiceFormValue
 	): Promise<CatalogService | null> {
-		this.creatingCatalogService.set(true);
-		this.creatingCatalogServiceError.set(null);
+		this.creating.set(true);
+		this.createError.set(null);
 
 		try {
 			const payload = toCreateCatalogServiceRequest(formValue);
-
 			const dto = await firstValueFrom(
 				this.catalogServicesApi.createCatalogService(payload)
 			);
+			const service = toCatalogService(dto);
 
-			const catalogService = toCatalogService(dto);
-
-			this.catalogServices.update(current => [catalogService, ...current]);
+			this.catalogServices.update(current => [service, ...current]);
 			this.meta.update(current => ({
 				count: (current?.count ?? this.catalogServices().length - 1) + 1,
-				include_inactive: current?.include_inactive ?? false,
+				include_inactive: this.includeInactive(),
 			}));
 
-			return catalogService;
+			return service;
 		} catch (error) {
-			this.creatingCatalogServiceError.set(error as AppHttpError);
+			this.createError.set(error as AppHttpError);
 			return null;
 		} finally {
-			this.creatingCatalogService.set(false);
+			this.creating.set(false);
 		}
 	}
 
@@ -141,61 +105,53 @@ export class CatalogServicesStore {
 		serviceCatalogItemId: string,
 		formValue: UpdateCatalogServiceFormValue
 	): Promise<CatalogService | null> {
-		this.updatingCatalogService.set(true);
-		this.updatingCatalogServiceError.set(null);
+		this.updating.set(true);
+		this.updateError.set(null);
 
 		try {
 			const payload = toUpdateCatalogServiceRequest(formValue);
-
 			const dto = await firstValueFrom(
 				this.catalogServicesApi.updateCatalogService(
 					serviceCatalogItemId,
 					payload
 				)
 			);
-
-			const catalogService = toCatalogService(dto);
+			const service = toCatalogService(dto);
 
 			this.catalogServices.update(current =>
-				current.map(item =>
-					item.id === catalogService.id ? catalogService : item
-				)
+				current.map(item => (item.id === service.id ? service : item))
 			);
 
-			if (this.selectedCatalogService()?.id === catalogService.id) {
-				this.selectedCatalogService.set(catalogService);
+			if (this.selectedCatalogService()?.id === service.id) {
+				this.selectedCatalogService.set(service);
 			}
 
-			return catalogService;
+			return service;
 		} catch (error) {
-			this.updatingCatalogServiceError.set(error as AppHttpError);
+			this.updateError.set(error as AppHttpError);
 			return null;
 		} finally {
-			this.updatingCatalogService.set(false);
+			this.updating.set(false);
 		}
+	}
+
+	setIncludeInactive(value: boolean): void {
+		this.includeInactive.set(value);
+	}
+
+	setSelectedCatalogService(service: CatalogService | null): void {
+		this.selectedCatalogService.set(service);
 	}
 
 	clearError(): void {
 		this.error.set(null);
 	}
 
-	clearSelectedCatalogService(): void {
-		this.selectedCatalogService.set(null);
+	clearCreateError(): void {
+		this.createError.set(null);
 	}
 
-	clearSelectedCatalogServiceError(): void {
-		this.selectedCatalogServiceError.set(null);
-	}
-
-	clearCreatingCatalogServiceError(): void {
-		this.creatingCatalogServiceError.set(null);
-	}
-
-	clearUpdatingCatalogServiceError(): void {
-		this.updatingCatalogServiceError.set(null);
-	}
-
-	setSelectedCatalogService(catalogService: CatalogService | null): void {
-		this.selectedCatalogService.set(catalogService);
+	clearUpdateError(): void {
+		this.updateError.set(null);
 	}
 }

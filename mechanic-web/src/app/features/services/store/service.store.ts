@@ -33,6 +33,7 @@ export class ServicesStore {
 	readonly catalogHasLoaded = signal(false);
 	readonly catalogError = signal<AppHttpError | null>(null);
 	readonly hasCatalogError = computed(() => this.catalogError() !== null);
+	readonly includeInactiveCatalog = signal(false);
 
 	readonly providerServices = signal<ProviderService[]>([]);
 	readonly providerServicesMeta = signal<ProviderServicesMetaDto | null>(null);
@@ -47,19 +48,15 @@ export class ServicesStore {
 		() => this.providerServicesMeta()?.count ?? this.providerServices().length
 	);
 
+	readonly activeProviderServicesCount = computed(
+		() => this.providerServices().filter(service => service.isActive).length
+	);
+
 	readonly providerServicesIsEmpty = computed(
 		() =>
 			this.providerServicesHasLoaded() &&
 			!this.providerServicesLoading() &&
 			this.providerServices().length === 0
-	);
-
-	readonly availableCatalogOptions = computed(() =>
-		this.catalogConfigurations().filter(item => !item.isConfigured)
-	);
-
-	readonly configuredCatalogOptions = computed(() =>
-		this.catalogConfigurations().filter(item => item.isConfigured)
 	);
 
 	readonly creatingProviderService = signal(false);
@@ -68,13 +65,15 @@ export class ServicesStore {
 		() => this.creatingProviderServiceError() !== null
 	);
 
-	readonly selectedProviderService = signal<ProviderService | null>(null);
-
 	readonly updatingProviderService = signal(false);
 	readonly updatingProviderServiceError = signal<AppHttpError | null>(null);
 	readonly hasUpdatingProviderServiceError = computed(
 		() => this.updatingProviderServiceError() !== null
 	);
+
+	readonly selectedProviderService = signal<ProviderService | null>(null);
+	readonly selectedCatalogConfiguration =
+		signal<ProviderServiceCatalogConfiguration | null>(null);
 
 	async loadCatalogConfigurations(): Promise<void> {
 		this.catalogLoading.set(true);
@@ -82,7 +81,9 @@ export class ServicesStore {
 
 		try {
 			const response = await firstValueFrom(
-				this.servicesApi.getMyCatalogWithConfiguration()
+				this.servicesApi.getMyCatalogWithConfiguration(
+					this.includeInactiveCatalog()
+				)
 			);
 
 			this.catalogConfigurations.set(
@@ -100,7 +101,7 @@ export class ServicesStore {
 		}
 	}
 
-	async loadMyProviderServices(): Promise<void> {
+	async loadProviderServices(): Promise<void> {
 		this.providerServicesLoading.set(true);
 		this.providerServicesError.set(null);
 
@@ -122,14 +123,14 @@ export class ServicesStore {
 		}
 	}
 
-	async loadServicesPageData(): Promise<void> {
+	async loadWorkspace(): Promise<void> {
 		await Promise.all([
 			this.loadCatalogConfigurations(),
-			this.loadMyProviderServices(),
+			this.loadProviderServices(),
 		]);
 	}
 
-	async createMyProviderService(
+	async createProviderService(
 		formValue: CreateProviderServiceFormValue
 	): Promise<ProviderService | null> {
 		this.creatingProviderService.set(true);
@@ -137,21 +138,15 @@ export class ServicesStore {
 
 		try {
 			const payload = toCreateProviderServiceRequest(formValue);
-
 			const dto = await firstValueFrom(
 				this.servicesApi.createMyProviderService(payload)
 			);
+			const service = toProviderService(dto);
 
-			const providerService = toProviderService(dto);
+			this.upsertProviderServiceInState(service);
+			await this.loadCatalogConfigurations();
 
-			this.providerServices.update(current => [providerService, ...current]);
-			this.providerServicesMeta.update(current => ({
-				count: (current?.count ?? this.providerServices().length - 1) + 1,
-			}));
-
-			this.markCatalogItemAsConfigured(providerService);
-
-			return providerService;
+			return service;
 		} catch (error) {
 			this.creatingProviderServiceError.set(error as AppHttpError);
 			return null;
@@ -160,7 +155,7 @@ export class ServicesStore {
 		}
 	}
 
-	async updateMyProviderService(
+	async updateProviderService(
 		providerServiceId: string,
 		formValue: UpdateProviderServiceFormValue
 	): Promise<ProviderService | null> {
@@ -169,26 +164,15 @@ export class ServicesStore {
 
 		try {
 			const payload = toUpdateProviderServiceRequest(formValue);
-
 			const dto = await firstValueFrom(
 				this.servicesApi.updateMyProviderService(providerServiceId, payload)
 			);
+			const service = toProviderService(dto);
 
-			const providerService = toProviderService(dto);
+			this.upsertProviderServiceInState(service);
+			await this.loadCatalogConfigurations();
 
-			this.providerServices.update(current =>
-				current.map(item =>
-					item.id === providerService.id ? providerService : item
-				)
-			);
-
-			if (this.selectedProviderService()?.id === providerService.id) {
-				this.selectedProviderService.set(providerService);
-			}
-
-			this.markCatalogItemAsConfigured(providerService);
-
-			return providerService;
+			return service;
 		} catch (error) {
 			this.updatingProviderServiceError.set(error as AppHttpError);
 			return null;
@@ -197,18 +181,18 @@ export class ServicesStore {
 		}
 	}
 
-	private markCatalogItemAsConfigured(providerService: ProviderService): void {
-		this.catalogConfigurations.update(current =>
-			current.map(item =>
-				item.catalogItem.id === providerService.serviceCatalogItemId
-					? {
-							...item,
-							isConfigured: true,
-							providerService,
-						}
-					: item
-			)
-		);
+	setIncludeInactiveCatalog(value: boolean): void {
+		this.includeInactiveCatalog.set(value);
+	}
+
+	setSelectedProviderService(service: ProviderService | null): void {
+		this.selectedProviderService.set(service);
+	}
+
+	setSelectedCatalogConfiguration(
+		configuration: ProviderServiceCatalogConfiguration | null
+	): void {
+		this.selectedCatalogConfiguration.set(configuration);
 	}
 
 	clearCatalogError(): void {
@@ -227,7 +211,23 @@ export class ServicesStore {
 		this.updatingProviderServiceError.set(null);
 	}
 
-	setSelectedProviderService(providerService: ProviderService | null): void {
-		this.selectedProviderService.set(providerService);
+	private upsertProviderServiceInState(service: ProviderService): void {
+		this.providerServices.update(current => {
+			const exists = current.some(item => item.id === service.id);
+
+			if (exists) {
+				return current.map(item => (item.id === service.id ? service : item));
+			}
+
+			return [service, ...current];
+		});
+
+		this.providerServicesMeta.set({
+			count: this.providerServices().length,
+		});
+
+		if (this.selectedProviderService()?.id === service.id) {
+			this.selectedProviderService.set(service);
+		}
 	}
 }

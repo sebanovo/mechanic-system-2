@@ -11,6 +11,7 @@ import {
 	CandidateProviderDto,
 	CandidateProviderOwnerUser,
 	CandidateProviderOwnerUserDto,
+	CandidateRationaleDto,
 } from "../models/candidate.types";
 
 export function toCandidateProviderOwnerUser(
@@ -36,20 +37,12 @@ export function toCandidateMatchedService(
 	};
 }
 
-export function toCandidateMatchedServices(
-	dtos: CandidateMatchedServiceDto[]
-): CandidateMatchedService[] {
-	return dtos.map(toCandidateMatchedService);
-}
-
-export function toCandidateProvider(
-	dto: CandidateProviderDto
-): CandidateProvider {
+export function toCandidateProvider(dto: CandidateProviderDto): CandidateProvider {
 	return {
 		id: dto.id,
 		providerType: dto.provider_type,
 		businessName: dto.business_name,
-		city: dto.city,
+		city: dto.city ?? "",
 		contactPhone: dto.contact_phone,
 		averageRating: dto.average_rating,
 		availableCapacity: dto.available_capacity,
@@ -57,13 +50,11 @@ export function toCandidateProvider(
 		baseLatitude: dto.base_latitude,
 		baseLongitude: dto.base_longitude,
 		ownerUser: toCandidateProviderOwnerUser(dto.owner_user),
-		matchedServices: toCandidateMatchedServices(dto.matched_services),
+		matchedServices: (dto.matched_services ?? []).map(toCandidateMatchedService),
 	};
 }
 
-export function toCandidateIncident(
-	dto: CandidateIncidentDto
-): CandidateIncident {
+export function toCandidateIncident(dto: CandidateIncidentDto): CandidateIncident {
 	return {
 		id: dto.id,
 		status: dto.status,
@@ -93,17 +84,15 @@ export function toAssignmentCandidate(
 		recommendationRank: dto.recommendation_rank,
 		score: dto.score,
 		distanceKm: dto.distance_km,
-		requiredServiceCodes: dto.required_service_codes,
-		matchedServiceCodes: dto.matched_service_codes,
-		rationale: dto.rationale,
+		requiredServiceCodes: dto.required_service_codes ?? [],
+		matchedServiceCodes: dto.matched_service_codes ?? [],
+		rationale: normalizeRationale(dto.rationale),
 		providerAverageRatingSnapshot: dto.provider_average_rating_snapshot,
 		providerAvailableCapacitySnapshot: dto.provider_available_capacity_snapshot,
 		availableTechniciansCountSnapshot: dto.available_technicians_count_snapshot,
-		publishedAt: new Date(dto.published_at).toDateString(),
-		respondedAt: dto.responded_at
-			? new Date(dto.responded_at).toDateString()
-			: null,
-		expiresAt: dto.expires_at ? new Date(dto.expires_at).toDateString() : null,
+		publishedAt: formatDateTime(dto.published_at),
+		respondedAt: dto.responded_at ? formatDateTime(dto.responded_at) : null,
+		expiresAt: dto.expires_at ? formatDateTime(dto.expires_at) : null,
 		provider: toCandidateProvider(dto.provider),
 		incident: toCandidateIncident(dto.incident),
 	};
@@ -124,8 +113,32 @@ export function toCandidateActionResult(
 		incidentId: dto.incident_id,
 		incidentStatus: dto.incident_status,
 		assignedProviderId: dto.assigned_provider_id,
-		assignedAt: dto.assigned_at
-			? new Date(dto.assigned_at).toDateString()
-			: null,
+		assignedAt: dto.assigned_at ? formatDateTime(dto.assigned_at) : null,
 	};
+}
+
+function normalizeRationale(
+	rationale: CandidateRationaleDto | null | undefined
+): Record<string, unknown> {
+	if (!rationale || typeof rationale !== "object") {
+		return {};
+	}
+
+	return rationale;
+}
+
+function formatDateTime(value: string): string {
+	const date = new Date(value);
+
+	if (Number.isNaN(date.getTime())) {
+		return value;
+	}
+
+	return date.toLocaleString("es-BO", {
+		year: "numeric",
+		month: "2-digit",
+		day: "2-digit",
+		hour: "2-digit",
+		minute: "2-digit",
+	});
 }
