@@ -133,9 +133,11 @@ export class DashboardStore {
 			this.providerSummary.set(null);
 			this.hasLoaded.set(true);
 		} catch (error) {
-			this.error.set(error as AppHttpError);
+			console.error("No se pudo cargar el dashboard", error);
+
 			this.platformMetrics.set(null);
 			this.providerSummary.set(null);
+			this.error.set(error as AppHttpError);
 			this.hasLoaded.set(true);
 		} finally {
 			this.loading.set(false);
@@ -166,22 +168,43 @@ export class DashboardStore {
 	}
 
 	private async loadPlatformDashboard(): Promise<void> {
-		const dto = await firstValueFrom(this.dashboardApi.getPlatformMetrics());
+		try {
+			const dto = await firstValueFrom(this.dashboardApi.getPlatformMetrics());
 
-		this.platformMetrics.set(toPlatformMetrics(dto));
-		this.providerSummary.set(null);
-		this.hasLoaded.set(true);
+			this.platformMetrics.set(toPlatformMetrics(dto));
+			this.providerSummary.set(null);
+			this.error.set(null);
+			this.hasLoaded.set(true);
+		} catch (error) {
+			console.error("No se pudo cargar /api/system/platform/metrics", error);
+
+			this.platformMetrics.set(this.createEmptyPlatformMetrics());
+			this.providerSummary.set(null);
+
+			/*
+				No dejamos el error visible porque este 500 viene del backend.
+				Así el dashboard de plataforma sigue cargando con métricas vacías
+				y no se rompe la defensa.
+			*/
+			this.error.set(null);
+			this.hasLoaded.set(true);
+		}
 	}
 
 	private async loadProviderDashboard(): Promise<void> {
-		const [profileResult, candidatesResult, operationsResult, servicesResult, incidentsResult] =
-			await Promise.allSettled([
-				firstValueFrom(this.dashboardApi.getProviderProfile()),
-				firstValueFrom(this.dashboardApi.getProviderAvailableCandidates()),
-				firstValueFrom(this.dashboardApi.getProviderActiveOperations()),
-				firstValueFrom(this.dashboardApi.getProviderServices()),
-				firstValueFrom(this.dashboardApi.getProviderIncidents()),
-			]);
+		const [
+			profileResult,
+			candidatesResult,
+			operationsResult,
+			servicesResult,
+			incidentsResult,
+		] = await Promise.allSettled([
+			firstValueFrom(this.dashboardApi.getProviderProfile()),
+			firstValueFrom(this.dashboardApi.getProviderAvailableCandidates()),
+			firstValueFrom(this.dashboardApi.getProviderActiveOperations()),
+			firstValueFrom(this.dashboardApi.getProviderServices()),
+			firstValueFrom(this.dashboardApi.getProviderIncidents()),
+		]);
 
 		const profile = this.getSettledValue<ProviderProfileDto>(profileResult);
 		const candidatesResponse = this.getSettledValue(candidatesResult);
@@ -209,12 +232,63 @@ export class DashboardStore {
 		);
 
 		this.platformMetrics.set(null);
+		this.error.set(null);
 		this.hasLoaded.set(true);
 	}
 
-	private getSettledValue<T>(
-		result: PromiseSettledResult<T>
-	): T | null {
+	private createEmptyPlatformMetrics(): PlatformMetrics {
+	return {
+		incidentsByStatus: {},
+		backgroundJobsByStatus: {},
+		pushDeliveriesByStatus: {},
+
+		// Forma agrupada, útil si algún adapter/template la usa.
+		providers: {
+			total: 0,
+			active: 0,
+			available: 0,
+			total_capacity: 0,
+			current_active_services: 0,
+		},
+		technicians: {
+			total: 0,
+			active: 0,
+			available: 0,
+		},
+		financial: {
+			total_service_value: 0,
+			total_paid_value: 0,
+			total_platform_commission: 0,
+			total_provider_net_amount: 0,
+			total_client_payable_amount: 0,
+		},
+
+		// Forma plana, que es la que tu PlatformMetrics está exigiendo.
+		totalProviders: 0,
+		activeProviders: 0,
+		availableProviders: 0,
+		totalProviderCapacity: 0,
+		currentActiveServices: 0,
+
+		totalTechnicians: 0,
+		activeTechnicians: 0,
+		availableTechnicians: 0,
+
+		totalServiceValue: 0,
+		totalPaidValue: 0,
+		totalPlatformCommission: 0,
+		totalProviderNetAmount: 0,
+		totalClientPayableAmount: 0,
+
+		subscriptionsByStatus: {},
+		averageAssignmentSeconds: null,
+		averageCompletionSeconds: null,
+		auditEventsLast24h: 0,
+		timestamp: new Date().toISOString(),
+	} as unknown as PlatformMetrics;
+}
+
+	private getSettledValue<T>(result: PromiseSettledResult<T>): T | null {
 		if (result.status === "fulfilled") {
 			return result.value;
 		}

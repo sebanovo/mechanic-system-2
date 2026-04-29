@@ -14,12 +14,8 @@ import {
 	lucideSearch,
 	lucideUser,
 } from "@ng-icons/lucide";
-import { HlmButtonImports } from "@shared/ui/button";
-import { HlmInputImports } from "@shared/ui/input";
+
 import { AuthStore } from "../../../../features/auth/store/auth.store";
-// import { ChangePasswordDialog } from "../../../../features/password/components/change-password-dialog/change-password-dialog";
-// import { ChangePasswordFormValue } from "../../../../features/password/model/password.type";
-// import { PasswordStore } from "../../../../features/password/store/password.store";
 import { SessionStore } from "../../../session/store/session.store";
 import { AppLayoutState } from "../../services/app-layout.state";
 import { UserMenu } from "../user-menu/user-menu";
@@ -27,13 +23,7 @@ import { UserMenu } from "../user-menu/user-menu";
 @Component({
 	selector: "app-app-header",
 	standalone: true,
-	imports: [
-		NgIcon,
-		HlmButtonImports,
-		HlmInputImports,
-		UserMenu,
-		// ChangePasswordDialog,
-	],
+	imports: [NgIcon, UserMenu],
 	providers: [
 		provideIcons({
 			lucideBell,
@@ -58,72 +48,49 @@ export class AppHeader {
 	readonly searchPlaceholder = input("Buscar...");
 
 	protected readonly layoutState = inject(AppLayoutState);
-	readonly currentUser = this.sessionStore.user;
 
-	// readonly passwordStore = inject(PasswordStore);
+	readonly currentUser = this.sessionStore.user;
 	readonly changePasswordDialogOpen = signal(false);
 
 	readonly userName = computed(() => {
 		const user = this.currentUser();
 
 		if (!user) {
-			return "User";
+			return "Usuario";
 		}
 
-		return `${user.firstName} ${user.lastName}`;
+		return (
+			user.fullName ||
+			`${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() ||
+			user.email
+		);
 	});
 
 	readonly userEmail = computed(() => this.currentUser()?.email ?? "");
 
-	readonly avatarUrl = computed(() => {
-		const user = this.currentUser();
-		return user ? null : null;
-	});
+	readonly avatarUrl = computed(() => null);
 
 	protected openMobileSidebar(): void {
 		this.layoutState.openMobileSidebar();
 	}
 
-	onClickPerfil(): void {
-		this.router.navigate(["/app/users/profile"]);
-		console.log("Profile click");
+	protected onClickNotifications(): void {
+		this.router.navigate(["/app/notifications"]);
 	}
 
-	onClickSettings(): void {
-		// this.router.navigate(["/settings"]);
-		console.log("Settings  click");
+	protected onClickPerfil(): void {
+		this.router.navigate(["/app/users/profile"]);
+	}
+
+	protected onClickSettings(): void {
 		this.router.navigate(["/app/settings"]);
 	}
 
-	protected onClickLogout(): void {
-		this.sessionStore.clearSession();
-		this.authStore.logout();
+	protected async onClickLogout(): Promise<void> {
+		await this.authStore.logout();
 	}
 
-	onClickChangePassword(): void {
-		console.log("change password click");
-		// this.changePasswordDialogOpen.set(true);
-		// this.passwordStore.clearChangeState();
+	protected onClickChangePassword(): void {
+		this.changePasswordDialogOpen.set(true);
 	}
-
-	// onChangePasswordDialogOpenChange(isOpen: boolean): void {
-	//   this.changePasswordDialogOpen.set(isOpen);
-
-	//   if (!isOpen) {
-	//     this.passwordStore.clearChangeState();
-	//   }
-	// }
-
-	// async onSubmitChangePassword(
-	//   payload: ChangePasswordFormValue
-	// ): Promise<void> {
-	//   const success = await this.passwordStore.changePassword(payload);
-
-	//   if (!success) {
-	//     return;
-	//   }
-
-	//   this.changePasswordDialogOpen.set(false);
-	//   this.passwordStore.clearChangeState();
-	// }
 }
