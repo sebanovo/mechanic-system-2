@@ -1,9 +1,11 @@
-import '../entities/user.dart';
+import '../entities/auth_entities.dart';
 
 abstract class AuthRepository {
-  Future<User> login(String email, String password);
-  Future<User> register(Map<String, dynamic> body);
-  Future<User> getMe();
-  Future<User> getMyProfile();
-  Future<User> updateMyProfile(Map<String, dynamic> body);
+  Future<AuthContextEntity> login(LoginInput input);
+  Future<AuthContextEntity> registerClient(RegisterClientInput input);
+  Future<AuthContextEntity> registerTenant(RegisterTenantInput input);
+  Future<AuthContextEntity> selectTenant(SelectTenantInput input);
+  Future<AuthContextEntity> refresh();
+  Future<void> logout();
+  Future<AuthContextEntity> me();
 }

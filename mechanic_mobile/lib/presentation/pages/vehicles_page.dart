@@ -1,261 +1,293 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
-import '../../../core/di/injection_container.dart';
-import '../../../domain/entities/vehicle.dart';
-import '../viewmodels/vehicle_viewmodel.dart';
+import '../../constants/api_enums.dart';
+import '../../domain/entities/app_entities.dart';
+import '../utils/api_enum_labels.dart';
+import '../viewmodels/app_viewmodels.dart';
+import '../widgets/app_widgets.dart';
 
-class VehiclesPage extends StatefulWidget {
+class VehiclesPage extends StatelessWidget {
   const VehiclesPage({super.key});
 
   @override
-  State<VehiclesPage> createState() => _VehiclesPageState();
+  Widget build(BuildContext context) {
+    final vm = context.watch<VehiclesViewModel>();
+    if (!vm.loaded && !vm.loading) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted) {
+          context.read<VehiclesViewModel>().loadVehicles();
+        }
+      });
+    }
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+      children: [
+        SectionHeader(
+          title: 'Mis vehículos',
+          subtitle: 'Administra placas, estado y datos de mantenimiento.',
+          actionLabel: 'Nuevo',
+          onAction: () => showVehicleForm(context),
+        ),
+        const SizedBox(height: 12),
+        if (vm.error != null)
+          ErrorBanner(message: vm.error!)
+        else if (vm.loading)
+          Skeletonizer(
+            enabled: true,
+            child: Column(
+              children: List.generate(
+                4,
+                (index) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: SurfaceCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Text('Placa ABC-123'),
+                        SizedBox(height: 10),
+                        Text('SUV - Activo'),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          )
+        else if (vm.vehicles?.items.isEmpty ?? true)
+          const EmptyStatePanel(
+            title: 'No hay vehículos registrados',
+            subtitle: 'Crea el primero para poder abrir incidentes.',
+            icon: Icons.directions_car_rounded,
+          )
+        else
+          ...vm.vehicles!.items.map(
+            (vehicle) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: VehicleCard(
+                vehicle: vehicle,
+                onTap: () => context.go('/vehicles/${vehicle.id}'),
+                onEdit: () => showVehicleForm(context, existing: vehicle),
+                onDelete: () => confirmDeleteVehicle(context, vehicle),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
 }
 
-class _VehiclesPageState extends State<VehiclesPage> {
-  late final VehicleViewModel _viewModel;
-  final List<String> _validVehicleTypes = [
-    'CAR',
-    'MOTORCYCLE',
-    'TRUCK',
-    'VAN',
-    'OTHER',
-  ];
+Future<void> showVehicleForm(
+  BuildContext context, {
+  VehicleEntity? existing,
+}) async {
+  final formKey = GlobalKey<FormState>();
+  final plateController = TextEditingController(
+    text: existing?.plateNumber ?? '',
+  );
+  final brandController = TextEditingController(text: existing?.brand ?? '');
+  final modelController = TextEditingController(text: existing?.model ?? '');
+  final yearController = TextEditingController(
+    text: existing?.year?.toString() ?? '',
+  );
+  final colorController = TextEditingController(text: existing?.color ?? '');
+  var selectedVehicleType =
+      _vehicleTypeFromApi(existing?.vehicleType) ?? VehicleType.car;
+  var selectedVehicleStatus =
+      _vehicleStatusFromApi(existing?.status) ?? VehicleStatus.active;
 
-  @override
-  void initState() {
-    super.initState();
-    _viewModel = sl<VehicleViewModel>();
-    _viewModel.loadVehicles();
-  }
-
-  String? _validateVehicleType(String value) {
-    if (!_validVehicleTypes.contains(value.toUpperCase())) {
-      return 'El tipo debe ser: ${_validVehicleTypes.join(', ')}';
-    }
-    return null;
-  }
-
-  String? _validateTextField(String value, String fieldName) {
-    if (value.trim().length < 3) {
-      return '$fieldName debe tener al menos 3 caracteres';
-    }
-    return null;
-  }
-
-  Future<void> _openVehicleForm({Vehicle? vehicle}) async {
-    final plateController = TextEditingController(text: vehicle?.plateNumber);
-    final typeController = TextEditingController(
-      text: vehicle?.vehicleType ?? 'CAR',
-    );
-    final brandController = TextEditingController(text: vehicle?.brand);
-    final modelController = TextEditingController(text: vehicle?.model);
-    final yearController = TextEditingController(
-      text: vehicle != null ? vehicle.year.toString() : '',
-    );
-    final colorController = TextEditingController(text: vehicle?.color);
-    final notesController = TextEditingController(text: vehicle?.notes ?? '');
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text(vehicle == null ? 'Nuevo vehículo' : 'Editar vehículo'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: plateController,
-                  decoration: const InputDecoration(labelText: 'Placa *'),
-                ),
-                const SizedBox(height: 8),
-                DropdownButtonFormField<String>(
-                  initialValue: typeController.text,
-                  decoration: const InputDecoration(labelText: 'Tipo *'),
-                  items: _validVehicleTypes.map((type) {
-                    return DropdownMenuItem(value: type, child: Text(type));
-                  }).toList(),
-                  onChanged: (value) {
-                    if (value != null) typeController.text = value;
-                  },
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: brandController,
-                  decoration: const InputDecoration(labelText: 'Marca *'),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: modelController,
-                  decoration: const InputDecoration(labelText: 'Modelo *'),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: yearController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Año *'),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: colorController,
-                  decoration: const InputDecoration(labelText: 'Color *'),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: notesController,
-                  decoration: const InputDecoration(labelText: 'Notas'),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancelar'),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('Guardar'),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (confirmed != true) return;
-
-    // Validaciones solo al guardar
-    final errors = <String>[];
-
-    // Validar placa
-    final plateError = _validateTextField(plateController.text, 'Placa');
-    if (plateError != null) errors.add(plateError);
-
-    // Validar tipo de vehículo
-    final typeError = _validateVehicleType(typeController.text);
-    if (typeError != null) errors.add(typeError);
-
-    // Validar marca
-    final brandError = _validateTextField(brandController.text, 'Marca');
-    if (brandError != null) errors.add(brandError);
-
-    // Validar modelo
-    final modelError = _validateTextField(modelController.text, 'Modelo');
-    if (modelError != null) errors.add(modelError);
-
-    // Validar año
-    final yearText = yearController.text.trim();
-    final year = int.tryParse(yearText);
-    if (yearText.isEmpty) {
-      errors.add('El año es obligatorio');
-    } else if (year == null || year < 1900 || year > DateTime.now().year + 1) {
-      errors.add(
-        'Ingrese un año válido (entre 1900 y ${DateTime.now().year + 1})',
-      );
-    }
-
-    // Validar color
-    final colorError = _validateTextField(colorController.text, 'Color');
-    if (colorError != null) errors.add(colorError);
-
-    // Notas: opcional pero si tiene contenido debe tener al menos 3 caracteres
-    final notes = notesController.text.trim();
-    if (notes.isNotEmpty && notes.length < 3) {
-      errors.add('Las notas deben tener al menos 3 caracteres');
-    }
-
-    if (errors.isNotEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: errors.map((e) => Text('• $e')).toList(),
-          ),
-          backgroundColor: Colors.red.shade700,
-          behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 3),
-        ),
-      );
-      return;
-    }
-
-    final body = {
-      "plate_number": plateController.text.trim(),
-      "vehicle_type": typeController.text.trim().toUpperCase(),
-      "brand": brandController.text.trim(),
-      "model": modelController.text.trim(),
-      "year": year,
-      "color": colorController.text.trim(),
-      "notes": notesController.text.trim(),
-    };
-
-    final ok = vehicle == null
-        ? await _viewModel.createVehicle(body)
-        : await _viewModel.updateVehicle(vehicle.id, body);
-
-    if (!mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          ok
-              ? (vehicle == null
-                    ? 'Vehículo registrado'
-                    : 'Vehículo actualizado')
-              : (_viewModel.errorMessage ?? 'No se pudo guardar'),
-        ),
-        backgroundColor: ok ? Colors.green.shade700 : Colors.red.shade700,
-      ),
-    );
-
-    if (ok) {
-      _viewModel.loadVehicles();
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Mis vehículos')),
-      body: ListenableBuilder(
-        listenable: _viewModel,
-        builder: (context, _) {
-          if (_viewModel.isLoading && _viewModel.vehicles.isEmpty) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (_viewModel.errorMessage != null && _viewModel.vehicles.isEmpty) {
-            return Center(child: Text(_viewModel.errorMessage!));
-          }
-
-          if (_viewModel.vehicles.isEmpty) {
-            return const Center(child: Text('Aún no registraste vehículos.'));
-          }
-
-          return RefreshIndicator(
-            onRefresh: _viewModel.loadVehicles,
-            child: ListView.builder(
-              itemCount: _viewModel.vehicles.length,
-              itemBuilder: (context, index) {
-                final vehicle = _viewModel.vehicles[index];
-                return ListTile(
-                  title: Text('${vehicle.brand} ${vehicle.model}'),
-                  subtitle: Text(
-                    '${vehicle.plateNumber} - ${vehicle.vehicleType} (${vehicle.year})',
+  final saved = await showDialog<bool>(
+    context: context,
+    builder: (dialogContext) {
+      return AlertDialog(
+        title: Text(existing == null ? 'Nuevo vehículo' : 'Editar vehículo'),
+        content: SizedBox(
+          width: 500,
+          child: SingleChildScrollView(
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: plateController,
+                    decoration: const InputDecoration(labelText: 'Placa'),
+                    validator: (value) => value == null || value.trim().isEmpty
+                        ? 'Requerido'
+                        : null,
                   ),
-                  trailing: const Icon(Icons.edit),
-                  onTap: () => _openVehicleForm(vehicle: vehicle),
-                );
-              },
+                  const SizedBox(height: 10),
+                  DropdownButtonFormField<VehicleType>(
+                    value: selectedVehicleType,
+                    decoration: const InputDecoration(labelText: 'Tipo'),
+                    items: vehicleTypeOptions
+                        .map(
+                          (item) => DropdownMenuItem<VehicleType>(
+                            value: item,
+                            child: Text(item.label),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      if (value != null) {
+                        selectedVehicleType = value;
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  DropdownButtonFormField<VehicleStatus>(
+                    value: selectedVehicleStatus,
+                    decoration: const InputDecoration(labelText: 'Estado'),
+                    items: vehicleStatusOptions
+                        .map(
+                          (item) => DropdownMenuItem<VehicleStatus>(
+                            value: item,
+                            child: Text(item.label),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      if (value != null) {
+                        selectedVehicleStatus = value;
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  TextFormField(
+                    controller: brandController,
+                    decoration: const InputDecoration(labelText: 'Marca'),
+                  ),
+                  const SizedBox(height: 10),
+                  TextFormField(
+                    controller: modelController,
+                    decoration: const InputDecoration(labelText: 'Modelo'),
+                  ),
+                  const SizedBox(height: 10),
+                  TextFormField(
+                    controller: yearController,
+                    decoration: const InputDecoration(labelText: 'Año'),
+                    keyboardType: TextInputType.number,
+                  ),
+                  const SizedBox(height: 10),
+                  TextFormField(
+                    controller: colorController,
+                    decoration: const InputDecoration(labelText: 'Color'),
+                  ),
+                ],
+              ),
             ),
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _openVehicleForm(),
-        child: const Icon(Icons.add),
-      ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (!formKey.currentState!.validate()) return;
+              final input = VehicleUpsertInput(
+                plateNumber: plateController.text.trim(),
+                vehicleType: selectedVehicleType.apiValue,
+                // status: selectedVehicleStatus.apiValue,
+                brand: brandController.text.trim().isEmpty
+                    ? null
+                    : brandController.text.trim(),
+                model: modelController.text.trim().isEmpty
+                    ? null
+                    : modelController.text.trim(),
+                year: int.tryParse(yearController.text.trim()),
+                color: colorController.text.trim().isEmpty
+                    ? null
+                    : colorController.text.trim(),
+              );
+              final savedOk = existing == null
+                  ? await context.read<VehiclesViewModel>().create(input)
+                  : await context.read<VehiclesViewModel>().update(
+                      existing.id,
+                      input,
+                    );
+              if (!dialogContext.mounted) return;
+              Navigator.of(dialogContext).pop(savedOk);
+            },
+            child: const Text('Guardar'),
+          ),
+        ],
+      );
+    },
+  );
+
+  if (saved == true && context.mounted) {
+    _toast(
+      context,
+      existing == null ? 'Vehículo creado' : 'Vehículo actualizado',
     );
   }
+}
+
+Future<void> confirmDeleteVehicle(
+  BuildContext context,
+  VehicleEntity vehicle,
+) async {
+  final ok = await showDialog<bool>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: const Text('Eliminar vehículo'),
+      content: Text('¿Eliminar ${vehicle.plateNumber}?'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(dialogContext).pop(false),
+          child: const Text('Cancelar'),
+        ),
+        ElevatedButton(
+          onPressed: () => Navigator.of(dialogContext).pop(true),
+          child: const Text('Eliminar'),
+        ),
+      ],
+    ),
+  );
+
+  if (ok == true && context.mounted) {
+    final removed = await context.read<VehiclesViewModel>().remove(vehicle.id);
+    if (context.mounted) {
+      _toast(context, removed ? 'Vehículo eliminado' : 'No se pudo eliminar');
+    }
+  }
+}
+
+VehicleType? _vehicleTypeFromApi(String? value) {
+  switch ((value ?? '').toUpperCase()) {
+    case 'CAR':
+      return VehicleType.car;
+    case 'MOTORCYCLE':
+      return VehicleType.motorcycle;
+    case 'TRUCK':
+      return VehicleType.truck;
+    case 'VAN':
+      return VehicleType.van;
+    case 'SUV':
+      return VehicleType.suv;
+    case 'OTHER':
+      return VehicleType.other;
+    default:
+      return null;
+  }
+}
+
+VehicleStatus? _vehicleStatusFromApi(String? value) {
+  switch ((value ?? '').toUpperCase()) {
+    case 'ACTIVE':
+      return VehicleStatus.active;
+    case 'INACTIVE':
+      return VehicleStatus.inactive;
+    default:
+      return null;
+  }
+}
+
+void _toast(BuildContext context, String message) {
+  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
 }

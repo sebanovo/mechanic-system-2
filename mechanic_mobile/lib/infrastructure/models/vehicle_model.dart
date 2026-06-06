@@ -1,39 +1,38 @@
-import '../../domain/entities/vehicle.dart';
+import '../../domain/entities/vehicle_entity.dart';
+import 'app_model_utils.dart';
 
-class VehicleModel extends Vehicle {
-  VehicleModel({
+class VehicleModel extends VehicleEntity {
+  const VehicleModel({
     required super.id,
-    required super.ownerUserId,
+    required super.customerId,
     required super.plateNumber,
     required super.vehicleType,
-    required super.brand,
-    required super.model,
-    required super.year,
-    required super.color,
-    required super.notes,
-    required super.isActive,
-    super.createdAt,
-    super.updatedAt,
+    required super.status,
+    required super.createdAt,
+    required super.updatedAt,
+    super.brand,
+    super.model,
+    super.year,
+    super.color,
+    super.deletedAt,
+    super.raw,
   });
 
   factory VehicleModel.fromJson(Map<String, dynamic> json) {
     return VehicleModel(
-      id: (json['id'] ?? '').toString(),
-      ownerUserId: (json['owner_user_id'] ?? '').toString(),
-      plateNumber: (json['plate_number'] ?? '').toString(),
-      vehicleType: (json['vehicle_type'] ?? '').toString(),
-      brand: (json['brand'] ?? '').toString(),
-      model: (json['model'] ?? '').toString(),
-      year: (json['year'] ?? 0) as int,
-      color: (json['color'] ?? '').toString(),
-      notes: (json['notes'] ?? '').toString(),
-      isActive: (json['is_active'] ?? true) as bool,
-      createdAt: json['created_at'] != null
-          ? DateTime.tryParse(json['created_at'].toString())
-          : null,
-      updatedAt: json['updated_at'] != null
-          ? DateTime.tryParse(json['updated_at'].toString())
-          : null,
+      id: stringOf(json['id']) ?? '',
+      customerId: stringOf(json['customer_id']) ?? '',
+      plateNumber: stringOf(json['plate_number']) ?? '',
+      brand: stringOf(json['brand']),
+      model: stringOf(json['model']),
+      year: intOf(json['year']),
+      color: stringOf(json['color']),
+      vehicleType: stringOf(json['vehicle_type']) ?? 'unknown',
+      status: stringOf(json['status']) ?? 'unknown',
+      createdAt: dateTimeOf(json['created_at']),
+      updatedAt: dateTimeOf(json['updated_at']),
+      deletedAt: dateTimeOf(json['deleted_at']),
+      raw: json,
     );
   }
 }

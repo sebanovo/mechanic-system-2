@@ -1,533 +1,128 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../domain/entities/incident.dart';
+import 'package:provider/provider.dart';
 
-class IncidentDetailPage extends StatefulWidget {
-  final Incident? incident;
+import '../../domain/entities/app_entities.dart';
+import '../utils/api_enum_labels.dart';
+import '../viewmodels/app_viewmodels.dart';
+import '../widgets/app_widgets.dart';
+import 'incidents_page.dart';
 
-  const IncidentDetailPage({super.key, this.incident});
+class IncidentDetailPage extends StatelessWidget {
+  const IncidentDetailPage({super.key, required this.incidentId});
 
-  @override
-  State<IncidentDetailPage> createState() => _IncidentDetailPageState();
-}
-
-class _IncidentDetailPageState extends State<IncidentDetailPage> {
-  late Incident _incident;
-
-  @override
-  void initState() {
-    super.initState();
-    if (widget.incident == null) {
-      // Si no se pasa el incidente, podrías cargarlo desde un ID
-      // Por ahora, mostramos error
-      _incident = widget.incident!;
-    } else {
-      _incident = widget.incident!;
-    }
-  }
-
-  String _formatDate(DateTime? date) {
-    if (date == null) return 'N/A';
-    return '${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
-  }
-
-  Color _getStatusColor(String status) {
-    switch (status) {
-      case 'PENDING':
-        return Colors.orange;
-      case 'PUBLISHED':
-        return Colors.blue;
-      case 'ASSIGNED':
-        return Colors.purple;
-      case 'EN_ROUTE':
-        return Colors.cyan;
-      case 'ON_SITE':
-        return Colors.teal;
-      case 'IN_PROGRESS':
-        return Colors.indigo;
-      case 'COMPLETED':
-        return Colors.green;
-      case 'CANCELLED':
-        return Colors.red;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  Color _getPriorityColor(String priority) {
-    switch (priority) {
-      case 'LOW':
-        return Colors.green;
-      case 'MEDIUM':
-        return Colors.orange;
-      case 'HIGH':
-        return Colors.red;
-      case 'URGENT':
-        return Colors.purple;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  Widget _buildInfoRow(String label, String value, {IconData? icon}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (icon != null)
-            Padding(
-              padding: const EdgeInsets.only(right: 12),
-              child: Icon(icon, size: 20, color: Colors.blue.shade700),
-            ),
-          SizedBox(
-            width: 120,
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                color: Colors.grey,
-              ),
-            ),
-          ),
-          Expanded(child: Text(value, style: const TextStyle(fontSize: 14))),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTimelineItem(
-    String label,
-    DateTime? date,
-    IconData icon, {
-    bool isCompleted = false,
-  }) {
-    final color = isCompleted && date != null
-        ? Colors.green
-        : Colors.grey.shade400;
-
-    return Column(
-      children: [
-        Row(
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.2),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, size: 18, color: color),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: TextStyle(fontWeight: FontWeight.w500, color: color),
-                  ),
-                  if (date != null)
-                    Text(
-                      _formatDate(date),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey.shade500,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-      ],
-    );
-  }
+  final String incidentId;
 
   @override
   Widget build(BuildContext context) {
+    final vm = context.watch<IncidentsViewModel>();
+    final incident = vm.selectedIncident;
+    if (!vm.detailLoaded && !vm.detailLoading) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted) {
+          context.read<IncidentsViewModel>().loadIncident(incidentId);
+        }
+      });
+    }
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Detalle de Solicitud'),
-        backgroundColor: Colors.blue.shade800,
-        foregroundColor: Colors.white,
-        elevation: 2,
+        title: const Text('Detalle del incidente'),
+        actions: [
+          IconButton(
+            onPressed: incident == null ? null : () => showIncidentForm(context, existing: incident),
+            icon: const Icon(Icons.edit_rounded),
+          ),
+        ],
       ),
-      // En el AppBar o en un FloatingActionButton
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          final result = await context.push('/add-evidence/${_incident.id}');
-          if (result == true) {
-            // Recargar datos si es necesario
-          }
-        },
-        icon: const Icon(Icons.add),
-        label: const Text('Agregar Evidencia'),
-        backgroundColor: Colors.blue.shade700,
-        foregroundColor: Colors.white,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Estado y Prioridad
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: _getStatusColor(
-                      _incident.status,
-                    ).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.circle,
-                        size: 10,
-                        color: _getStatusColor(_incident.status),
+      body: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+        child: vm.detailLoading
+            ? const Center(child: CircularProgressIndicator())
+            : vm.error != null
+                ? ErrorBanner(message: vm.error!)
+                : incident == null
+                    ? const EmptyStatePanel(
+                        title: 'Incidente no encontrado',
+                        subtitle: 'Regresa al listado para cargar otro registro.',
+                        icon: Icons.sos_rounded,
+                      )
+                    : ListView(
+                        children: [
+                          SurfaceCard(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        incident.title,
+                                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: 24),
+                                      ),
+                                    ),
+                                    StatusBadge(label: incidentStatusLabelFromApi(incident.status)),
+                                  ],
+                                ),
+                                const SizedBox(height: 10),
+                                Text(incident.incidentCode, style: Theme.of(context).textTheme.bodyMedium),
+                                const SizedBox(height: 18),
+                                InfoRow(label: 'Vehículo', value: incident.vehicleId),
+                                const Divider(height: 24),
+                                InfoRow(label: 'Prioridad', value: incident.priority),
+                                const Divider(height: 24),
+                                InfoRow(label: 'Ubicación', value: '${incident.latitude}, ${incident.longitude}'),
+                                const Divider(height: 24),
+                                InfoRow(label: 'Reportado', value: _formatDate(incident.reportedAt)),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          if (incident.addressText != null)
+                            SurfaceCard(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Dirección', style: Theme.of(context).textTheme.titleLarge),
+                                  const SizedBox(height: 10),
+                                  Text(incident.addressText!, style: Theme.of(context).textTheme.bodyLarge),
+                                ],
+                              ),
+                            ),
+                          if (incident.description != null) ...[
+                            const SizedBox(height: 12),
+                            SurfaceCard(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Descripción', style: Theme.of(context).textTheme.titleLarge),
+                                  const SizedBox(height: 10),
+                                  Text(incident.description!, style: Theme.of(context).textTheme.bodyLarge),
+                                ],
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: 12),
+                          ElevatedButton.icon(
+                            onPressed: () async {
+                              final ok = await context.read<IncidentsViewModel>().cancel(
+                                    incidentId,
+                                    const IncidentCancelInput(),
+                                  );
+                              if (!context.mounted) return;
+                              if (ok) context.pop();
+                            },
+                            icon: const Icon(Icons.cancel_rounded),
+                            label: const Text('Cancelar incidente'),
+                          ),
+                        ],
                       ),
-
-                      const SizedBox(width: 6),
-                      Text(
-                        _incident.status,
-                        style: TextStyle(
-                          color: _getStatusColor(_incident.status),
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: _getPriorityColor(
-                      _incident.priority,
-                    ).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.priority_high,
-                        size: 14,
-                        color: _getPriorityColor(_incident.priority),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        _incident.priority,
-                        style: TextStyle(
-                          color: _getPriorityColor(_incident.priority),
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-
-            // Información del incidente
-            Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Información de la Solicitud',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const Divider(),
-                    _buildInfoRow('Título', _incident.title, icon: Icons.title),
-                    _buildInfoRow(
-                      'Descripción',
-                      _incident.description,
-                      icon: Icons.description,
-                    ),
-                    _buildInfoRow(
-                      'Categoría',
-                      _incident.reportedCategory,
-                      icon: Icons.category,
-                    ),
-                    if (_incident.addressReference != null)
-                      _buildInfoRow(
-                        'Dirección',
-                        _incident.addressReference!,
-                        icon: Icons.location_on,
-                      ),
-                    if (_incident.incidentLatitude != null &&
-                        _incident.incidentLongitude != null)
-                      _buildInfoRow(
-                        'Coordenadas',
-                        _incident.location,
-                        icon: Icons.public,
-                      ),
-                    _buildInfoRow(
-                      'Fecha',
-                      _formatDate(_incident.createdAt),
-                      icon: Icons.calendar_today,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Información del vehículo
-            if (_incident.vehicle != null)
-              Card(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Vehículo',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const Divider(),
-                      _buildInfoRow(
-                        'Marca',
-                        _incident.vehicle!.brand,
-                        icon: Icons.directions_car,
-                      ),
-                      _buildInfoRow('Modelo', _incident.vehicle!.model),
-                      _buildInfoRow('Placa', _incident.vehicle!.plateNumber),
-                      _buildInfoRow('Año', _incident.vehicle!.year.toString()),
-                      _buildInfoRow('Color', _incident.vehicle!.color),
-                    ],
-                  ),
-                ),
-              ),
-            const SizedBox(height: 16),
-
-            // Información del proveedor/taller
-            if (_incident.provider != null)
-              Card(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Taller Asignado',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const Divider(),
-                      _buildInfoRow(
-                        'Nombre',
-                        _incident.provider!.businessName,
-                        icon: Icons.business,
-                      ),
-                      if (_incident.provider!.contactPhone != null)
-                        _buildInfoRow(
-                          'Teléfono',
-                          _incident.provider!.contactPhone!,
-                          icon: Icons.phone,
-                        ),
-                      if (_incident.provider!.city != null)
-                        _buildInfoRow(
-                          'Ciudad',
-                          _incident.provider!.city!,
-                          icon: Icons.location_city,
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-            const SizedBox(height: 16),
-
-            // Información del técnico
-            if (_incident.assignedTechnician != null)
-              Card(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Técnico Asignado',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const Divider(),
-                      _buildInfoRow(
-                        'Nombre',
-                        _incident.assignedTechnician!.fullName,
-                        icon: Icons.person,
-                      ),
-                      if (_incident.assignedTechnician!.phoneNumber != null)
-                        _buildInfoRow(
-                          'Teléfono',
-                          _incident.assignedTechnician!.phoneNumber!,
-                          icon: Icons.phone,
-                        ),
-                      if (_incident.assignedTechnician!.specialty != null)
-                        _buildInfoRow(
-                          'Especialidad',
-                          _incident.assignedTechnician!.specialty!,
-                          icon: Icons.build,
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-            const SizedBox(height: 16),
-
-            // Ruta y ETA
-            if (_incident.routeDistanceKm != null)
-              Card(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Información de Ruta',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const Divider(),
-                      _buildInfoRow(
-                        'Distancia',
-                        '${_incident.routeDistanceKm!.toStringAsFixed(1)} km',
-                        icon: Icons.route,
-                      ),
-                      _buildInfoRow(
-                        'ETA estimado',
-                        '${_incident.routeEtaMinutes} minutos',
-                        icon: Icons.timer,
-                      ),
-                      if (_incident.responderLastLatitude != null)
-                        _buildInfoRow(
-                          'Ubicación del respondedor',
-                          '${_incident.responderLastLatitude!.toStringAsFixed(4)}, ${_incident.responderLastLongitude!.toStringAsFixed(4)}',
-                          icon: Icons.location_searching,
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-            const SizedBox(height: 16),
-
-            // Timeline de estados
-            Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Línea de Tiempo',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const Divider(),
-                    _buildTimelineItem(
-                      'Solicitud creada',
-                      _incident.requestedAt ?? _incident.createdAt,
-                      Icons.add_circle_outline,
-                      isCompleted: true,
-                    ),
-                    if (_incident.assignedAt != null)
-                      _buildTimelineItem(
-                        'Asignado a taller',
-                        _incident.assignedAt,
-                        Icons.assignment_ind,
-                        isCompleted: true,
-                      ),
-                    if (_incident.enRouteAt != null)
-                      _buildTimelineItem(
-                        'Técnico en camino',
-                        _incident.enRouteAt,
-                        Icons.directions_car,
-                        isCompleted: true,
-                      ),
-                    if (_incident.arrivedAt != null)
-                      _buildTimelineItem(
-                        'Técnico en el lugar',
-                        _incident.arrivedAt,
-                        Icons.location_on,
-                        isCompleted: true,
-                      ),
-                    if (_incident.startedAt != null)
-                      _buildTimelineItem(
-                        'Servicio iniciado',
-                        _incident.startedAt,
-                        Icons.build,
-                        isCompleted: true,
-                      ),
-                    if (_incident.completedAt != null)
-                      _buildTimelineItem(
-                        'Servicio completado',
-                        _incident.completedAt,
-                        Icons.check_circle,
-                        isCompleted: true,
-                      ),
-                    if (_incident.cancelledAt != null)
-                      _buildTimelineItem(
-                        'Solicitud cancelada',
-                        _incident.cancelledAt,
-                        Icons.cancel,
-                        isCompleted: true,
-                      ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 32),
-          ],
-        ),
       ),
     );
   }
+}
+
+String _formatDate(DateTime? value) {
+  if (value == null) return '-';
+  return '${value.year.toString().padLeft(4, '0')}-${value.month.toString().padLeft(2, '0')}-${value.day.toString().padLeft(2, '0')}';
 }

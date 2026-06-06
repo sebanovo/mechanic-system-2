@@ -1,41 +1,76 @@
-import '../../domain/entities/user.dart';
+import '../../core/services/session_storage.dart';
+import '../../domain/entities/auth_entities.dart';
 import '../../domain/repositories/auth_repository.dart';
-import '../datasources/auth_remote_data_source.dart';
-import '../../core/network/api_client.dart';
+import '../datasources/auth_remote_datasource.dart';
+import '../models/auth_models.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
-  final AuthRemoteDataSource remote;
-  final ApiClient api;
+  AuthRepositoryImpl(this._remoteDataSource, this._sessionStorage);
 
-  AuthRepositoryImpl(this.remote, this.api);
+  final AuthRemoteDataSource _remoteDataSource;
+  final SessionStorage _sessionStorage;
 
-  @override
-  Future<User> login(String email, String password) async {
-    final (token, user) = await remote.login(email, password);
-    api.setToken(token);
-    return user;
+  Map<String, dynamic> _envelopeData(Map<String, dynamic> response) {
+    final data = response['data'];
+    return data is Map ? Map<String, dynamic>.from(data) : <String, dynamic>{};
+  }
+
+  Future<AuthContextEntity> _storeContext(Map<String, dynamic> response) async {
+    final context = AuthContextModel.fromJson(_envelopeData(response));
+    final tokens = context.tokens;
+    if (tokens != null) {
+      await _sessionStorage.setTokens(
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+      );
+    }
+    await _sessionStorage.setAuthMeta(
+      userType: context.userType,
+      tenantId: context.tenantId ?? '',
+    );
+    return context;
   }
 
   @override
-  Future<User> register(Map<String, dynamic> body) async {
-    final (token, user) = await remote.register(body);
-    api.setToken(token);
-    return user;
-  }
-
-  // ✅ Implementar getMe
-  @override
-  Future<User> getMe() async {
-    return await remote.me();
+  Future<AuthContextEntity> login(LoginInput input) async {
+    return _storeContext(await _remoteDataSource.login(input.toJson()));
   }
 
   @override
-  Future<User> getMyProfile() async {
-    return await remote.myProfile();
+  Future<AuthContextEntity> registerClient(RegisterClientInput input) async {
+    return _storeContext(await _remoteDataSource.registerClient(input.toJson()));
   }
 
   @override
-  Future<User> updateMyProfile(Map<String, dynamic> body) async {
-    return await remote.updateMyProfile(body);
+  Future<AuthContextEntity> registerTenant(RegisterTenantInput input) async {
+    return _storeContext(await _remoteDataSource.registerTenant(input.toJson()));
+  }
+
+  @override
+  Future<AuthContextEntity> selectTenant(SelectTenantInput input) async {
+    return _storeContext(await _remoteDataSource.selectTenant(input.toJson()));
+  }
+
+  @override
+  Future<AuthContextEntity> refresh() async {
+    final refreshToken = _sessionStorage.refreshToken;
+    final response = await _remoteDataSource.refresh({
+      if (refreshToken.isNotEmpty) 'refresh_token': refreshToken,
+    });
+    return _storeContext(response);
+  }
+
+  @override
+  Future<void> logout() async {
+    try {
+      await _remoteDataSource.logout();
+    } finally {
+      await _sessionStorage.clearSession();
+    }
+  }
+
+  @override
+  Future<AuthContextEntity> me() async {
+    return _storeContext(await _remoteDataSource.me());
   }
 }
