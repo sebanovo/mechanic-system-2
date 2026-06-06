@@ -7,10 +7,10 @@
   "mounts": [
     "source=${localWorkspaceFolder},target=/mechanic-web,type=bind,consistency=cached"
   ],
-  "forwardPorts": [4200],
+  "forwardPorts": [
+    4200
+  ],
   "runArgs": [
-    "--network=mechanic-system_mechanic-net",
-    "--env-file=../.env.sample",
     "--hostname=serv-mech-web"
   ],
   "customizations": {
@@ -31,6 +31,6 @@
       }
     }
   },
-  "postCreateCommand": "npm install",
+  "postCreateCommand": "npm ci",
   "remoteUser": "root"
 }

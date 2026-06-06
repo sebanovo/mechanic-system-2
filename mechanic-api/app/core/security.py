@@ -1,105 +1,120 @@
+from __future__ import annotations
+
+import hashlib
+import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-import jwt
-from fastapi import Depends
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from jwt import InvalidTokenError
-from pwdlib import PasswordHash
-from sqlalchemy.orm import Session
+from fastapi import Response
+from jose import jwt
+from passlib.context import CryptContext
 
-from app.common.exceptions import ForbiddenException, UnauthorizedException
 from app.core.config import settings
-from app.core.dependencies import get_db_session
-from app.services.auth.models import User
-from app.services.auth.repository import AuthRepository
 
-password_hasher = PasswordHash.recommended()
-bearer_scheme = HTTPBearer(auto_error=False)
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
-def hash_password(plain_password: str) -> str:
-    return password_hasher.hash(plain_password)
+def hash_password(password: str) -> str:
+    return pwd_context.hash(password)
 
 
-def verify_password(plain_password: str, password_hash: str) -> bool:
-    return password_hasher.verify(plain_password, password_hash)
+def verify_password(password: str, password_hash: str) -> bool:
+    return pwd_context.verify(password, password_hash)
 
 
 def create_access_token(
     subject: str,
-    email: str,
-    role_codes: list[str],
-    expires_minutes: int | None = None,
-) -> str:
-    now = datetime.now(timezone.utc)
-    expiration_minutes = expires_minutes or settings.access_token_expire_minutes
-    expires_at = now + timedelta(minutes=expiration_minutes)
+    *,
+    extra_claims: dict[str, Any] | None = None,
+) -> tuple[str, datetime]:
+    issued_at = datetime.now(timezone.utc)
+    expires_at = issued_at + timedelta(minutes=settings.access_token_expire_minutes)
 
     payload: dict[str, Any] = {
         "sub": subject,
-        "email": email,
-        "roles": role_codes,
-        "iat": int(now.timestamp()),
-        "exp": int(expires_at.timestamp()),
+        "type": "access",
+        "iat": issued_at,
+        "exp": expires_at,
     }
 
-    return jwt.encode(
+    if extra_claims:
+        payload.update(extra_claims)
+
+    token = jwt.encode(
         payload,
         settings.secret_key,
         algorithm=settings.jwt_algorithm,
     )
 
-
-def decode_access_token(token: str) -> dict[str, Any]:
-    try:
-        return jwt.decode(
-            token,
-            settings.secret_key,
-            algorithms=[settings.jwt_algorithm],
-        )
-    except InvalidTokenError as exc:
-        raise UnauthorizedException("Invalid or expired access token.") from exc
+    return token, expires_at
 
 
-def get_current_user(
-    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
-    db: Session = Depends(get_db_session),
-) -> User:
-    if credentials is None or credentials.scheme.lower() != "bearer":
-        raise UnauthorizedException("Bearer token is required.")
-
-    payload = decode_access_token(credentials.credentials)
-    user_id = payload.get("sub")
-
-    if not user_id:
-        raise UnauthorizedException("Invalid token payload.")
-
-    repository = AuthRepository(db)
-    user = repository.get_user_by_id(user_id)
-
-    if user is None:
-        raise UnauthorizedException("Authenticated user was not found.")
-
-    return user
+def decode_token(token: str) -> dict[str, Any]:
+    return jwt.decode(
+        token,
+        settings.secret_key,
+        algorithms=[settings.jwt_algorithm],
+    )
 
 
-def get_current_active_user(current_user: User = Depends(get_current_user)) -> User:
-    if not current_user.is_active:
-        raise UnauthorizedException("This user account is inactive.")
-
-    return current_user
+def generate_refresh_token() -> str:
+    return secrets.token_urlsafe(64)
 
 
-def require_roles(*allowed_role_codes: str):
-    def dependency(current_user: User = Depends(get_current_active_user)) -> User:
-        user_role_codes = {role.code for role in current_user.roles}
+def hash_token(token: str) -> str:
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
-        if not user_role_codes.intersection(set(allowed_role_codes)):
-            raise ForbiddenException(
-                "You do not have the required role to access this resource."
-            )
 
-        return current_user
+def refresh_token_expires_at() -> datetime:
+    return datetime.now(timezone.utc) + timedelta(
+        minutes=settings.refresh_token_expire_minutes,
+    )
 
-    return dependency
+
+def session_expires_at() -> datetime:
+    return datetime.now(timezone.utc) + timedelta(
+        minutes=settings.session_expire_minutes,
+    )
+
+
+def set_auth_cookies(
+    response: Response,
+    *,
+    access_token: str,
+    refresh_token: str,
+) -> None:
+    response.set_cookie(
+        key=settings.access_cookie_name,
+        value=access_token,
+        httponly=settings.cookie_http_only,
+        secure=settings.cookie_secure,
+        samesite=settings.cookie_same_site,
+        domain=settings.cookie_domain or None,
+        path=settings.cookie_path,
+        max_age=settings.access_token_expire_minutes * 60,
+    )
+
+    response.set_cookie(
+        key=settings.refresh_cookie_name,
+        value=refresh_token,
+        httponly=settings.cookie_http_only,
+        secure=settings.cookie_secure,
+        samesite=settings.cookie_same_site,
+        domain=settings.cookie_domain or None,
+        path=settings.cookie_path,
+        max_age=settings.refresh_token_expire_minutes * 60,
+    )
+
+
+def clear_auth_cookies(response: Response) -> None:
+    response.delete_cookie(
+        key=settings.access_cookie_name,
+        domain=settings.cookie_domain or None,
+        path=settings.cookie_path,
+    )
+
+    response.delete_cookie(
+        key=settings.refresh_cookie_name,
+        domain=settings.cookie_domain or None,
+        path=settings.cookie_path,
+    )

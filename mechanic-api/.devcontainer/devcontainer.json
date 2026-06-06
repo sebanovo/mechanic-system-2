@@ -10,8 +10,8 @@
   "forwardPorts": [8000],
   "runArgs": [
     "--network=mechanic-system_mechanic-net",
-    "--env-file=../.env.sample",
-    "--hostname=serv-mech-api"
+    "--hostname=serv-mech-api",
+    "--env-file=../.env"
   ],
   "customizations": {
     "vscode": {
