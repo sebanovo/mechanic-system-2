@@ -17,93 +17,86 @@ mechanic-system/
 │   └── ...
 │
 ├── mechanic-api/              # Backend (FastAPI)
-│   ├── .devcontainer/         # Configuración para entorno de desarrollo
-│   │   ├── Dockerfile
-│   │   └── devcontainer.json
+│   ├── .devcontainer/         # DevContainer para desarrollo de la API
 │   ├── app/                   # Código principal de la API
 │   ├── requirements.txt       # Dependencias Python
 │   ├── Dockerfile.dev         # Imagen para desarrollo
+│   ├── Dockerfile.prod        # Imagen para produccion
+│   ├── .dockerignore          # Contexto de build limpio
 │   └── ...
 │
 ├── mechanic-web/              # Frontend (Angular)
-│   ├── .devcontainer/         # Configuración para entorno de desarrollo
+│   ├── .devcontainer/         # DevContainer para desarrollo web
 │   ├── src/                   # Código fuente del frontend
 │   ├── Dockerfile.dev         # Imagen para desarrollo
+│   ├── Dockerfile.prod        # Imagen para produccion
+│   ├── .dockerignore          # Contexto de build limpio
 │   └── ...
 │
 ├── .env                       # Variables de entorno (desarrollo)
 ├── .env.sample                # Ejemplo de variables de entorno
-├── .env.prod                  # Variables de entorno para producción
-├── docker-compose.yml         # Orquestación para desarrollo
+├── docker-compose.yml         # Orquestación para desarrollo local
+├── docker-compose.prod.yml    # Orquestación para produccion en VM/AWS
+├── docker-compose.last.yml    # Variante operativa usada en AWS
 └── README.md
 ```
 
 ### Servicios (Docker)
 
-|    Servicio     | Tecnología        | Puerto | Descripción   |
-|-----------------|-------------------|--------|---------------|
-| serv-mech-web   | Angular           | 4200   | Interfaz web  |
-| serv-mech-api   | Python            | 8000   | FAST API      |
-| serv-mech-db    | PostgreSQL        | 5432   | Base de datos |
+| Servicio | Tecnología | Puerto | Descripción |
+|---|---|---:|---|
+| `serv-mech-web` | Angular | 4200 | Interfaz web de desarrollo |
+| `serv-mech-api` | Python / FastAPI | 8000 | API backend |
+| `serv-mech-db` | PostgreSQL | 5432 | Base de datos |
 
 ---
 
-### 🧯 Comandos Docker
+### Desarrollo local
 
-En la raiz jecutar
+En la raiz ejecutar:
 ```bash
 cp .env.sample .env
-```
-```bash
 
 # Iniciar servicios
 docker compose up --build
-
-# Iniciar servicios en background
-docker compose up --build -d
-
-# Ver logs
-docker compose logs -f
-
-# Detener servicios
-docker compose down
-
-# Resetear volumenes y base de datos
-docker compose down -v
-
-
-docker container prune
-docker network prune
-docker volume prune
 ```
 
-## 🧯 Ejecutar DevContainer en VSCode
+Flujo recomendado:
 
-### ⚠️ instalar devcontainer en VSCODE
+1. Copiar `.env.sample` a `.env`.
+2. Ajustar variables locales si hace falta.
+3. Levantar el stack con `docker compose up --build`.
+4. Abrir `http://localhost:4200` para la web.
+5. Consumir la API en `http://localhost:8000`.
 
-1. **En VSCode**  
-   Abrir `mechanic-api` o `mechanic-web`.
+### Documentacion del backend
 
-2. **En otra ventana Ejecutar la base de datos (solo para mechanic-api)**  
+La referencia actual del backend y su flujo real de arranque esta en:
 
-   ```bash
-   docker compose up --build serv-mech-db
+- [`mechanic-api/documentacion_backend_actual.md`](mechanic-api/documentacion_backend_actual.md)
 
-3. **Abrir el Command Palette**  
-- Presiona `Ctrl + Shift + P`.
-- Busca y selecciona la opción `Dev Containers: Reopen in Container.`
+### DevContainer
 
-5. **Ejecutar proyectos**
-- En `mechanic-api`
+Los devcontainers de `mechanic-api/` y `mechanic-web/` usan Dockerfiles dedicados para el editor y no dependen del `docker-compose.yml` del stack.
 
-   ```bash
-   uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-   ```
-- En `mechanic-web`
-   ```bash
-   npm start
-   ```
-- Listo !!!
+Flujo:
+
+1. Abrir `mechanic-api/` o `mechanic-web/` en VS Code.
+2. Ejecutar `Dev Containers: Reopen in Container`.
+3. Usar el contenedor con sus herramientas de desarrollo y dependencias de editor.
+
+### Produccion en VM/AWS
+
+La implementacion real de despliegue usa `docker-compose.prod.yml` o `docker-compose.last.yml` y un archivo `.env` generado en la maquina virtual.
+
+Flujo general:
+
+1. Provisionar la VM.
+2. Crear el `.env` en la VM con las variables reales.
+3. Cargar las imagenes publicadas.
+4. Ejecutar el compose de produccion correspondiente.
+
+`docker-compose.prod.yml` y `docker-compose.last.yml` solo incluyen infraestructura base, API, frontends y proxy.
 
 <hr>
 

@@ -1,25 +1,27 @@
+from __future__ import annotations
+
 from logging.config import fileConfig
 
-from alembic import context
-from sqlalchemy import engine_from_config, pool
+from sqlalchemy import create_engine
 
+from alembic import context
 from app.core.config import settings
 from app.core.database import Base
-from app.services.assignment import models as assignment_models  # noqa: F401
-from app.services.audit import models as audit_models  # noqa: F401
-from app.services.auth import models as auth_models  # noqa: F401
-from app.services.billing import models as billing_models  # noqa: F401
-from app.services.catalog import models as catalog_models  # noqa: F401
-from app.services.evidences import models as evidences_models  # noqa: F401
-from app.services.incidents import models as incidents_models  # noqa: F401
-from app.services.jobs import models as jobs_models  # noqa: F401
-from app.services.notifications import models as notifications_models  # noqa: F401
-from app.services.operations import models as operations_models  # noqa: F401
-from app.services.providers import models as providers_models  # noqa: F401
-from app.services.ratings import models as ratings_models  # noqa: F401
-from app.services.subscriptions import models as subscriptions_models  # noqa: F401
-from app.services.tracking import models as tracking_models  # noqa: F401
-from app.services.vehicles import models as vehicles_models  # noqa: F401
+from app.modules.audit import models as audit_models  # noqa: F401
+from app.modules.identity.customer import models as customer_models  # noqa: F401
+from app.modules.identity.membership import models as membership_models  # noqa: F401
+from app.modules.identity.provider import models as provider_models  # noqa: F401
+from app.modules.identity.session import models as session_models  # noqa: F401
+from app.modules.identity.technician import models as technician_models  # noqa: F401
+from app.modules.identity.technician_availability import (
+    models as technician_availability_models,  # noqa: F401
+)
+from app.modules.identity.tenant import models as tenant_models  # noqa: F401
+from app.modules.identity.user import models as user_models  # noqa: F401
+from app.modules.incident import models as incident_models  # noqa: F401
+from app.modules.provider_service import models as provider_service_models  # noqa: F401
+from app.modules.service_catalog import models as service_catalog_models  # noqa: F401
+from app.modules.vehicle import models as vehicle  # noqa: f401
 
 config = context.config
 
@@ -32,14 +34,13 @@ target_metadata = Base.metadata
 
 
 def run_migrations_offline() -> None:
-    url = config.get_main_option("sqlalchemy.url")
-
     context.configure(
-        url=url,
+        url=settings.database_url,
         target_metadata=target_metadata,
         literal_binds=True,
-        compare_type=True,
         dialect_opts={"paramstyle": "named"},
+        compare_type=True,
+        compare_server_default=True,
     )
 
     with context.begin_transaction():
@@ -47,17 +48,14 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
-    connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
-        prefix="sqlalchemy.",
-        poolclass=pool.NullPool,
-    )
+    connectable = create_engine(settings.database_url, pool_pre_ping=True)
 
     with connectable.connect() as connection:
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
             compare_type=True,
+            compare_server_default=True,
         )
 
         with context.begin_transaction():

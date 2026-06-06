@@ -1,0 +1,2 @@
+"""Technician availability module."""
+

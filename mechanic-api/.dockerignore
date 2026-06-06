@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.git/
+.devcontainer/
+old-version/
+storage/
+.env
+.env.*
+node_modules/
+
