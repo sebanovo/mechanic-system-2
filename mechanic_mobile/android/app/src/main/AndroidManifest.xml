@@ -28,6 +28,16 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" /> <!-- Opcional: para ubicación en segundo plano -->
 
+    <!-- Para Android 13+ (API 33+) necesitas este permiso para notificaciones -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    
+    <!-- Para recibir notificaciones después de reiniciar el dispositivo -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    
+    <!-- Para notificaciones en pantalla completa (opcional) -->
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+
+
     <!-- Para que la app se inicie con el dispositivo (recepción de notificaciones) -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
@@ -36,13 +46,6 @@
         android:label="mechanic_mobile"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
-        <!-- meta-data de firabase recomendado -->
-        <meta-data
-            android:name="com.google.firebase.messaging.default_notification_channel_id"
-            android:value="default_channel" />
-        <meta-data
-            android:name="com.google.firebase.messaging.default_notification_icon"
-            android:resource="@drawable/ic_notification" />
         <!-- configuración para firabase -->
         <service
             android:name="com.google.firebase.messaging.FirebaseMessagingService"
@@ -86,9 +89,6 @@
 
          In particular, this is used by the Flutter engine in io.flutter.plugin.text.ProcessTextPlugin. -->
     <queries>
-        <intent>
-            <action android:name="android.speech.RecognitionService" />
-        </intent>
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>

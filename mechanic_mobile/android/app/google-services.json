@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "249326114363",
+    "project_id": "mechanic-system-60380",
+    "storage_bucket": "mechanic-system-60380.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:249326114363:android:ba37e3019c4bac3031ae1e",
+        "android_client_info": {
+          "package_name": "com.example.mechanic_mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAnQhkGs2ZgBqM-RceSeGyQX7yS4N9ImDM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
