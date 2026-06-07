@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from decimal import ROUND_HALF_UP, Decimal
 
 from app.common.exceptions import NotFoundException
@@ -26,8 +27,16 @@ from app.modules.incident_ai_analysis.prompt_builder import (
 )
 from app.modules.incident_ai_analysis.repository import IncidentAiAnalysisRepository
 from app.modules.incident_ai_analysis.schemas import IncidentAiAnalysisCreateRequest
+from app.modules.incident_candidate_provider.repository import (
+    IncidentCandidateProviderRepository,
+)
+from app.modules.incident_dispatch.service import IncidentDispatchService
+from app.modules.incident_dispatch.repository import IncidentDispatchRepository
+from app.modules.incident_offer.repository import IncidentOfferRepository
 from app.modules.service_catalog.models import ServiceCatalog
 from app.modules.service_catalog.repository import ServiceCatalogRepository
+
+logger = logging.getLogger(__name__)
 
 
 class IncidentAiAnalysisService(BaseService):
@@ -123,6 +132,11 @@ class IncidentAiAnalysisService(BaseService):
         )
 
         analysis = self.repository.add(analysis)
+        self.db.flush()
+        self._run_dispatch_safely(
+            incident_id=str(incident.id),
+            analysis_id=str(analysis.id),
+        )
 
         self.audit.created(
             analysis,
@@ -227,6 +241,7 @@ class IncidentAiAnalysisService(BaseService):
         )
 
         analysis = self.repository.add(analysis)
+        self.db.flush()
 
         self.audit.created(
             analysis,
@@ -266,6 +281,10 @@ class IncidentAiAnalysisService(BaseService):
         )
 
         self.db.flush()
+        self._run_dispatch_safely(
+            incident_id=str(incident.id),
+            analysis_id=str(analysis.id),
+        )
 
         if commit:
             self.db.commit()
@@ -334,6 +353,41 @@ class IncidentAiAnalysisService(BaseService):
     def _confidence_to_score(self, confidence: float) -> Decimal:
         score = Decimal(str(confidence * 100))
         return score.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+    def _run_dispatch_safely(
+        self,
+        *,
+        incident_id: str,
+        analysis_id: str,
+    ) -> None:
+        try:
+            result = IncidentDispatchService(
+                incident_repository=IncidentRepository(self.db),
+                ai_analysis_repository=IncidentAiAnalysisRepository(self.db),
+                dispatch_repository=IncidentDispatchRepository(self.db),
+                candidate_provider_repository=IncidentCandidateProviderRepository(
+                    self.db
+                ),
+                offer_repository=IncidentOfferRepository(self.db),
+                context=self.context,
+            ).run_after_ai_analysis(
+                incident_id=incident_id,
+                analysis_id=analysis_id,
+            )
+
+            logger.info(
+                "Incident dispatch result. incident_id=%s analysis_id=%s result=%s",
+                incident_id,
+                analysis_id,
+                result.model_dump(mode="json"),
+            )
+
+        except Exception:
+            logger.exception(
+                "No se pudo ejecutar dispatch automático. incident_id=%s analysis_id=%s",
+                incident_id,
+                analysis_id,
+            )
 
     def _to_core_media_parts(
         self,

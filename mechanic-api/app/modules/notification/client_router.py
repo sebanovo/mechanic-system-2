@@ -12,6 +12,8 @@ from app.modules.identity.auth.authorization import CurrentIdentity, require_use
 from app.modules.notification.mappers import notification_public
 from app.modules.notification.repository import NotificationRepository
 from app.modules.notification.schemas import (
+    NotificationBulkActionData,
+    NotificationBulkActionResponse,
     NotificationListData,
     NotificationResponse,
     NotificationsResponse,
@@ -74,4 +76,19 @@ def mark_my_notification_as_read(
     return success_response(
         message="Notificación marcada como leída correctamente.",
         data=notification_public(notification).model_dump(mode="json"),
+    )
+
+
+@router.patch("/read-all", response_model=NotificationBulkActionResponse)
+def mark_all_my_notifications_as_read(
+    identity: CurrentIdentity = Depends(
+        require_user_types("SUPERADMIN", "TENANT_OWNER", "TECHNICIAN", "CLIENT")
+    ),
+    service: NotificationService = Depends(_notification_service),
+) -> dict:
+    updated_count = service.mark_all_as_read()
+
+    return success_response(
+        message="Notificaciones marcadas como leídas correctamente.",
+        data=NotificationBulkActionData(updated_count=updated_count).model_dump(mode="json"),
     )

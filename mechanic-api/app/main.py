@@ -105,6 +105,12 @@ from app.modules.notification.client_router import router as notification_client
 from app.modules.notification.platform_router import (
     router as notification_platform_router,
 )
+from app.modules.notification_device.client_router import (
+    router as notification_device_client_router,
+)
+from app.modules.notification_device.platform_router import (
+    router as notification_device_platform_router,
+)
 from app.modules.platform.summary_router import router as platform_summary_router
 from app.modules.provider_service.platform_router import (
     router as provider_service_platform_router,
@@ -221,6 +227,10 @@ def create_application() -> FastAPI:
         notification_client_router,
         prefix=settings.api_v1_prefix,
     )
+    application.include_router(
+        notification_device_client_router,
+        prefix=settings.api_v1_prefix,
+    )
 
     # Tenant context
     application.include_router(tenant_context_router, prefix=settings.api_v1_prefix)
@@ -312,6 +322,10 @@ def create_application() -> FastAPI:
     application.include_router(platform_summary_router, prefix=settings.api_v1_prefix)
     application.include_router(
         notification_platform_router,
+        prefix=settings.api_v1_prefix,
+    )
+    application.include_router(
+        notification_device_platform_router,
         prefix=settings.api_v1_prefix,
     )
     application.include_router(user_platform_router, prefix=settings.api_v1_prefix)

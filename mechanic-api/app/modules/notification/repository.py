@@ -46,6 +46,14 @@ class NotificationRepository:
         self.db.flush()
         return notification
 
+    def list_unread_by_user(self, user_id: str | UUID) -> list[Notification]:
+        query = select(Notification).where(
+            Notification.recipient_user_id == _to_uuid(user_id, "user_id"),
+            Notification.notification_status != "READ",
+        )
+
+        return list(self.db.scalars(query.order_by(Notification.created_at.desc())))
+
     def _paginate(
         self,
         query: Select[tuple[Notification]],

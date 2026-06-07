@@ -3,6 +3,7 @@ from __future__ import annotations
 
 class NotificationType:
     INCIDENT_CREATED = "INCIDENT_CREATED"
+    INCIDENT_OFFER_CREATED = "INCIDENT_OFFER_CREATED"
     OFFER_RECEIVED = "OFFER_RECEIVED"
     OFFER_ACCEPTED = "OFFER_ACCEPTED"
     OFFER_REJECTED = "OFFER_REJECTED"
@@ -16,6 +17,7 @@ class NotificationType:
 
     ALL = (
         INCIDENT_CREATED,
+        INCIDENT_OFFER_CREATED,
         OFFER_RECEIVED,
         OFFER_ACCEPTED,
         OFFER_REJECTED,

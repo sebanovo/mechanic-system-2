@@ -137,12 +137,15 @@ class NotificationService(BaseService):
         return notification
 
     def mark_as_read(self, notification_id: str) -> Notification:
+        if self.context.user_id is None:
+            raise NotFoundException("Notificación no encontrada.")
+
         notification = self.repository.get_by_id(notification_id)
 
         if notification is None:
             raise NotFoundException("Notificación no encontrada.")
 
-        if self.context.user_id is not None and str(notification.recipient_user_id) != self.context.user_id:
+        if str(notification.recipient_user_id) != self.context.user_id:
             raise NotFoundException("Notificación no encontrada.")
 
         notification.notification_status = "READ"
@@ -153,3 +156,29 @@ class NotificationService(BaseService):
         self.db.refresh(notification)
 
         return notification
+
+    def mark_all_as_read(self) -> int:
+        if self.context.user_id is None:
+            raise NotFoundException("Notificación no encontrada.")
+
+        notifications = self.repository.list_unread_by_user(self.context.user_id)
+
+        updated_count = 0
+        now = datetime.now(timezone.utc)
+
+        for notification in notifications:
+            notification.notification_status = "READ"
+            notification.read_at = now
+            updated_count += 1
+
+        self.db.flush()
+        self.db.commit()
+
+        return updated_count
+
+    def _normalize_upper(self, value: str | None) -> str | None:
+        if value is None:
+            return None
+
+        normalized = value.strip().upper()
+        return normalized or None
