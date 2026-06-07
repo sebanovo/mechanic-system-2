@@ -1,0 +1,1 @@
+"""Assignment tracking event module."""

@@ -33,6 +33,12 @@ class TechnicianAvailabilityRepository:
             )
         )
 
+    def get_current_by_technician(
+        self,
+        technician_id: str | UUID,
+    ) -> TechnicianAvailability | None:
+        return self.get_by_technician_id(technician_id)
+
     def add(self, availability: TechnicianAvailability) -> TechnicianAvailability:
         self.db.add(availability)
         self.db.flush()

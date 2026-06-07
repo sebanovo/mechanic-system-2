@@ -30,6 +30,22 @@ class Settings(BaseSettings):
     )
 
     sql_echo: bool = Field(default=False, alias="SQL_ECHO")
+    notifications_push_enabled: bool = Field(
+        default=False,
+        alias="NOTIFICATIONS_PUSH_ENABLED",
+    )
+    notifications_provider: Literal["FIREBASE"] = Field(
+        default="FIREBASE",
+        alias="NOTIFICATIONS_PROVIDER",
+    )
+    firebase_credentials_path: str = Field(
+        default="app/firebase/mechanic-system.json",
+        alias="FIREBASE_CREDENTIALS_PATH",
+    )
+    firebase_project_id: str | None = Field(
+        default=None,
+        alias="FIREBASE_PROJECT_ID",
+    )
 
     postgres_serv: str = Field(default="localhost", alias="POSTGRES_SERV")
     postgres_db: str = Field(alias="POSTGRES_DB")
@@ -71,6 +87,38 @@ class Settings(BaseSettings):
     initial_platform_admin_phone: str | None = Field(default=None, alias="INITIAL_PLATFORM_ADMIN_PHONE")
 
     frontend_port: int = Field(default=4200, alias="FRONTEND_PORT")
+
+    # ================== AI SETTINGS ==================
+    ai_enabled: bool = Field(default=False, alias="AI_ENABLED")
+
+    ai_provider: Literal["GEMINI", "OPENAI"] = Field(
+        default="GEMINI",
+        alias="AI_PROVIDER",
+    )
+
+    ai_timeout_seconds: int = Field(default=30, alias="AI_TIMEOUT_SECONDS")
+
+    ai_default_temperature: float = Field(
+        default=0.2,
+        alias="AI_DEFAULT_TEMPERATURE",
+    )
+
+    ai_default_max_output_tokens: int = Field(
+        default=1024,
+        alias="AI_DEFAULT_MAX_OUTPUT_TOKENS",
+    )
+
+    gemini_api_key: str | None = Field(default=None, alias="GEMINI_API_KEY")
+    gemini_model: str = Field(default="gemini-2.5-flash", alias="GEMINI_MODEL")
+    gemini_json_model: str | None = Field(
+        default=None,
+        alias="GEMINI_JSON_MODEL",
+    )
+
+    openai_api_key: str | None = Field(default=None, alias="OPENAI_API_KEY")
+    openai_model: str = Field(default="gpt-5-mini", alias="OPENAI_MODEL")
+    openai_json_model: str = Field(default="gpt-5-mini", alias="OPENAI_JSON_MODEL")
+    #==================== END ==============================
 
     @computed_field
     @property

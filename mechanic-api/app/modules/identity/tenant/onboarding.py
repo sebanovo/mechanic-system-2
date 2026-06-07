@@ -15,6 +15,8 @@ from app.core.security import hash_password
 from app.modules.identity.auth.schemas import RegisterTenantRequest
 from app.modules.identity.membership.models import TenantMembership
 from app.modules.identity.provider.models import ProviderProfile
+from app.modules.identity.provider.repository import ProviderProfileRepository
+from app.modules.identity.provider.service import ProviderProfileService
 from app.modules.identity.tenant.models import Tenant, TenantProfile, TenantSettings
 from app.modules.identity.tenant.repository import TenantRepository
 from app.modules.identity.tenant.schemas import (
@@ -65,6 +67,10 @@ class TenantOnboardingService(BaseService):
         super().__init__(db=db, context=context or _system_context())
         self.user_repository = UserRepository(db)
         self.tenant_repository = TenantRepository(db)
+        self.provider_profile_service = ProviderProfileService(
+            repository=ProviderProfileRepository(db),
+            context=self.context,
+        )
 
     def create_with_owner(
         self,
@@ -120,13 +126,8 @@ class TenantOnboardingService(BaseService):
         settings = TenantSettings(tenant_id=tenant.id)
         self.db.add(settings)
 
-        provider_profile = ProviderProfile(
-            tenant_id=tenant.id,
-            provider_type=tenant.tenant_kind,
-            accepts_emergency_requests=True,
-            average_rating=0,
-            total_reviews=0,
-            response_score=0,
+        provider_profile = self.provider_profile_service.build_for_tenant_uncommitted(
+            tenant
         )
         self.db.add(provider_profile)
 
@@ -229,13 +230,8 @@ class TenantOnboardingService(BaseService):
         settings = TenantSettings(tenant_id=tenant.id)
         self.db.add(settings)
 
-        provider_profile = ProviderProfile(
-            tenant_id=tenant.id,
-            provider_type=tenant.tenant_kind,
-            accepts_emergency_requests=True,
-            average_rating=0,
-            total_reviews=0,
-            response_score=0,
+        provider_profile = self.provider_profile_service.build_for_tenant_uncommitted(
+            tenant
         )
         self.db.add(provider_profile)
 

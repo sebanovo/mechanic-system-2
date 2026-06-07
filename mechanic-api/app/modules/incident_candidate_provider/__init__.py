@@ -1,0 +1,1 @@
+"""Incident candidate provider module."""

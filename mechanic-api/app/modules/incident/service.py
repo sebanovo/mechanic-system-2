@@ -1,16 +1,23 @@
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timezone
 from uuid import uuid4
+
+from sqlalchemy import select
 
 from app.common.exceptions import (
     ConflictException,
     ForbiddenException,
     NotFoundException,
 )
+from app.common.uuid import to_uuid
+from app.core.config import settings
+from app.core.ai.media import AIMediaInput
 from app.core.audit.constants import IncidentAuditEvent
 from app.core.context import RequestContext
 from app.core.services.base import BaseService
+from app.modules.identity.provider.models import ProviderProfile
 from app.modules.identity.customer.models import Customer
 from app.modules.identity.customer.repository import CustomerRepository
 from app.modules.incident.models import Incident
@@ -21,10 +28,29 @@ from app.modules.incident.schemas import (
     IncidentStatusChangeRequest,
     IncidentUpdateRequest,
 )
+from app.modules.incident_ai_analysis.repository import IncidentAiAnalysisRepository
+from app.modules.incident_ai_analysis.service import IncidentAiAnalysisService
 from app.modules.service_catalog.repository import ServiceCatalogRepository
 from app.modules.vehicle.repository import VehicleRepository
 
+logger = logging.getLogger(__name__)
+
 FINAL_STATUSES = {"COMPLETED", "CANCELLED"}
+
+ALLOWED_INCIDENT_TRANSITIONS: dict[str, set[str]] = {
+    "REPORTED": {"ANALYZING", "SEARCHING_PROVIDER", "CANCELLED"},
+    "ANALYZING": {"SEARCHING_PROVIDER", "CANCELLED"},
+    "SEARCHING_PROVIDER": {"WAITING_PROVIDER_RESPONSE", "CANCELLED"},
+    "WAITING_PROVIDER_RESPONSE": {"PROVIDER_ACCEPTED", "SEARCHING_PROVIDER", "CANCELLED"},
+    "PROVIDER_ACCEPTED": {"TECHNICIAN_ASSIGNED", "SEARCHING_PROVIDER", "CANCELLED"},
+    "ASSIGNING_TECHNICIAN": {"TECHNICIAN_ASSIGNED", "PROVIDER_ACCEPTED", "CANCELLED"},
+    "TECHNICIAN_ASSIGNED": {"EN_ROUTE", "PROVIDER_ACCEPTED", "CANCELLED"},
+    "EN_ROUTE": {"ARRIVED", "CANCELLED"},
+    "ARRIVED": {"IN_SERVICE", "CANCELLED"},
+    "IN_SERVICE": {"COMPLETED", "CANCELLED"},
+    "COMPLETED": set(),
+    "CANCELLED": set(),
+}
 
 
 class IncidentService(BaseService):
@@ -92,6 +118,32 @@ class IncidentService(BaseService):
             offset=offset,
         )
 
+    def list_for_current_provider(
+        self,
+        *,
+        status: str | None = None,
+        priority: str | None = None,
+        service_catalog_id: str | None = None,
+        search: str | None = None,
+        reported_from=None,
+        reported_to=None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> tuple[list[Incident], int]:
+        provider_profile = self._get_current_provider_or_fail()
+
+        return self.repository.list_by_related_provider(
+            str(provider_profile.id),
+            status=self._normalize_upper(status),
+            priority=self._normalize_upper(priority),
+            service_catalog_id=service_catalog_id,
+            search=self._normalize_text(search),
+            reported_from=reported_from,
+            reported_to=reported_to,
+            limit=limit,
+            offset=offset,
+        )
+
     def get_or_fail(self, incident_id: str) -> Incident:
         incident = self.repository.get_by_id(incident_id)
 
@@ -109,9 +161,31 @@ class IncidentService(BaseService):
 
         return incident
 
+    def get_for_current_provider_or_fail(self, incident_id: str) -> Incident:
+        provider_profile = self._get_current_provider_or_fail()
+        incident = self.repository.get_by_related_provider(
+            incident_id,
+            str(provider_profile.id),
+        )
+
+        if incident is None:
+            raise NotFoundException("Incidente no encontrado.")
+
+        return incident
+
     def create_current_customer_incident(
         self,
         payload: IncidentCreateRequest,
+        *,
+        ai_media: list[AIMediaInput] | None = None,
+    ) -> Incident:
+        return self.create_for_current_customer(payload, ai_media=ai_media)
+
+    def create_for_current_customer(
+        self,
+        payload: IncidentCreateRequest,
+        *,
+        ai_media: list[AIMediaInput] | None = None,
     ) -> Incident:
         customer = self._get_current_customer_or_fail()
         vehicle = self.vehicle_repository.get_by_id(payload.vehicle_id)
@@ -122,25 +196,17 @@ class IncidentService(BaseService):
         if str(vehicle.customer_id) != str(customer.id):
             raise ForbiddenException("El vehículo no pertenece al cliente actual.")
 
-        if payload.service_catalog_id is not None:
-            service_catalog = self.service_catalog_repository.get_by_id(
-                payload.service_catalog_id
-            )
-
-            if service_catalog is None or not service_catalog.is_active:
-                raise NotFoundException("Servicio de catálogo no disponible.")
-
         incident = Incident(
             customer_id=customer.id,
             vehicle_id=vehicle.id,
-            service_catalog_id=payload.service_catalog_id,
+            service_catalog_id=None,
             incident_code=self._generate_incident_code(),
-            title=payload.title.strip(),
+            title=(self._normalize_text(payload.description) or "Incidente reportado")[:150],
             description=self._normalize_text(payload.description),
             latitude=payload.latitude,
             longitude=payload.longitude,
-            address_text=self._normalize_text(payload.address_text),
-            priority=payload.priority,
+            address_text=None,
+            priority=payload.priority or "MEDIUM",
             status="REPORTED",
             reported_at=datetime.now(timezone.utc),
         )
@@ -155,11 +221,7 @@ class IncidentService(BaseService):
                 "incident_code": incident.incident_code,
                 "customer_id": str(customer.id),
                 "vehicle_id": str(vehicle.id),
-                "service_catalog_id": (
-                    str(incident.service_catalog_id)
-                    if incident.service_catalog_id is not None
-                    else None
-                ),
+                "service_catalog_id": None,
                 "priority": incident.priority,
                 "status": incident.status,
             },
@@ -167,6 +229,11 @@ class IncidentService(BaseService):
 
         self.db.commit()
         self.db.refresh(incident)
+
+        self._run_incident_ai_analysis_if_enabled(
+            incident,
+            media=ai_media,
+        )
 
         return incident
 
@@ -192,7 +259,7 @@ class IncidentService(BaseService):
         payload: IncidentStatusChangeRequest,
     ) -> Incident:
         incident = self.get_or_fail(incident_id)
-        return self._change_status(incident, payload.status)
+        return self._change_status(incident, self._normalize_upper(payload.status))
 
     def cancel_current_customer_incident(
         self,
@@ -318,8 +385,7 @@ class IncidentService(BaseService):
     def _change_status(self, incident: Incident, status: str) -> Incident:
         previous_status = incident.status
 
-        if previous_status in FINAL_STATUSES:
-            raise ConflictException("No se puede cambiar un incidente finalizado.")
+        self._ensure_valid_transition(previous_status, status)
 
         incident.status = status
 
@@ -358,7 +424,7 @@ class IncidentService(BaseService):
         incident: Incident,
         payload: IncidentCancelRequest,
     ) -> Incident:
-        self._ensure_not_final(incident)
+        self._ensure_valid_transition(incident.status, "CANCELLED")
 
         previous_status = incident.status
         incident.status = "CANCELLED"
@@ -384,7 +450,7 @@ class IncidentService(BaseService):
         return incident
 
     def _complete(self, incident: Incident) -> Incident:
-        self._ensure_not_final(incident)
+        self._ensure_valid_transition(incident.status, "COMPLETED")
 
         previous_status = incident.status
         incident.status = "COMPLETED"
@@ -419,9 +485,30 @@ class IncidentService(BaseService):
 
         return customer
 
+    def _get_current_provider_or_fail(self):
+        if self.context.tenant_id is None:
+            raise NotFoundException("Perfil de proveedor no encontrado.")
+
+        provider_profile = self.db.scalar(
+            select(ProviderProfile).where(
+                ProviderProfile.tenant_id == to_uuid(self.context.tenant_id, "tenant_id")
+            )
+        )
+
+        if provider_profile is None:
+            raise NotFoundException("Perfil de proveedor no encontrado.")
+
+        return provider_profile
+
     def _ensure_not_final(self, incident: Incident) -> None:
         if incident.status in FINAL_STATUSES:
             raise ConflictException("No se puede modificar un incidente finalizado.")
+
+    def _ensure_valid_transition(self, current_status: str, next_status: str) -> None:
+        allowed_next_statuses = ALLOWED_INCIDENT_TRANSITIONS.get(current_status, set())
+
+        if next_status not in allowed_next_statuses:
+            raise ConflictException("Transición de estado no permitida.")
 
     def _generate_incident_code(self) -> str:
         while True:
@@ -439,3 +526,39 @@ class IncidentService(BaseService):
     def _normalize_upper(self, value: str | None) -> str | None:
         normalized = self._normalize_text(value)
         return normalized.upper() if normalized else None
+
+    def _run_incident_ai_analysis_if_enabled(
+        self,
+        incident: Incident,
+        *,
+        media: list[AIMediaInput] | None = None,
+    ) -> None:
+        if not settings.ai_enabled:
+            return
+
+        try:
+            analysis_service = IncidentAiAnalysisService(
+                IncidentAiAnalysisRepository(self.db),
+                self.context,
+            )
+            analysis_service.run_for_incident(
+                incident_id=str(incident.id),
+                analysis_input=self._build_analysis_input(incident, media),
+            )
+        except Exception:
+            logger.exception(
+                "No se pudo generar el análisis IA del incidente %s",
+                incident.id,
+            )
+
+    def _build_analysis_input(
+        self,
+        incident: Incident,
+        media: list[AIMediaInput] | None,
+    ):
+        from app.modules.incident_ai_analysis.inputs import IncidentAIMultimodalInput
+
+        return IncidentAIMultimodalInput(
+            text=incident.description,
+            media=media or [],
+        )

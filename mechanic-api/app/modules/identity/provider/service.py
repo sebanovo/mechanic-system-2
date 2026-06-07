@@ -66,6 +66,9 @@ class ProviderProfileService(BaseService):
 
         return provider_profile
 
+    def build_for_tenant_uncommitted(self, tenant: Tenant) -> ProviderProfile:
+        return self._create_for_tenant_uncommitted(tenant)
+
     def ensure_for_tenant(self, tenant: Tenant) -> ProviderProfile:
         existing = self.repository.get_by_tenant_id(str(tenant.id))
 
@@ -128,6 +131,10 @@ class ProviderProfileService(BaseService):
             provider_profile.accepts_emergency_requests = payload.accepts_emergency_requests
             changed_fields.append("accepts_emergency_requests")
 
+        if payload.operational_status is not None:
+            provider_profile.operational_status = payload.operational_status
+            changed_fields.append("operational_status")
+
         self.db.flush()
 
         self.audit.updated(
@@ -152,6 +159,7 @@ class ProviderProfileService(BaseService):
         provider_profile = ProviderProfile(
             tenant_id=tenant.id,
             provider_type=tenant.tenant_kind,
+            operational_status="ACTIVE",
             accepts_emergency_requests=True,
             average_rating=0,
             total_reviews=0,
