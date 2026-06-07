@@ -9,6 +9,7 @@ def provider_profile_public(provider_profile: ProviderProfile) -> ProviderProfil
         id=str(provider_profile.id),
         tenant_id=str(provider_profile.tenant_id),
         provider_type=provider_profile.provider_type,  # type: ignore[arg-type]
+        operational_status=provider_profile.operational_status,  # type: ignore[arg-type]
         accepts_emergency_requests=provider_profile.accepts_emergency_requests,
         average_rating=float(provider_profile.average_rating),
         total_reviews=provider_profile.total_reviews,

@@ -38,8 +38,6 @@ def list_current_tenant_incidents(
     identity: CurrentIdentity = Depends(require_user_types("TENANT_OWNER", "TECHNICIAN")),
     service: IncidentService = Depends(_incident_service),
     pagination: PaginationParams = Depends(),
-    customer_id: str | None = Query(default=None),
-    vehicle_id: str | None = Query(default=None),
     service_catalog_id: str | None = Query(default=None),
     status: str | None = Query(default=None),
     priority: str | None = Query(default=None),
@@ -47,12 +45,10 @@ def list_current_tenant_incidents(
     reported_from: datetime | None = Query(default=None),
     reported_to: datetime | None = Query(default=None),
 ) -> dict:
-    incidents, total = service.list(
-        customer_id=customer_id,
-        vehicle_id=vehicle_id,
-        service_catalog_id=service_catalog_id,
+    incidents, total = service.list_for_current_provider(
         status=status,
         priority=priority,
+        service_catalog_id=service_catalog_id,
         search=search,
         reported_from=reported_from,
         reported_to=reported_to,
@@ -81,7 +77,7 @@ def get_current_tenant_incident(
     identity: CurrentIdentity = Depends(require_user_types("TENANT_OWNER", "TECHNICIAN")),
     service: IncidentService = Depends(_incident_service),
 ) -> dict:
-    incident = service.get_or_fail(incident_id)
+    incident = service.get_for_current_provider_or_fail(incident_id)
 
     return success_response(
         message="Incidente obtenido correctamente.",

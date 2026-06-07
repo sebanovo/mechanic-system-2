@@ -10,6 +10,7 @@ from app.common.openapi import STANDARD_ERROR_RESPONSES
 from app.common.responses import success_response
 from app.core.config import settings
 from app.core.database import get_db
+from app.modules.system.notification_test_router import router as notification_test_router
 from app.modules.system.schemas import (
     HealthPayload,
     HealthResponse,
@@ -20,6 +21,7 @@ from app.modules.system.schemas import (
 )
 
 router = APIRouter(prefix="/system", tags=["System"], responses=STANDARD_ERROR_RESPONSES)
+router.include_router(notification_test_router)
 
 
 @router.get("/health", response_model=HealthResponse)

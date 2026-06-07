@@ -8,6 +8,9 @@ from sqlalchemy.orm import Session
 
 from app.common.uuid import to_uuid
 from app.common.validators import escape_like
+from app.modules.assignment.models import Assignment
+from app.modules.incident_candidate_provider.models import IncidentCandidateProvider
+from app.modules.incident_offer.models import IncidentOffer
 from app.modules.incident.models import Incident
 
 
@@ -57,6 +60,89 @@ class IncidentRepository:
             reported_to=reported_to,
             limit=limit,
             offset=offset,
+        )
+
+    def list_by_related_provider(
+        self,
+        provider_profile_id: str | UUID,
+        *,
+        status: str | None = None,
+        priority: str | None = None,
+        service_catalog_id: str | UUID | None = None,
+        search: str | None = None,
+        reported_from: datetime | None = None,
+        reported_to: datetime | None = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> tuple[list[Incident], int]:
+        provider_uuid = _to_uuid(provider_profile_id, "provider_profile_id")
+
+        related_incident_ids = (
+            select(IncidentCandidateProvider.incident_id)
+            .where(IncidentCandidateProvider.provider_profile_id == provider_uuid)
+            .union(
+                select(IncidentOffer.incident_id).where(
+                    IncidentOffer.provider_profile_id == provider_uuid
+                )
+            )
+            .union(
+                select(Assignment.incident_id).where(
+                    Assignment.provider_profile_id == provider_uuid
+                )
+            )
+        )
+
+        query = select(Incident).where(
+            Incident.deleted_at.is_(None),
+            Incident.id.in_(related_incident_ids),
+        )
+
+        return self._apply_filters_and_paginate(
+            query=query,
+            status=status,
+            priority=priority,
+            service_catalog_id=service_catalog_id,
+            search=search,
+            reported_from=reported_from,
+            reported_to=reported_to,
+            limit=limit,
+            offset=offset,
+        )
+
+    def get_by_related_provider(
+        self,
+        incident_id: str | UUID,
+        provider_profile_id: str | UUID,
+    ) -> Incident | None:
+        provider_uuid = _to_uuid(provider_profile_id, "provider_profile_id")
+        incident_uuid = _to_uuid(incident_id, "incident_id")
+
+        related_exists = (
+            select(IncidentCandidateProvider.id)
+            .where(
+                IncidentCandidateProvider.incident_id == incident_uuid,
+                IncidentCandidateProvider.provider_profile_id == provider_uuid,
+            )
+            .union(
+                select(IncidentOffer.id).where(
+                    IncidentOffer.incident_id == incident_uuid,
+                    IncidentOffer.provider_profile_id == provider_uuid,
+                )
+            )
+            .union(
+                select(Assignment.id).where(
+                    Assignment.incident_id == incident_uuid,
+                    Assignment.provider_profile_id == provider_uuid,
+                )
+            )
+        )
+
+        return self.db.scalar(
+            select(Incident).where(
+                Incident.id == incident_uuid,
+                Incident.deleted_at.is_(None),
+                Incident.id.in_(related_exists),
+            )
         )
 
     def list(

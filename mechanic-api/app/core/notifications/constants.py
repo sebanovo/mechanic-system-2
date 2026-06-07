@@ -1,0 +1,7 @@
+from __future__ import annotations
+
+
+class NotificationType:
+    INCIDENT_OFFER_ACCEPTED = "INCIDENT_OFFER_ACCEPTED"
+    TECHNICIAN_ASSIGNED = "TECHNICIAN_ASSIGNED"
+    TRACKING_UPDATED = "TRACKING_UPDATED"

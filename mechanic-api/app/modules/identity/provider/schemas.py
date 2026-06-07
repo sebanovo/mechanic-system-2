@@ -8,16 +8,19 @@ from pydantic import BaseModel
 from app.common.pagination import PaginationMeta
 
 ProviderType = Literal["WORKSHOP", "WORKSHOP_NETWORK", "INDEPENDENT_TECHNICIAN"]
+ProviderOperationalStatus = Literal["ACTIVE", "INACTIVE", "SUSPENDED"]
 
 
 class ProviderProfileUpdateRequest(BaseModel):
     accepts_emergency_requests: bool | None = None
+    operational_status: ProviderOperationalStatus | None = None
 
 
 class ProviderProfilePublic(BaseModel):
     id: str
     tenant_id: str
     provider_type: ProviderType
+    operational_status: ProviderOperationalStatus
     accepts_emergency_requests: bool
     average_rating: float
     total_reviews: int

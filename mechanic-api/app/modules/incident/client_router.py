@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 from datetime import datetime
+from decimal import Decimal
+from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, File, Form, Query, UploadFile
 from sqlalchemy.orm import Session
 
 from app.common.pagination import PaginationParams, build_pagination_meta
 from app.common.responses import success_response
+from app.common.exceptions import ValidationException
+from app.core.ai.media import build_ai_media_inputs
 from app.core.context import RequestContext
 from app.core.database import get_db
 from app.core.request_context import get_request_context
@@ -81,6 +85,94 @@ def create_my_incident(
     service: IncidentService = Depends(_incident_service),
 ) -> dict:
     incident = service.create_current_customer_incident(payload)
+
+    return success_response(
+        message="Incidente creado correctamente.",
+        data=incident_public(incident).model_dump(mode="json"),
+    )
+
+
+@router.post(
+    "/with-files",
+    response_model=IncidentResponse,
+    openapi_extra={
+        "requestBody": {
+            "content": {
+                "multipart/form-data": {
+                    "example": {
+                        "vehicle_id": "uuid-del-vehiculo",
+                        "latitude": -16.5001,
+                        "longitude": -68.1193,
+                        "description": "El auto se apagó en marcha y ahora no enciende.",
+                        "priority": "MEDIUM",
+                    }
+                }
+            }
+        }
+    },
+)
+async def create_my_incident_with_files(
+    vehicle_id: Annotated[
+        str,
+        Form(
+            description="UUID del vehículo del cliente.",
+            examples=["uuid-del-vehiculo"],
+        ),
+    ],
+    latitude: Annotated[
+        Decimal,
+        Form(
+            description="Latitud geográfica donde ocurrió el incidente.",
+            examples=[-16.5001],
+        ),
+    ],
+    longitude: Annotated[
+        Decimal,
+        Form(
+            description="Longitud geográfica donde ocurrió el incidente.",
+            examples=[-68.1193],
+        ),
+    ],
+    description: Annotated[
+        str | None,
+        Form(
+            description="Descripción opcional del incidente. Si no se envía, al menos debe llegar un archivo.",
+            examples=["El auto se apagó en marcha y ahora no enciende."],
+        ),
+    ] = None,
+    priority: Annotated[
+        str | None,
+        Form(
+            description="Prioridad opcional del incidente. Si no se envía, el backend usa MEDIUM.",
+            examples=["MEDIUM"],
+        ),
+    ] = None,
+    files: Annotated[
+        list[UploadFile] | None,
+        File(
+            description="Archivos opcionales del incidente. Imágenes, video, audio o PDF.",
+        ),
+    ] = None,
+    identity: CurrentIdentity = Depends(require_user_types("CLIENT")),
+    service: IncidentService = Depends(_incident_service),
+) -> dict:
+    if (description is None or not description.strip()) and not files:
+        raise ValidationException("Debes enviar una descripción o al menos un archivo.")
+
+    media = await build_ai_media_inputs(files)
+
+    payload = IncidentCreateRequest(
+        vehicle_id=vehicle_id,
+        description=description,
+        latitude=latitude,
+        longitude=longitude,
+        priority=priority or "MEDIUM",
+    )
+
+    incident = service.create_for_current_customer(
+        payload,
+        ai_media=media,
+    )
 
     return success_response(
         message="Incidente creado correctamente.",

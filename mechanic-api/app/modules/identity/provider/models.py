@@ -17,6 +17,10 @@ class ProviderProfile(BaseModel):
             name="provider_type_valid",
         ),
         CheckConstraint(
+            "operational_status IN ('ACTIVE', 'INACTIVE', 'SUSPENDED')",
+            name="provider_operational_status_valid",
+        ),
+        CheckConstraint(
             "average_rating BETWEEN 0 AND 5 "
             "AND total_reviews >= 0 "
             "AND response_score >= 0",
@@ -32,6 +36,12 @@ class ProviderProfile(BaseModel):
     )
 
     provider_type: Mapped[str] = mapped_column(String(50), nullable=False)
+
+    operational_status: Mapped[str] = mapped_column(
+        String(30),
+        nullable=False,
+        default="ACTIVE",
+    )
 
     accepts_emergency_requests: Mapped[bool] = mapped_column(
         Boolean,

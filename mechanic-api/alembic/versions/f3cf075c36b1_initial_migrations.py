@@ -1,8 +1,8 @@
 """initial migrations
 
-Revision ID: 72a3148c44e7
+Revision ID: f3cf075c36b1
 Revises: 
-Create Date: 2026-06-06 12:06:14.722254
+Create Date: 2026-06-07 04:08:50.087641
 """
 
 import sqlalchemy as sa
@@ -11,7 +11,7 @@ from sqlalchemy.dialects import postgresql
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = '72a3148c44e7'
+revision = 'f3cf075c36b1'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -107,9 +107,48 @@ def upgrade() -> None:
     sa.UniqueConstraint('customer_code', name=op.f('uq_customer_customer_code')),
     sa.UniqueConstraint('user_id', name=op.f('uq_customer_user_id'))
     )
+    op.create_table('notification',
+    sa.Column('recipient_user_id', sa.UUID(), nullable=False),
+    sa.Column('tenant_id', sa.UUID(), nullable=True),
+    sa.Column('notification_type', sa.String(length=100), nullable=False),
+    sa.Column('title', sa.String(length=160), nullable=False),
+    sa.Column('body', sa.Text(), nullable=False),
+    sa.Column('data', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.Column('notification_status', sa.String(length=30), nullable=False),
+    sa.Column('provider_message_id', sa.String(length=255), nullable=True),
+    sa.Column('error_message', sa.Text(), nullable=True),
+    sa.Column('sent_at', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('read_at', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
+    sa.CheckConstraint("notification_status IN ('PENDING', 'SENT', 'FAILED', 'READ')", name=op.f('ck_notification_notification_status_valid')),
+    sa.ForeignKeyConstraint(['recipient_user_id'], ['app_user.id'], name=op.f('fk_notification_recipient_user_id_app_user'), ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['tenant_id'], ['tenant.id'], name=op.f('fk_notification_tenant_id_tenant'), ondelete='SET NULL'),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_notification'))
+    )
+    op.create_table('notification_device',
+    sa.Column('user_id', sa.UUID(), nullable=False),
+    sa.Column('device_token', sa.Text(), nullable=False),
+    sa.Column('platform', sa.String(length=30), nullable=False),
+    sa.Column('device_name', sa.String(length=150), nullable=True),
+    sa.Column('app_version', sa.String(length=40), nullable=True),
+    sa.Column('os_version', sa.String(length=40), nullable=True),
+    sa.Column('status', sa.String(length=30), nullable=False),
+    sa.Column('last_seen_at', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
+    sa.CheckConstraint("platform IN ('ANDROID', 'IOS', 'WEB')", name=op.f('ck_notification_device_notification_device_platform_valid')),
+    sa.CheckConstraint("status IN ('ACTIVE', 'INACTIVE', 'REVOKED', 'EXPIRED')", name=op.f('ck_notification_device_notification_device_status_valid')),
+    sa.ForeignKeyConstraint(['user_id'], ['app_user.id'], name=op.f('fk_notification_device_user_id_app_user'), ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_notification_device')),
+    sa.UniqueConstraint('device_token', name=op.f('uq_notification_device_device_token'))
+    )
     op.create_table('provider_profile',
     sa.Column('tenant_id', sa.UUID(), nullable=False),
     sa.Column('provider_type', sa.String(length=50), nullable=False),
+    sa.Column('operational_status', sa.String(length=30), nullable=False),
     sa.Column('accepts_emergency_requests', sa.Boolean(), nullable=False),
     sa.Column('average_rating', sa.Numeric(precision=3, scale=2), nullable=False),
     sa.Column('total_reviews', sa.Integer(), nullable=False),
@@ -117,6 +156,7 @@ def upgrade() -> None:
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
+    sa.CheckConstraint("operational_status IN ('ACTIVE', 'INACTIVE', 'SUSPENDED')", name=op.f('ck_provider_profile_provider_operational_status_valid')),
     sa.CheckConstraint("provider_type IN ('WORKSHOP', 'WORKSHOP_NETWORK', 'INDEPENDENT_TECHNICIAN')", name=op.f('ck_provider_profile_provider_type_valid')),
     sa.CheckConstraint('average_rating BETWEEN 0 AND 5 AND total_reviews >= 0 AND response_score >= 0', name=op.f('ck_provider_profile_provider_metrics_valid')),
     sa.ForeignKeyConstraint(['tenant_id'], ['tenant.id'], name=op.f('fk_provider_profile_tenant_id_tenant'), ondelete='CASCADE'),
@@ -302,11 +342,128 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id', name=op.f('pk_technician_availability')),
     sa.UniqueConstraint('technician_id', name=op.f('uq_technician_availability_technician_id'))
     )
+    op.create_table('technician_service',
+    sa.Column('technician_id', sa.UUID(), nullable=False),
+    sa.Column('provider_service_id', sa.UUID(), nullable=False),
+    sa.Column('skill_level', sa.String(length=30), nullable=False),
+    sa.Column('is_enabled', sa.Boolean(), nullable=False),
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
+    sa.CheckConstraint("skill_level IN ('BASIC', 'INTERMEDIATE', 'ADVANCED', 'EXPERT')", name=op.f('ck_technician_service_technician_service_skill_level_valid')),
+    sa.ForeignKeyConstraint(['provider_service_id'], ['provider_service.id'], name=op.f('fk_technician_service_provider_service_id_provider_service'), ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['technician_id'], ['technician.id'], name=op.f('fk_technician_service_technician_id_technician'), ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_technician_service')),
+    sa.UniqueConstraint('technician_id', 'provider_service_id', name='technician_service_unique')
+    )
+    op.create_table('incident_ai_analysis',
+    sa.Column('incident_id', sa.UUID(), nullable=False),
+    sa.Column('analysis_version', sa.String(length=50), nullable=False),
+    sa.Column('probable_service_code', sa.String(length=100), nullable=True),
+    sa.Column('probable_problem', sa.Text(), nullable=True),
+    sa.Column('confidence_score', sa.Numeric(precision=5, scale=2), nullable=True),
+    sa.Column('estimated_min_price', sa.Numeric(precision=12, scale=2), nullable=True),
+    sa.Column('estimated_max_price', sa.Numeric(precision=12, scale=2), nullable=True),
+    sa.Column('estimated_min_duration_minutes', sa.Integer(), nullable=True),
+    sa.Column('estimated_max_duration_minutes', sa.Integer(), nullable=True),
+    sa.Column('recommended_priority', sa.String(length=30), nullable=True),
+    sa.Column('analysis_result', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
+    sa.CheckConstraint("recommended_priority IS NULL OR recommended_priority IN ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL')", name=op.f('ck_incident_ai_analysis_incident_ai_analysis_priority_valid')),
+    sa.CheckConstraint('\n            (confidence_score IS NULL OR confidence_score BETWEEN 0 AND 100)\n            AND (estimated_min_price IS NULL OR estimated_min_price >= 0)\n            AND (estimated_max_price IS NULL OR estimated_max_price >= 0)\n            AND (\n                estimated_min_price IS NULL\n                OR estimated_max_price IS NULL\n                OR estimated_max_price >= estimated_min_price\n            )\n            AND (estimated_min_duration_minutes IS NULL OR estimated_min_duration_minutes > 0)\n            AND (estimated_max_duration_minutes IS NULL OR estimated_max_duration_minutes > 0)\n            AND (\n                estimated_min_duration_minutes IS NULL\n                OR estimated_max_duration_minutes IS NULL\n                OR estimated_max_duration_minutes >= estimated_min_duration_minutes\n            )\n            ', name=op.f('ck_incident_ai_analysis_incident_ai_analysis_values_valid')),
+    sa.ForeignKeyConstraint(['incident_id'], ['incident.id'], name=op.f('fk_incident_ai_analysis_incident_id_incident'), ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_incident_ai_analysis'))
+    )
+    op.create_table('incident_candidate_provider',
+    sa.Column('incident_id', sa.UUID(), nullable=False),
+    sa.Column('provider_profile_id', sa.UUID(), nullable=False),
+    sa.Column('distance_km', sa.Numeric(precision=10, scale=2), nullable=True),
+    sa.Column('estimated_arrival_minutes', sa.Integer(), nullable=True),
+    sa.Column('rating_score', sa.Numeric(precision=5, scale=2), nullable=True),
+    sa.Column('capacity_score', sa.Numeric(precision=5, scale=2), nullable=True),
+    sa.Column('response_score', sa.Numeric(precision=5, scale=2), nullable=True),
+    sa.Column('match_score', sa.Numeric(precision=5, scale=2), nullable=True),
+    sa.Column('candidate_status', sa.String(length=30), nullable=False),
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
+    sa.CheckConstraint("candidate_status IN ('SUGGESTED', 'SELECTED', 'DISCARDED', 'EXPIRED')", name=op.f('ck_incident_candidate_provider_incident_candidate_provider_status_valid')),
+    sa.CheckConstraint('\n            (distance_km IS NULL OR distance_km >= 0)\n            AND (estimated_arrival_minutes IS NULL OR estimated_arrival_minutes >= 0)\n            AND (rating_score IS NULL OR rating_score >= 0)\n            AND (capacity_score IS NULL OR capacity_score >= 0)\n            AND (response_score IS NULL OR response_score >= 0)\n            AND (match_score IS NULL OR match_score >= 0)\n            ', name=op.f('ck_incident_candidate_provider_incident_candidate_provider_scores_valid')),
+    sa.ForeignKeyConstraint(['incident_id'], ['incident.id'], name=op.f('fk_incident_candidate_provider_incident_id_incident'), ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['provider_profile_id'], ['provider_profile.id'], name=op.f('fk_incident_candidate_provider_provider_profile_id_provider_profile'), ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_incident_candidate_provider')),
+    sa.UniqueConstraint('incident_id', 'provider_profile_id', name='incident_candidate_provider_unique')
+    )
+    op.create_table('incident_offer',
+    sa.Column('incident_id', sa.UUID(), nullable=False),
+    sa.Column('candidate_provider_id', sa.UUID(), nullable=False),
+    sa.Column('provider_profile_id', sa.UUID(), nullable=False),
+    sa.Column('offer_status', sa.String(length=30), nullable=False),
+    sa.Column('message', sa.Text(), nullable=True),
+    sa.Column('response_message', sa.Text(), nullable=True),
+    sa.Column('sent_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('responded_at', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('expires_at', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
+    sa.CheckConstraint("offer_status IN ('PENDING', 'ACCEPTED', 'REJECTED', 'EXPIRED', 'CANCELLED')", name=op.f('ck_incident_offer_incident_offer_status_valid')),
+    sa.ForeignKeyConstraint(['candidate_provider_id'], ['incident_candidate_provider.id'], name=op.f('fk_incident_offer_candidate_provider_id_incident_candidate_provider'), ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['incident_id'], ['incident.id'], name=op.f('fk_incident_offer_incident_id_incident'), ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['provider_profile_id'], ['provider_profile.id'], name=op.f('fk_incident_offer_provider_profile_id_provider_profile'), ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_incident_offer'))
+    )
+    op.create_table('assignment',
+    sa.Column('incident_id', sa.UUID(), nullable=False),
+    sa.Column('offer_id', sa.UUID(), nullable=False),
+    sa.Column('provider_profile_id', sa.UUID(), nullable=False),
+    sa.Column('technician_id', sa.UUID(), nullable=False),
+    sa.Column('assignment_status', sa.String(length=30), nullable=False),
+    sa.Column('notes', sa.Text(), nullable=True),
+    sa.Column('assigned_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('started_at', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('arrived_at', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('completed_at', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('cancelled_at', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
+    sa.CheckConstraint("\n            assignment_status IN (\n                'PENDING',\n                'ASSIGNED',\n                'EN_ROUTE',\n                'ARRIVED',\n                'IN_SERVICE',\n                'COMPLETED',\n                'CANCELLED'\n            )\n            ", name=op.f('ck_assignment_assignment_status_valid')),
+    sa.ForeignKeyConstraint(['incident_id'], ['incident.id'], name=op.f('fk_assignment_incident_id_incident'), ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['offer_id'], ['incident_offer.id'], name=op.f('fk_assignment_offer_id_incident_offer'), ondelete='RESTRICT'),
+    sa.ForeignKeyConstraint(['provider_profile_id'], ['provider_profile.id'], name=op.f('fk_assignment_provider_profile_id_provider_profile'), ondelete='RESTRICT'),
+    sa.ForeignKeyConstraint(['technician_id'], ['technician.id'], name=op.f('fk_assignment_technician_id_technician'), ondelete='RESTRICT'),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_assignment'))
+    )
+    op.create_table('assignment_tracking_event',
+    sa.Column('assignment_id', sa.UUID(), nullable=False),
+    sa.Column('event_type', sa.String(length=40), nullable=False),
+    sa.Column('latitude', sa.Numeric(precision=10, scale=7), nullable=True),
+    sa.Column('longitude', sa.Numeric(precision=10, scale=7), nullable=True),
+    sa.Column('notes', sa.Text(), nullable=True),
+    sa.Column('occurred_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
+    sa.CheckConstraint("\n            event_type IN (\n                'ASSIGNED',\n                'EN_ROUTE',\n                'LOCATION_UPDATED',\n                'ARRIVED',\n                'SERVICE_STARTED',\n                'SERVICE_COMPLETED',\n                'CANCELLED',\n                'NOTE'\n            )\n            ", name=op.f('ck_assignment_tracking_event_assignment_tracking_event_type_valid')),
+    sa.CheckConstraint('\n            latitude IS NULL\n            OR latitude BETWEEN -90 AND 90\n            ', name=op.f('ck_assignment_tracking_event_assignment_tracking_event_latitude_valid')),
+    sa.CheckConstraint('\n            longitude IS NULL\n            OR longitude BETWEEN -180 AND 180\n            ', name=op.f('ck_assignment_tracking_event_assignment_tracking_event_longitude_valid')),
+    sa.ForeignKeyConstraint(['assignment_id'], ['assignment.id'], name=op.f('fk_assignment_tracking_event_assignment_id_assignment'), ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_assignment_tracking_event'))
+    )
     # ### end Alembic commands ###
 
 
 def downgrade() -> None:
     # ### commands auto generated by Alembic - please adjust! ###
+    op.drop_table('assignment_tracking_event')
+    op.drop_table('assignment')
+    op.drop_table('incident_offer')
+    op.drop_table('incident_candidate_provider')
+    op.drop_table('incident_ai_analysis')
+    op.drop_table('technician_service')
     op.drop_table('technician_availability')
     op.drop_table('incident')
     op.drop_table('vehicle')
@@ -318,6 +475,8 @@ def downgrade() -> None:
     op.drop_table('tenant_profile')
     op.drop_table('tenant_membership')
     op.drop_table('provider_profile')
+    op.drop_table('notification_device')
+    op.drop_table('notification')
     op.drop_table('customer')
     op.drop_table('audit_event')
     op.drop_index(op.f('ix_tenant_slug'), table_name='tenant')

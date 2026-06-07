@@ -27,9 +27,13 @@ class ServiceCatalogRepository:
     def get_by_code(self, service_code: str) -> ServiceCatalog | None:
         return self.db.scalar(
             select(ServiceCatalog).where(
-                ServiceCatalog.service_code == service_code.strip().upper()
+                ServiceCatalog.service_code == service_code.strip().upper(),
+                ServiceCatalog.is_active.is_(True),
             )
         )
+
+    def get_by_service_code(self, service_code: str) -> ServiceCatalog | None:
+        return self.get_by_code(service_code)
 
     def exists_by_code(self, service_code: str) -> bool:
         return self.get_by_code(service_code) is not None

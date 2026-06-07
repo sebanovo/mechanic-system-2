@@ -28,24 +28,18 @@ IncidentStatus = Literal[
 
 class IncidentCreateRequest(BaseModel):
     vehicle_id: str
-    service_catalog_id: str | None = None
-    title: str = Field(min_length=1, max_length=150)
     description: str | None = None
     latitude: Decimal = Field(ge=-90, le=90)
     longitude: Decimal = Field(ge=-180, le=180)
-    address_text: str | None = None
     priority: IncidentPriority = "MEDIUM"
 
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
                 "vehicle_id": "uuid-del-vehiculo",
-                "service_catalog_id": "uuid-del-servicio",
-                "title": "Mi vehículo no enciende",
                 "description": "El auto no arranca y parece problema de batería.",
                 "latitude": -16.5001,
                 "longitude": -68.1193,
-                "address_text": "Av. Busch, La Paz",
                 "priority": "MEDIUM",
             }
         }

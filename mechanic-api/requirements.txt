@@ -28,6 +28,13 @@ python-multipart
 
 structlog
 
+#notification
+firebase-admin
+
+#ia sdk
+google-genai
+openai
+
 # developer dependencies
 pytest
 pytest-asyncio

@@ -19,8 +19,20 @@ from app.modules.identity.technician_availability import (
 from app.modules.identity.tenant import models as tenant_models  # noqa: F401
 from app.modules.identity.user import models as user_models  # noqa: F401
 from app.modules.incident import models as incident_models  # noqa: F401
+from app.modules.incident_ai_analysis import models as incident_ai_analysis_models  # noqa: F401
+from app.modules.incident_candidate_provider import (
+    models as incident_candidate_provider_models,  # noqa: F401
+)
+from app.modules.incident_offer import models as incident_offer_models  # noqa: F401
+from app.modules.assignment import models as assignment_models  # noqa: F401
+from app.modules.assignment_tracking_event import (
+    models as assignment_tracking_event_models,  # noqa: F401
+)
 from app.modules.provider_service import models as provider_service_models  # noqa: F401
+from app.modules.notification import models as notification_models  # noqa: F401
+from app.modules.notification_device import models as notification_device_models  # noqa: F401
 from app.modules.service_catalog import models as service_catalog_models  # noqa: F401
+from app.modules.technician_service import models as technician_service_models  # noqa: F401
 from app.modules.vehicle import models as vehicle  # noqa: f401
 
 config = context.config

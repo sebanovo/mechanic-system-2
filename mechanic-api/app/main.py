@@ -21,6 +21,21 @@ from app.common.responses import success_response
 from app.core.config import settings
 from app.core.logging import RequestLoggingMiddleware, configure_logging
 from app.core.middleware import RequestContextMiddleware, SecurityHeadersMiddleware
+from app.modules.assignment.platform_router import (
+    router as assignment_platform_router,
+)
+from app.modules.assignment.tenant_router import (
+    router as assignment_tenant_router,
+)
+from app.modules.assignment_tracking_event.client_router import (
+    router as assignment_tracking_event_client_router,
+)
+from app.modules.assignment_tracking_event.platform_router import (
+    router as assignment_tracking_event_platform_router,
+)
+from app.modules.assignment_tracking_event.tenant_router import (
+    router as assignment_tracking_event_tenant_router,
+)
 from app.modules.audit.platform_router import router as audit_platform_router
 from app.modules.audit.tenant_router import router as audit_tenant_router
 from app.modules.clients.router import router as clients_router
@@ -62,6 +77,34 @@ from app.modules.identity.user.platform_router import router as user_platform_ro
 from app.modules.incident.client_router import router as incident_client_router
 from app.modules.incident.platform_router import router as incident_platform_router
 from app.modules.incident.tenant_router import router as incident_tenant_router
+from app.modules.incident_ai_analysis.client_router import (
+    router as incident_ai_analysis_client_router,
+)
+from app.modules.incident_ai_analysis.router import (
+    router as incident_ai_analysis_router,
+)
+from app.modules.incident_ai_analysis.platform_router import (
+    router as incident_ai_analysis_platform_router,
+)
+from app.modules.incident_ai_analysis.tenant_router import (
+    router as incident_ai_analysis_tenant_router,
+)
+from app.modules.incident_candidate_provider.platform_router import (
+    router as incident_candidate_provider_platform_router,
+)
+from app.modules.incident_candidate_provider.tenant_router import (
+    router as incident_candidate_provider_tenant_router,
+)
+from app.modules.incident_offer.platform_router import (
+    router as incident_offer_platform_router,
+)
+from app.modules.incident_offer.tenant_router import (
+    router as incident_offer_tenant_router,
+)
+from app.modules.notification.client_router import router as notification_client_router
+from app.modules.notification.platform_router import (
+    router as notification_platform_router,
+)
 from app.modules.platform.summary_router import router as platform_summary_router
 from app.modules.provider_service.platform_router import (
     router as provider_service_platform_router,
@@ -75,7 +118,14 @@ from app.modules.service_catalog.platform_router import (
 from app.modules.service_catalog.tenant_router import (
     router as service_catalog_tenant_router,
 )
+from app.modules.system.ai_test_router import router as ai_test_router
 from app.modules.system.router import router as system_router
+from app.modules.technician_service.platform_router import (
+    router as technician_service_platform_router,
+)
+from app.modules.technician_service.tenant_router import (
+    router as technician_service_tenant_router,
+)
 from app.modules.vehicle.client_router import router as vehicle_client_router
 from app.modules.vehicle.platform_router import router as vehicle_platform_router
 
@@ -140,6 +190,7 @@ def create_application() -> FastAPI:
     # Public / System
     application.include_router(system_router, prefix=settings.api_v1_prefix)
     application.include_router(auth_router, prefix=settings.api_v1_prefix)
+    application.include_router(ai_test_router, prefix=settings.api_v1_prefix)
 
     # Client context
     application.include_router(clients_router, prefix=settings.api_v1_prefix)
@@ -150,6 +201,24 @@ def create_application() -> FastAPI:
     )
     application.include_router(
         incident_client_router,
+        prefix=settings.api_v1_prefix,
+    )
+
+    application.include_router(
+        incident_ai_analysis_client_router,
+        prefix=settings.api_v1_prefix,
+    )
+    application.include_router(
+        incident_ai_analysis_router,
+        prefix=settings.api_v1_prefix,
+    )
+
+    application.include_router(
+        assignment_tracking_event_client_router,
+        prefix=settings.api_v1_prefix,
+    )
+    application.include_router(
+        notification_client_router,
         prefix=settings.api_v1_prefix,
     )
 
@@ -203,8 +272,48 @@ def create_application() -> FastAPI:
         dependencies=[Depends(require_tenant_selected())],
     )
 
+    application.include_router(
+        incident_ai_analysis_tenant_router,
+        prefix=settings.api_v1_prefix,
+        dependencies=[Depends(require_tenant_selected())],
+    )
+
+    application.include_router(
+        technician_service_tenant_router,
+        prefix=settings.api_v1_prefix,
+        dependencies=[Depends(require_tenant_selected())],
+    )
+
+    application.include_router(
+        incident_candidate_provider_tenant_router,
+        prefix=settings.api_v1_prefix,
+        dependencies=[Depends(require_tenant_selected())],
+    )
+
+    application.include_router(
+        incident_offer_tenant_router,
+        prefix=settings.api_v1_prefix,
+        dependencies=[Depends(require_tenant_selected())],
+    )
+
+    application.include_router(
+        assignment_tenant_router,
+        prefix=settings.api_v1_prefix,
+        dependencies=[Depends(require_tenant_selected())],
+    )
+
+    application.include_router(
+        assignment_tracking_event_tenant_router,
+        prefix=settings.api_v1_prefix,
+        dependencies=[Depends(require_tenant_selected())],
+    )
+
     # Platform context
     application.include_router(platform_summary_router, prefix=settings.api_v1_prefix)
+    application.include_router(
+        notification_platform_router,
+        prefix=settings.api_v1_prefix,
+    )
     application.include_router(user_platform_router, prefix=settings.api_v1_prefix)
     application.include_router(customer_platform_router, prefix=settings.api_v1_prefix)
     application.include_router(tenant_platform_router, prefix=settings.api_v1_prefix)
@@ -230,6 +339,36 @@ def create_application() -> FastAPI:
 
     application.include_router(
         incident_platform_router,
+        prefix=settings.api_v1_prefix,
+    )
+
+    application.include_router(
+        incident_ai_analysis_platform_router,
+        prefix=settings.api_v1_prefix,
+    )
+
+    application.include_router(
+        technician_service_platform_router,
+        prefix=settings.api_v1_prefix,
+    )
+
+    application.include_router(
+        incident_candidate_provider_platform_router,
+        prefix=settings.api_v1_prefix,
+    )
+
+    application.include_router(
+        incident_offer_platform_router,
+        prefix=settings.api_v1_prefix,
+    )
+
+    application.include_router(
+        assignment_platform_router,
+        prefix=settings.api_v1_prefix,
+    )
+
+    application.include_router(
+        assignment_tracking_event_platform_router,
         prefix=settings.api_v1_prefix,
     )
 
