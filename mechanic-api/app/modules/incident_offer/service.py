@@ -362,6 +362,12 @@ class IncidentOfferService(BaseService):
 
         candidate.candidate_status = "DISCARDED"
 
+        accepted_offer = self.repository.get_accepted_by_incident(str(incident.id))
+        if accepted_offer is None:
+            pending_offers, _ = self.repository.list_pending_by_incident(str(incident.id))
+            if len(pending_offers) == 0:
+                incident.status = "SEARCHING_PROVIDER"
+
         self.db.flush()
 
         self.audit.updated(

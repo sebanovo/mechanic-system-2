@@ -50,10 +50,20 @@ class NotificationListData(BaseModel):
     pagination: PaginationMeta
 
 
+class NotificationBulkActionData(BaseModel):
+    updated_count: int
+
+
 class NotificationResponse(BaseModel):
     success: bool = True
     message: str
     data: NotificationPublic
+
+
+class NotificationBulkActionResponse(BaseModel):
+    success: bool = True
+    message: str
+    data: NotificationBulkActionData
 
 
 class NotificationsResponse(BaseModel):

@@ -1,13 +1,19 @@
 from __future__ import annotations
 
+import logging
+
 from sqlalchemy.orm import Session
 
+from app.core.context import RequestContext
 from app.modules.identity.membership.repository import TenantMembershipRepository
+from app.modules.identity.customer.repository import CustomerRepository
+from app.modules.identity.user.repository import UserRepository
 from app.modules.notification.constants import NotificationType
 from app.modules.notification.repository import NotificationRepository
 from app.modules.notification.schemas import NotificationSendRequest
 from app.modules.notification.service import NotificationService
-from app.core.context import RequestContext
+
+logger = logging.getLogger(__name__)
 
 
 class BusinessNotificationService:
@@ -17,6 +23,8 @@ class BusinessNotificationService:
             repository=NotificationRepository(db),
             context=context,
         )
+        self.user_repository = UserRepository(self.db)
+        self.customer_repository = CustomerRepository(self.db)
         self.membership_repository = TenantMembershipRepository(self.db)
 
     def send_offer_received(
@@ -207,6 +215,58 @@ class BusinessNotificationService:
             },
         )
 
+    def send_incident_offer_created(
+        self,
+        *,
+        tenant_id: str,
+        incident_id: str,
+        offer_id: str,
+        provider_profile_id: str,
+    ) -> None:
+        for recipient_user_id in self._list_tenant_notification_recipients(tenant_id):
+            self._send(
+                recipient_user_id=recipient_user_id,
+                tenant_id=tenant_id,
+                notification_type=NotificationType.INCIDENT_OFFER_CREATED,
+                title="Nueva solicitud de servicio",
+                body="Tienes una nueva solicitud pendiente para revisar.",
+                data={
+                    "type": NotificationType.INCIDENT_OFFER_CREATED,
+                    "incident_id": incident_id,
+                    "offer_id": offer_id,
+                    "provider_profile_id": provider_profile_id,
+                },
+            )
+
+    def send_incident_offer_accepted(
+        self,
+        *,
+        incident_id: str,
+        offer_id: str,
+        provider_profile_id: str,
+        tenant_id: str,
+        customer_id: str,
+        ) -> None:
+        customer = self.customer_repository.get_by_user_id(customer_id)
+
+        if customer is None or customer.deleted_at is not None:
+            return
+
+        self._send(
+            recipient_user_id=customer_id,
+            tenant_id=tenant_id,
+            notification_type=NotificationType.OFFER_ACCEPTED,
+            title="Solicitud aceptada",
+            body="Un taller aceptó tu solicitud. En un momento se asignará un técnico.",
+            data={
+                "type": NotificationType.OFFER_ACCEPTED,
+                "incident_id": incident_id,
+                "offer_id": offer_id,
+                "provider_profile_id": provider_profile_id,
+                "tenant_id": tenant_id,
+            },
+        )
+
     def _send(
         self,
         *,
@@ -241,3 +301,23 @@ class BusinessNotificationService:
                 return str(user.id)
 
         return None
+
+    def _list_tenant_notification_recipients(
+        self,
+        *,
+        tenant_id: str,
+    ) -> list[str]:
+        memberships, _ = self.membership_repository.list_by_tenant_with_users(
+            tenant_id,
+            status="ACTIVE",
+            limit=100,
+            offset=0,
+        )
+
+        recipients: list[str] = []
+
+        for membership, user in memberships:
+            if user.user_type in {"TENANT_OWNER", "TECHNICIAN"}:
+                recipients.append(str(user.id))
+
+        return recipients

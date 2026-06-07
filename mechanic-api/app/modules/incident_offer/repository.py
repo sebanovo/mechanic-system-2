@@ -40,6 +40,25 @@ class IncidentOfferRepository:
             )
         )
 
+    def get_by_incident_and_provider(
+        self,
+        *,
+        incident_id: str | UUID,
+        provider_profile_id: str | UUID,
+    ) -> IncidentOffer | None:
+        return self.db.scalar(
+            select(IncidentOffer).where(
+                IncidentOffer.incident_id == _to_uuid(
+                    incident_id,
+                    "incident_id",
+                ),
+                IncidentOffer.provider_profile_id == _to_uuid(
+                    provider_profile_id,
+                    "provider_profile_id",
+                ),
+            )
+        )
+
     def get_accepted_by_incident(
         self,
         incident_id: str | UUID,
