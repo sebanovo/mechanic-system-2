@@ -43,7 +43,12 @@ def _tracking_event_service(
     )
 
 
-@router.get("", response_model=AssignmentTrackingEventsResponse)
+@router.get(
+    "",
+    response_model=AssignmentTrackingEventsResponse,
+    summary="Listar tracking-events",
+    description="Lista los eventos de seguimiento registrados para asignaciones.",
+)
 def list_platform_assignment_tracking_events(
     identity: CurrentIdentity = Depends(require_user_types("SUPERADMIN")),
     service: AssignmentTrackingEventService = Depends(_tracking_event_service),
@@ -80,7 +85,15 @@ def list_platform_assignment_tracking_events(
     )
 
 
-@router.post("/assignments/{assignment_id}", response_model=AssignmentTrackingEventResponse)
+@router.post(
+    "/assignments/{assignment_id}",
+    response_model=AssignmentTrackingEventResponse,
+    summary="Registrar tracking-event de asignación",
+    description=(
+        "Registra un avance operativo en la asignación. "
+        "Usado por plataforma para auditoría o carga manual."
+    ),
+)
 def create_platform_assignment_tracking_event(
     assignment_id: str,
     payload: AssignmentTrackingEventCreateRequest,
@@ -100,7 +113,12 @@ def create_platform_assignment_tracking_event(
     )
 
 
-@router.get("/{tracking_event_id}", response_model=AssignmentTrackingEventResponse)
+@router.get(
+    "/{tracking_event_id}",
+    response_model=AssignmentTrackingEventResponse,
+    summary="Obtener tracking-event",
+    description="Devuelve el detalle de un evento de seguimiento de asignación.",
+)
 def get_platform_assignment_tracking_event(
     tracking_event_id: str,
     identity: CurrentIdentity = Depends(require_user_types("SUPERADMIN")),

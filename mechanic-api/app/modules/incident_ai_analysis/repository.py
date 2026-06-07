@@ -26,6 +26,21 @@ class IncidentAiAnalysisRepository:
             _to_uuid(analysis_id, "incident_ai_analysis_id"),
         )
 
+    def get_latest_by_incident(
+        self,
+        incident_id: str | UUID,
+    ) -> IncidentAiAnalysis | None:
+        query = (
+            select(IncidentAiAnalysis)
+            .where(
+                IncidentAiAnalysis.incident_id == _to_uuid(incident_id, "incident_id")
+            )
+            .order_by(IncidentAiAnalysis.created_at.desc())
+            .limit(1)
+        )
+
+        return self.db.scalar(query)
+
     def list_by_incident(
         self,
         incident_id: str | UUID,

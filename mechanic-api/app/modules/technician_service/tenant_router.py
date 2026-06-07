@@ -49,7 +49,15 @@ def _technician_service_service(
     )
 
 
-@router.get("", response_model=TechnicianServicesResponse)
+@router.get(
+    "",
+    response_model=TechnicianServicesResponse,
+    summary="Listar servicios habilitados de técnicos del taller",
+    description=(
+        "Lista los servicios técnicos habilitados dentro del taller actual. "
+        "Sirve para saber qué técnicos pueden atender cada catálogo."
+    ),
+)
 def list_current_tenant_technician_services(
     identity: CurrentIdentity = Depends(require_user_types("TENANT_OWNER", "TECHNICIAN")),
     provider_profile_service: ProviderProfileService = Depends(_provider_profile_service),
@@ -91,7 +99,15 @@ def list_current_tenant_technician_services(
     )
 
 
-@router.post("", response_model=TechnicianServiceResponse)
+@router.post(
+    "",
+    response_model=TechnicianServiceResponse,
+    summary="Crear servicio habilitado para técnico",
+    description=(
+        "Vincula un técnico con un servicio del catálogo de su taller, "
+        "permitiendo que pueda atender ese servicio."
+    ),
+)
 def create_current_tenant_technician_service(
     payload: TechnicianServiceCreateRequest,
     identity: CurrentIdentity = Depends(require_user_types("TENANT_OWNER")),
@@ -113,7 +129,12 @@ def create_current_tenant_technician_service(
     )
 
 
-@router.get("/{technician_service_id}", response_model=TechnicianServiceResponse)
+@router.get(
+    "/{technician_service_id}",
+    response_model=TechnicianServiceResponse,
+    summary="Obtener servicio habilitado de técnico",
+    description="Devuelve el detalle de la relación entre técnico y servicio.",
+)
 def get_current_tenant_technician_service(
     technician_service_id: str,
     identity: CurrentIdentity = Depends(require_user_types("TENANT_OWNER", "TECHNICIAN")),
@@ -137,7 +158,12 @@ def get_current_tenant_technician_service(
     )
 
 
-@router.put("/{technician_service_id}", response_model=TechnicianServiceResponse)
+@router.put(
+    "/{technician_service_id}",
+    response_model=TechnicianServiceResponse,
+    summary="Actualizar servicio habilitado de técnico",
+    description="Actualiza el nivel de habilidad u otros datos del servicio del técnico.",
+)
 def update_current_tenant_technician_service(
     technician_service_id: str,
     payload: TechnicianServiceUpdateRequest,
@@ -161,7 +187,12 @@ def update_current_tenant_technician_service(
     )
 
 
-@router.patch("/{technician_service_id}/status", response_model=TechnicianServiceResponse)
+@router.patch(
+    "/{technician_service_id}/status",
+    response_model=TechnicianServiceResponse,
+    summary="Cambiar estado del servicio del técnico",
+    description="Habilita o deshabilita un servicio técnico sin borrarlo.",
+)
 def change_current_tenant_technician_service_status(
     technician_service_id: str,
     payload: TechnicianServiceStatusChangeRequest,

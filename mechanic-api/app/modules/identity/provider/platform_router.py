@@ -31,7 +31,12 @@ def _provider_service(
     )
 
 
-@router.get("", response_model=ProviderProfilesResponse)
+@router.get(
+    "",
+    response_model=ProviderProfilesResponse,
+    summary="Listar perfiles de proveedor",
+    description="Lista los perfiles de proveedor registrados en la plataforma.",
+)
 def list_provider_profiles(
     identity: CurrentIdentity = Depends(require_user_types("SUPERADMIN")),
     service: ProviderProfileService = Depends(_provider_service),
@@ -61,7 +66,12 @@ def list_provider_profiles(
     )
 
 
-@router.get("/{provider_profile_id}", response_model=ProviderProfileResponse)
+@router.get(
+    "/{provider_profile_id}",
+    response_model=ProviderProfileResponse,
+    summary="Obtener perfil de proveedor",
+    description="Devuelve el detalle completo de un perfil de proveedor.",
+)
 def get_provider_profile(
     provider_profile_id: str,
     identity: CurrentIdentity = Depends(require_user_types("SUPERADMIN")),

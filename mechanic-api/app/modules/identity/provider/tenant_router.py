@@ -29,7 +29,15 @@ def _provider_service(
     )
 
 
-@router.get("", response_model=ProviderProfileResponse)
+@router.get(
+    "",
+    response_model=ProviderProfileResponse,
+    summary="Obtener perfil de proveedor del taller actual",
+    description=(
+        "Devuelve el perfil operativo del taller actual. "
+        "El perfil se usa para habilitar servicios, disponibilidad y flujo operativo."
+    ),
+)
 def get_current_provider_profile(
     identity: CurrentIdentity = Depends(require_user_types("TENANT_OWNER", "TECHNICIAN")),
     service: ProviderProfileService = Depends(_provider_service),
@@ -42,7 +50,15 @@ def get_current_provider_profile(
     )
 
 
-@router.put("", response_model=ProviderProfileResponse)
+@router.put(
+    "",
+    response_model=ProviderProfileResponse,
+    summary="Actualizar perfil de proveedor del taller actual",
+    description=(
+        "Permite al owner del taller actualizar el estado operativo y "
+        "la capacidad de aceptar solicitudes de emergencia."
+    ),
+)
 def update_current_provider_profile(
     payload: ProviderProfileUpdateRequest,
     identity: CurrentIdentity = Depends(require_user_types("TENANT_OWNER")),

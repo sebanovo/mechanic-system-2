@@ -91,6 +91,7 @@ class AssignmentRepository:
         provider_profile_id: str | UUID | None = None,
         technician_id: str | UUID | None = None,
         assignment_status: str | None = None,
+        exclude_assignment_statuses: list[str] | None = None,
         limit: int = 100,
         offset: int = 0,
     ) -> tuple[
@@ -138,6 +139,11 @@ class AssignmentRepository:
         if assignment_status is not None:
             query = query.where(Assignment.assignment_status == assignment_status)
 
+        if exclude_assignment_statuses is not None:
+            query = query.where(
+                Assignment.assignment_status.notin_(exclude_assignment_statuses)
+            )
+
         return self._paginate(
             query.order_by(Assignment.created_at.desc()),
             limit,
@@ -149,6 +155,7 @@ class AssignmentRepository:
         technician_id: str | UUID,
         *,
         assignment_status: str | None = None,
+        exclude_assignment_statuses: list[str] | None = None,
         limit: int = 100,
         offset: int = 0,
     ) -> tuple[
@@ -158,6 +165,7 @@ class AssignmentRepository:
         return self.list(
             technician_id=technician_id,
             assignment_status=assignment_status,
+            exclude_assignment_statuses=exclude_assignment_statuses,
             limit=limit,
             offset=offset,
         )

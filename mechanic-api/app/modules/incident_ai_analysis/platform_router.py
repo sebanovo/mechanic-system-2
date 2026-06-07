@@ -35,7 +35,12 @@ def _analysis_service(
     )
 
 
-@router.get("", response_model=IncidentAiAnalysesResponse)
+@router.get(
+    "",
+    response_model=IncidentAiAnalysesResponse,
+    summary="Listar análisis IA",
+    description="Lista todos los análisis IA registrados en la plataforma.",
+)
 def list_platform_incident_ai_analyses(
     identity: CurrentIdentity = Depends(require_user_types("SUPERADMIN")),
     service: IncidentAiAnalysisService = Depends(_analysis_service),
@@ -69,7 +74,12 @@ def list_platform_incident_ai_analyses(
     )
 
 
-@router.post("/incidents/{incident_id}", response_model=IncidentAiAnalysisResponse)
+@router.post(
+    "/incidents/{incident_id}",
+    response_model=IncidentAiAnalysisResponse,
+    summary="Crear análisis IA",
+    description="Crea un análisis IA manualmente para un incidente.",
+)
 def create_platform_incident_ai_analysis(
     incident_id: str,
     payload: IncidentAiAnalysisCreateRequest,
@@ -87,7 +97,12 @@ def create_platform_incident_ai_analysis(
     )
 
 
-@router.get("/{analysis_id}", response_model=IncidentAiAnalysisResponse)
+@router.get(
+    "/{analysis_id}",
+    response_model=IncidentAiAnalysisResponse,
+    summary="Obtener análisis IA",
+    description="Devuelve el detalle de un análisis IA.",
+)
 def get_platform_incident_ai_analysis(
     analysis_id: str,
     identity: CurrentIdentity = Depends(require_user_types("SUPERADMIN")),

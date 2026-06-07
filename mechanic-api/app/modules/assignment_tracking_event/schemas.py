@@ -4,7 +4,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.common.pagination import PaginationMeta
 from app.modules.assignment.schemas import AssignmentPublic
@@ -22,34 +22,76 @@ AssignmentTrackingEventType = Literal[
 
 
 class AssignmentTrackingEventCreateRequest(BaseModel):
-    event_type: AssignmentTrackingEventType
-    latitude: Decimal | None = Field(default=None, ge=-90, le=90)
-    longitude: Decimal | None = Field(default=None, ge=-180, le=180)
-    notes: str | None = Field(default=None, max_length=1000)
-    occurred_at: datetime | None = None
-
-    @model_validator(mode="after")
-    def validate_coordinates(self) -> "AssignmentTrackingEventCreateRequest":
-        has_latitude = self.latitude is not None
-        has_longitude = self.longitude is not None
-
-        if has_latitude != has_longitude:
-            raise ValueError("La latitud y longitud deben enviarse juntas.")
-
-        if self.event_type == "LOCATION_UPDATED" and not has_latitude:
-            raise ValueError("Un evento de ubicación requiere latitud y longitud.")
-
-        return self
+    event_type: AssignmentTrackingEventType = Field(
+        description=(
+            "Evento operativo de la asignación. "
+            "EN_ROUTE, ARRIVED, SERVICE_STARTED, SERVICE_COMPLETED y CANCELLED "
+            "actualizan assignment_status e incident.status. "
+            "LOCATION_UPDATED solo registra coordenadas. NOTE solo registra una observación."
+        )
+    )
+    latitude: Decimal = Field(
+        ge=-90,
+        le=90,
+        description="Latitud actual del técnico. Obligatoria para todos los eventos.",
+    )
+    longitude: Decimal = Field(
+        ge=-180,
+        le=180,
+        description="Longitud actual del técnico. Obligatoria para todos los eventos.",
+    )
+    notes: str | None = Field(
+        default=None,
+        max_length=1000,
+        description=(
+            "Nota opcional. Si no se envía, el backend genera una nota automática "
+            "según el tipo de evento."
+        ),
+    )
 
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
-                "event_type": "LOCATION_UPDATED",
+                "event_type": "EN_ROUTE",
                 "latitude": -16.5001,
                 "longitude": -68.1193,
-                "notes": "Técnico avanzando hacia el punto del incidente.",
-                "occurred_at": "2026-06-06T20:30:00Z",
-            }
+                "notes": "El técnico inició ruta hacia el cliente.",
+            },
+            "examples": [
+                {
+                    "event_type": "EN_ROUTE",
+                    "latitude": -16.5001,
+                    "longitude": -68.1193,
+                    "notes": "El técnico inició ruta hacia el cliente.",
+                },
+                {
+                    "event_type": "ARRIVED",
+                    "latitude": -16.5001,
+                    "longitude": -68.1193,
+                },
+                {
+                    "event_type": "SERVICE_STARTED",
+                    "latitude": -16.5001,
+                    "longitude": -68.1193,
+                },
+                {
+                    "event_type": "SERVICE_COMPLETED",
+                    "latitude": -16.5001,
+                    "longitude": -68.1193,
+                    "notes": "Se realizó el servicio correctamente.",
+                },
+                {
+                    "event_type": "LOCATION_UPDATED",
+                    "latitude": -16.5001,
+                    "longitude": -68.1193,
+                },
+                {
+                    "event_type": "CANCELLED",
+                    "latitude": -16.5001,
+                    "longitude": -68.1193,
+                    "notes": "No fue posible continuar con la atención.",
+                },
+            ]
         }
     )
 

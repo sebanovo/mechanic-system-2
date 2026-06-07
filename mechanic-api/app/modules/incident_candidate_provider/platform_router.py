@@ -43,7 +43,12 @@ def _candidate_service(
     )
 
 
-@router.get("", response_model=IncidentCandidateProvidersResponse)
+@router.get(
+    "",
+    response_model=IncidentCandidateProvidersResponse,
+    summary="Listar candidatos de proveedor",
+    description="Lista todos los candidatos de proveedor registrados en la plataforma.",
+)
 def list_platform_incident_candidate_providers(
     identity: CurrentIdentity = Depends(require_user_types("SUPERADMIN")),
     service: IncidentCandidateProviderService = Depends(_candidate_service),
@@ -78,7 +83,12 @@ def list_platform_incident_candidate_providers(
     )
 
 
-@router.post("/incidents/{incident_id}", response_model=IncidentCandidateProviderResponse)
+@router.post(
+    "/incidents/{incident_id}",
+    response_model=IncidentCandidateProviderResponse,
+    summary="Crear candidato de proveedor",
+    description="Crea manualmente un candidato de proveedor para un incidente.",
+)
 def create_platform_incident_candidate_provider(
     incident_id: str,
     payload: IncidentCandidateProviderCreateRequest,
@@ -97,7 +107,12 @@ def create_platform_incident_candidate_provider(
     )
 
 
-@router.get("/{candidate_id}", response_model=IncidentCandidateProviderResponse)
+@router.get(
+    "/{candidate_id}",
+    response_model=IncidentCandidateProviderResponse,
+    summary="Obtener candidato de proveedor",
+    description="Devuelve el detalle de un candidato de proveedor.",
+)
 def get_platform_incident_candidate_provider(
     candidate_id: str,
     identity: CurrentIdentity = Depends(require_user_types("SUPERADMIN")),
@@ -111,7 +126,12 @@ def get_platform_incident_candidate_provider(
     )
 
 
-@router.put("/{candidate_id}", response_model=IncidentCandidateProviderResponse)
+@router.put(
+    "/{candidate_id}",
+    response_model=IncidentCandidateProviderResponse,
+    summary="Actualizar candidato de proveedor",
+    description="Actualiza los campos editables de un proveedor candidato.",
+)
 def update_platform_incident_candidate_provider(
     candidate_id: str,
     payload: IncidentCandidateProviderUpdateRequest,
@@ -127,7 +147,12 @@ def update_platform_incident_candidate_provider(
     )
 
 
-@router.patch("/{candidate_id}/status", response_model=IncidentCandidateProviderResponse)
+@router.patch(
+    "/{candidate_id}/status",
+    response_model=IncidentCandidateProviderResponse,
+    summary="Cambiar estado de candidato de proveedor",
+    description="Actualiza el estado operativo de un candidato de proveedor.",
+)
 def change_platform_incident_candidate_provider_status(
     candidate_id: str,
     payload: IncidentCandidateProviderStatusChangeRequest,

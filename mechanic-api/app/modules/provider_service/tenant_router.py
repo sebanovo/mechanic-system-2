@@ -46,7 +46,15 @@ def _provider_service_service(
     )
 
 
-@router.get("", response_model=ProviderServicesResponse)
+@router.get(
+    "",
+    response_model=ProviderServicesResponse,
+    summary="Listar servicios del taller",
+    description=(
+        "Lista los servicios que el taller ofrece, con precio y disponibilidad. "
+        "Si no se filtra por estado, devuelve todos los servicios activos e inactivos del proveedor."
+    ),
+)
 def list_current_tenant_provider_services(
     identity: CurrentIdentity = Depends(require_user_types("TENANT_OWNER", "TECHNICIAN")),
     provider_profile_service: ProviderProfileService = Depends(_provider_profile_service),
@@ -85,7 +93,15 @@ def list_current_tenant_provider_services(
     )
 
 
-@router.post("", response_model=ProviderServiceResponse)
+@router.post(
+    "",
+    response_model=ProviderServiceResponse,
+    summary="Crear servicio del taller",
+    description=(
+        "Registra un servicio propio del taller usando un catálogo compartido y "
+        "rangos de precio personalizados."
+    ),
+)
 def create_current_tenant_provider_service(
     payload: ProviderServiceCreateRequest,
     identity: CurrentIdentity = Depends(require_user_types("TENANT_OWNER")),
@@ -107,7 +123,12 @@ def create_current_tenant_provider_service(
     )
 
 
-@router.get("/{provider_service_id}", response_model=ProviderServiceResponse)
+@router.get(
+    "/{provider_service_id}",
+    response_model=ProviderServiceResponse,
+    summary="Obtener servicio del taller",
+    description="Devuelve el detalle de un servicio registrado por el taller.",
+)
 def get_current_tenant_provider_service(
     provider_service_id: str,
     identity: CurrentIdentity = Depends(require_user_types("TENANT_OWNER", "TECHNICIAN")),
@@ -127,7 +148,12 @@ def get_current_tenant_provider_service(
     )
 
 
-@router.put("/{provider_service_id}", response_model=ProviderServiceResponse)
+@router.put(
+    "/{provider_service_id}",
+    response_model=ProviderServiceResponse,
+    summary="Actualizar servicio del taller",
+    description="Actualiza el servicio personalizado del taller.",
+)
 def update_current_tenant_provider_service(
     provider_service_id: str,
     payload: ProviderServiceUpdateRequest,
@@ -151,7 +177,12 @@ def update_current_tenant_provider_service(
     )
 
 
-@router.patch("/{provider_service_id}/status", response_model=ProviderServiceResponse)
+@router.patch(
+    "/{provider_service_id}/status",
+    response_model=ProviderServiceResponse,
+    summary="Cambiar estado del servicio del taller",
+    description="Activa o desactiva un servicio del taller sin eliminarlo.",
+)
 def change_current_tenant_provider_service_status(
     provider_service_id: str,
     payload: ProviderServiceStatusChangeRequest,
@@ -175,7 +206,12 @@ def change_current_tenant_provider_service_status(
     )
 
 
-@router.delete("/{provider_service_id}", response_model=ProviderServiceResponse)
+@router.delete(
+    "/{provider_service_id}",
+    response_model=ProviderServiceResponse,
+    summary="Deshabilitar servicio del taller",
+    description="Deshabilita lógicamente un servicio del taller.",
+)
 def delete_current_tenant_provider_service(
     provider_service_id: str,
     identity: CurrentIdentity = Depends(require_user_types("TENANT_OWNER")),

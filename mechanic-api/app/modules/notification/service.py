@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from typing import Any
 
 from app.common.exceptions import NotFoundException
 from app.common.uuid import optional_uuid, to_uuid
@@ -42,6 +43,7 @@ class NotificationService(BaseService):
         return self.repository.list_by_user(
             self.context.user_id,
             status=self._normalize_upper(status),
+            audience=self._normalize_upper(self.context.actor_type),
             limit=limit,
             offset=offset,
         )
@@ -67,6 +69,7 @@ class NotificationService(BaseService):
             title=payload.title,
             body=payload.body,
             data=payload.data,
+            push_data=payload.push_data,
         )
 
     def _create_and_send_internal(
@@ -77,7 +80,8 @@ class NotificationService(BaseService):
         notification_type: str,
         title: str,
         body: str,
-        data: dict[str, str],
+        data: dict[str, Any],
+        push_data: dict[str, str] | None = None,
     ) -> Notification:
         user = self.user_repository.get_by_id(recipient_user_id)
 
@@ -99,38 +103,44 @@ class NotificationService(BaseService):
         )
 
         notification = self.repository.add(notification)
+        self.db.commit()
+        self.db.refresh(notification)
 
         devices = self.device_repository.list_active_by_user(recipient_user_id)
 
         try:
             message_ids: list[str] = []
 
-            for device in devices:
-                message_id = NotificationDispatcher().send_push(
-                    PushNotificationPayload(
-                        token=device.device_token,
-                        title=notification.title,
-                        body=notification.body,
-                        data={
-                            **(data or {}),
-                            "notification_id": str(notification.id),
-                            "notification_type": notification.notification_type,
-                        },
-                    )
-                )
+            if devices:
+                push_payload_data = push_data or self._stringify_push_data(data)
 
-                if message_id is not None:
-                    message_ids.append(message_id)
+                for device in devices:
+                    message_id = NotificationDispatcher().send_push(
+                        PushNotificationPayload(
+                            token=device.device_token,
+                            title=notification.title,
+                            body=notification.body,
+                            data={
+                                **push_payload_data,
+                                "notification_id": str(notification.id),
+                                "notification_type": notification.notification_type,
+                            },
+                        )
+                    )
+
+                    if message_id is not None:
+                        message_ids.append(message_id)
 
             notification.notification_status = "SENT"
-            notification.provider_message_id = ",".join(message_ids) if message_ids else None
+            notification.provider_message_id = (
+                ",".join(message_ids) if message_ids else None
+            )
             notification.sent_at = datetime.now(timezone.utc)
 
         except Exception as exc:
             notification.notification_status = "FAILED"
             notification.error_message = str(exc)
 
-        self.db.flush()
         self.db.commit()
         self.db.refresh(notification)
 
@@ -148,6 +158,9 @@ class NotificationService(BaseService):
         if str(notification.recipient_user_id) != self.context.user_id:
             raise NotFoundException("Notificación no encontrada.")
 
+        if not self._is_visible_to_current_user(notification):
+            raise NotFoundException("Notificación no encontrada.")
+
         notification.notification_status = "READ"
         notification.read_at = datetime.now(timezone.utc)
 
@@ -161,7 +174,10 @@ class NotificationService(BaseService):
         if self.context.user_id is None:
             raise NotFoundException("Notificación no encontrada.")
 
-        notifications = self.repository.list_unread_by_user(self.context.user_id)
+        notifications = self.repository.list_unread_by_user_and_audience(
+            self.context.user_id,
+            audience=self._normalize_upper(self.context.actor_type),
+        )
 
         updated_count = 0
         now = datetime.now(timezone.utc)
@@ -182,3 +198,32 @@ class NotificationService(BaseService):
 
         normalized = value.strip().upper()
         return normalized or None
+
+    def _stringify_push_data(self, data: dict[str, Any]) -> dict[str, str]:
+        push_data: dict[str, str] = {}
+
+        for key, value in data.items():
+            if value is None:
+                continue
+
+            if isinstance(value, (dict, list)):
+                continue
+
+            push_data[str(key)] = str(value)
+
+        return push_data
+
+    def _is_visible_to_current_user(self, notification: Notification) -> bool:
+        if self.context.actor_type is None:
+            return True
+
+        data = notification.data or {}
+        audience = data.get("audience")
+
+        if audience is None:
+            return True
+
+        normalized_audience = self._normalize_upper(str(audience))
+        current_audience = self._normalize_upper(self.context.actor_type)
+
+        return normalized_audience in {current_audience, "ALL"}

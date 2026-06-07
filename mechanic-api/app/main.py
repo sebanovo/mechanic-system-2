@@ -24,6 +24,9 @@ from app.core.middleware import RequestContextMiddleware, SecurityHeadersMiddlew
 from app.modules.assignment.platform_router import (
     router as assignment_platform_router,
 )
+from app.modules.assignment.client_router import (
+    router as assignment_client_router,
+)
 from app.modules.assignment.tenant_router import (
     router as assignment_tenant_router,
 )
@@ -221,6 +224,10 @@ def create_application() -> FastAPI:
 
     application.include_router(
         assignment_tracking_event_client_router,
+        prefix=settings.api_v1_prefix,
+    )
+    application.include_router(
+        assignment_client_router,
         prefix=settings.api_v1_prefix,
     )
     application.include_router(

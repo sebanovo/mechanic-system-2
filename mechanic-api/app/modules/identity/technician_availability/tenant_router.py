@@ -41,6 +41,11 @@ def _availability_service(
 @router.get(
     "/{technician_id}/availability",
     response_model=TechnicianAvailabilityResponse,
+    summary="Obtener disponibilidad del técnico",
+    description=(
+        "Devuelve la disponibilidad actual del técnico dentro del tenant. "
+        "La disponibilidad controla si puede ser asignado a una orden."
+    ),
 )
 def get_technician_availability(
     technician_id: str,
@@ -58,6 +63,11 @@ def get_technician_availability(
 @router.put(
     "/{technician_id}/availability",
     response_model=TechnicianAvailabilityResponse,
+    summary="Actualizar disponibilidad del técnico",
+    description=(
+        "Actualiza el estado horario del técnico. Si tiene una asignación activa "
+        "sin cerrar, el backend rechaza el cambio."
+    ),
 )
 def upsert_technician_availability(
     technician_id: str,

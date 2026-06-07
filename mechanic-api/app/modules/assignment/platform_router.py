@@ -34,7 +34,12 @@ def _assignment_service(
     )
 
 
-@router.get("", response_model=AssignmentsResponse)
+@router.get(
+    "",
+    response_model=AssignmentsResponse,
+    summary="Listar asignaciones",
+    description="Lista todas las asignaciones registradas en la plataforma.",
+)
 def list_platform_assignments(
     identity: CurrentIdentity = Depends(require_user_types("SUPERADMIN")),
     service: AssignmentService = Depends(_assignment_service),
@@ -79,7 +84,12 @@ def list_platform_assignments(
     )
 
 
-@router.post("", response_model=AssignmentResponse)
+@router.post(
+    "",
+    response_model=AssignmentResponse,
+    summary="Crear asignación",
+    description="Crea una asignación global desde plataforma.",
+)
 def create_platform_assignment(
     payload: AssignmentCreateRequest,
     identity: CurrentIdentity = Depends(require_user_types("SUPERADMIN")),
@@ -94,7 +104,12 @@ def create_platform_assignment(
     )
 
 
-@router.get("/{assignment_id}", response_model=AssignmentResponse)
+@router.get(
+    "/{assignment_id}",
+    response_model=AssignmentResponse,
+    summary="Obtener asignación",
+    description="Devuelve el detalle completo de una asignación.",
+)
 def get_platform_assignment(
     assignment_id: str,
     identity: CurrentIdentity = Depends(require_user_types("SUPERADMIN")),
@@ -108,7 +123,12 @@ def get_platform_assignment(
     )
 
 
-@router.put("/{assignment_id}", response_model=AssignmentResponse)
+@router.put(
+    "/{assignment_id}",
+    response_model=AssignmentResponse,
+    summary="Actualizar asignación",
+    description="Actualiza una asignación desde plataforma.",
+)
 def update_platform_assignment(
     assignment_id: str,
     payload: AssignmentUpdateRequest,
@@ -124,7 +144,12 @@ def update_platform_assignment(
     )
 
 
-@router.patch("/{assignment_id}/status", response_model=AssignmentResponse)
+@router.patch(
+    "/{assignment_id}/status",
+    response_model=AssignmentResponse,
+    summary="Cambiar estado de asignación",
+    description="Actualiza el estado operativo de una asignación desde plataforma.",
+)
 def change_platform_assignment_status(
     assignment_id: str,
     payload: AssignmentStatusChangeRequest,

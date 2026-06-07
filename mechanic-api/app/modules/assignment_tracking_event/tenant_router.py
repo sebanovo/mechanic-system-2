@@ -76,7 +76,15 @@ def _assert_assignment_belongs_to_provider(
             raise ForbiddenException("El técnico no está asignado a esta orden.")
 
 
-@router.get("", response_model=AssignmentTrackingEventsResponse)
+@router.get(
+    "",
+    response_model=AssignmentTrackingEventsResponse,
+    summary="Listar tracking-events de una asignación",
+    description=(
+        "Devuelve la bitácora de seguimiento de una asignación. "
+        "El técnico y el owner pueden consultar el historial operativo."
+    ),
+)
 def list_current_tenant_assignment_tracking_events(
     assignment_id: str,
     identity: CurrentIdentity = Depends(require_user_types("TENANT_OWNER", "TECHNICIAN")),
@@ -120,7 +128,19 @@ def list_current_tenant_assignment_tracking_events(
     )
 
 
-@router.post("", response_model=AssignmentTrackingEventResponse)
+@router.post(
+    "",
+    response_model=AssignmentTrackingEventResponse,
+    summary="Registrar avance operativo del técnico",
+    description=(
+        "Registra un evento operativo de la asignación. Todos los eventos requieren "
+        "latitude y longitude. La nota es opcional; si no se envía, el backend "
+        "genera una nota automática. occurred_at lo genera el backend. EN_ROUTE, "
+        "ARRIVED, SERVICE_STARTED, SERVICE_COMPLETED y CANCELLED actualizan "
+        "automáticamente assignment_status e incident.status. LOCATION_UPDATED "
+        "solo registra ubicación."
+    ),
+)
 def create_current_tenant_assignment_tracking_event(
     assignment_id: str,
     payload: AssignmentTrackingEventCreateRequest,

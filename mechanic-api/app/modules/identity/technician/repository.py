@@ -6,6 +6,7 @@ from sqlalchemy import Select, func, select
 from sqlalchemy.orm import Session
 
 from app.common.uuid import to_uuid
+from app.modules.identity.provider.models import ProviderProfile
 from app.modules.identity.technician.models import Technician
 from app.modules.identity.user.models import User
 
@@ -35,6 +36,24 @@ class TechnicianRepository:
             select(Technician).where(
                 Technician.provider_profile_id == _to_uuid(provider_profile_id),
                 Technician.user_id == _to_uuid(user_id),
+                Technician.deleted_at.is_(None),
+            )
+        )
+
+    def get_by_tenant_and_user(
+        self,
+        tenant_id: str | UUID,
+        user_id: str | UUID,
+    ) -> Technician | None:
+        return self.db.scalar(
+            select(Technician)
+            .join(
+                ProviderProfile,
+                ProviderProfile.id == Technician.provider_profile_id,
+            )
+            .where(
+                ProviderProfile.tenant_id == _to_uuid(tenant_id, "tenant_id"),
+                Technician.user_id == _to_uuid(user_id, "user_id"),
                 Technician.deleted_at.is_(None),
             )
         )

@@ -33,7 +33,15 @@ def _incident_service(
     )
 
 
-@router.get("", response_model=IncidentsResponse)
+@router.get(
+    "",
+    response_model=IncidentsResponse,
+    summary="Listar incidentes del taller actual",
+    description=(
+        "Devuelve los incidentes asignados al taller actual. "
+        "Permite filtrar por estado, prioridad, catálogo y búsqueda."
+    ),
+)
 def list_current_tenant_incidents(
     identity: CurrentIdentity = Depends(require_user_types("TENANT_OWNER", "TECHNICIAN")),
     service: IncidentService = Depends(_incident_service),
@@ -71,7 +79,12 @@ def list_current_tenant_incidents(
     )
 
 
-@router.get("/{incident_id}", response_model=IncidentResponse)
+@router.get(
+    "/{incident_id}",
+    response_model=IncidentResponse,
+    summary="Obtener incidente del taller",
+    description="Devuelve el detalle de un incidente visible para el taller actual.",
+)
 def get_current_tenant_incident(
     incident_id: str,
     identity: CurrentIdentity = Depends(require_user_types("TENANT_OWNER", "TECHNICIAN")),
