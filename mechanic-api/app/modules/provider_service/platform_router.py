@@ -33,7 +33,12 @@ def _provider_service_service(
     )
 
 
-@router.get("", response_model=ProviderServicesResponse)
+@router.get(
+    "",
+    response_model=ProviderServicesResponse,
+    summary="Listar servicios de proveedores",
+    description="Lista los servicios publicados por todos los proveedores.",
+)
 def list_platform_provider_services(
     identity: CurrentIdentity = Depends(require_user_types("SUPERADMIN")),
     service: ProviderServiceService = Depends(_provider_service_service),
@@ -72,7 +77,12 @@ def list_platform_provider_services(
     )
 
 
-@router.get("/{provider_service_id}", response_model=ProviderServiceResponse)
+@router.get(
+    "/{provider_service_id}",
+    response_model=ProviderServiceResponse,
+    summary="Obtener servicio de proveedor",
+    description="Devuelve el detalle de un servicio de proveedor.",
+)
 def get_platform_provider_service(
     provider_service_id: str,
     identity: CurrentIdentity = Depends(require_user_types("SUPERADMIN")),
@@ -86,7 +96,12 @@ def get_platform_provider_service(
     )
 
 
-@router.put("/{provider_service_id}", response_model=ProviderServiceResponse)
+@router.put(
+    "/{provider_service_id}",
+    response_model=ProviderServiceResponse,
+    summary="Actualizar servicio de proveedor",
+    description="Actualiza un servicio de proveedor desde plataforma.",
+)
 def update_platform_provider_service(
     provider_service_id: str,
     payload: ProviderServiceUpdateRequest,
@@ -102,7 +117,12 @@ def update_platform_provider_service(
     )
 
 
-@router.patch("/{provider_service_id}/status", response_model=ProviderServiceResponse)
+@router.patch(
+    "/{provider_service_id}/status",
+    response_model=ProviderServiceResponse,
+    summary="Cambiar estado del servicio de proveedor",
+    description="Activa o desactiva un servicio de proveedor desde plataforma.",
+)
 def change_platform_provider_service_status(
     provider_service_id: str,
     payload: ProviderServiceStatusChangeRequest,
@@ -118,7 +138,12 @@ def change_platform_provider_service_status(
     )
 
 
-@router.delete("/{provider_service_id}", response_model=ProviderServiceResponse)
+@router.delete(
+    "/{provider_service_id}",
+    response_model=ProviderServiceResponse,
+    summary="Deshabilitar servicio de proveedor",
+    description="Deshabilita lógicamente un servicio de proveedor.",
+)
 def delete_platform_provider_service(
     provider_service_id: str,
     identity: CurrentIdentity = Depends(require_user_types("SUPERADMIN")),

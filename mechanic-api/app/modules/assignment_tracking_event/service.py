@@ -86,7 +86,7 @@ class AssignmentTrackingEventService(BaseService):
         limit: int = 100,
         offset: int = 0,
     ):
-        self._get_assignment_or_fail(assignment_id)
+        self._get_assignment_detail_or_fail(assignment_id)
 
         return self.repository.list_by_assignment(
             assignment_id,
@@ -128,8 +128,11 @@ class AssignmentTrackingEventService(BaseService):
             event_type=payload.event_type,
             latitude=payload.latitude,
             longitude=payload.longitude,
-            notes=self._normalize_text(payload.notes),
-            occurred_at=payload.occurred_at or datetime.now(timezone.utc),
+            notes=self._build_tracking_note(
+                event_type=payload.event_type,
+                notes=payload.notes,
+            ),
+            occurred_at=datetime.now(timezone.utc),
         )
 
         tracking_event = self.repository.add(tracking_event)
@@ -433,6 +436,29 @@ class AssignmentTrackingEventService(BaseService):
 
         normalized = value.strip()
         return normalized or None
+
+    def _build_tracking_note(
+        self,
+        *,
+        event_type: str,
+        notes: str | None,
+    ) -> str:
+        custom_note = self._normalize_text(notes)
+
+        if custom_note is not None:
+            return custom_note
+
+        default_notes = {
+            "EN_ROUTE": "El técnico inició ruta hacia el punto del incidente.",
+            "LOCATION_UPDATED": "Ubicación actualizada automáticamente por la app.",
+            "ARRIVED": "El técnico llegó al punto del incidente.",
+            "SERVICE_STARTED": "El técnico inició la atención del servicio.",
+            "SERVICE_COMPLETED": "El servicio fue finalizado correctamente.",
+            "CANCELLED": "El servicio fue cancelado por el técnico.",
+            "NOTE": "El técnico registró una observación.",
+        }
+
+        return default_notes.get(event_type, "Evento registrado por el técnico.")
 
     def _normalize_upper(self, value: str | None) -> str | None:
         normalized = self._normalize_text(value)

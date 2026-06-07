@@ -61,7 +61,15 @@ def _assert_client_incident(
         raise NotFoundException("Incidente no encontrado.")
 
 
-@router.get("", response_model=IncidentAiAnalysesResponse)
+@router.get(
+    "",
+    response_model=IncidentAiAnalysesResponse,
+    summary="Listar análisis IA del incidente",
+    description=(
+        "Devuelve los análisis IA generados para un incidente del cliente. "
+        "Sirve para mostrar el diagnóstico y el progreso del análisis."
+    ),
+)
 def list_my_incident_ai_analyses(
     incident_id: str,
     identity: CurrentIdentity = Depends(require_user_types("CLIENT")),
@@ -94,7 +102,12 @@ def list_my_incident_ai_analyses(
     )
 
 
-@router.get("/{analysis_id}", response_model=IncidentAiAnalysisResponse)
+@router.get(
+    "/{analysis_id}",
+    response_model=IncidentAiAnalysisResponse,
+    summary="Obtener análisis IA del incidente",
+    description="Devuelve el detalle de un análisis IA específico del cliente.",
+)
 def get_my_incident_ai_analysis(
     incident_id: str,
     analysis_id: str,

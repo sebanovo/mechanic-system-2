@@ -35,7 +35,12 @@ def _analysis_service(
     )
 
 
-@router.get("", response_model=IncidentAiAnalysesResponse)
+@router.get(
+    "",
+    response_model=IncidentAiAnalysesResponse,
+    summary="Listar análisis IA del incidente",
+    description="Lista los análisis IA asociados a un incidente del taller actual.",
+)
 def list_current_tenant_incident_ai_analyses(
     incident_id: str,
     identity: CurrentIdentity = Depends(require_user_types("TENANT_OWNER", "TECHNICIAN")),
@@ -65,7 +70,12 @@ def list_current_tenant_incident_ai_analyses(
     )
 
 
-@router.post("", response_model=IncidentAiAnalysisResponse)
+@router.post(
+    "",
+    response_model=IncidentAiAnalysisResponse,
+    summary="Crear análisis IA manualmente",
+    description="Permite al taller registrar o reintentar un análisis IA del incidente.",
+)
 def create_current_tenant_incident_ai_analysis(
     incident_id: str,
     payload: IncidentAiAnalysisCreateRequest,
@@ -83,7 +93,12 @@ def create_current_tenant_incident_ai_analysis(
     )
 
 
-@router.get("/{analysis_id}", response_model=IncidentAiAnalysisResponse)
+@router.get(
+    "/{analysis_id}",
+    response_model=IncidentAiAnalysisResponse,
+    summary="Obtener análisis IA del incidente",
+    description="Devuelve el detalle de un análisis IA del taller actual.",
+)
 def get_current_tenant_incident_ai_analysis(
     incident_id: str,
     analysis_id: str,

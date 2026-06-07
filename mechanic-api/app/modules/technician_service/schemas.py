@@ -15,8 +15,7 @@ TechnicianSkillLevel = Literal["BASIC", "INTERMEDIATE", "ADVANCED", "EXPERT"]
 class TechnicianServiceCreateRequest(BaseModel):
     technician_id: str
     provider_service_id: str
-    skill_level: TechnicianSkillLevel = "INTERMEDIATE"
-    is_enabled: bool = True
+    skill_level: TechnicianSkillLevel | None = None
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -24,7 +23,6 @@ class TechnicianServiceCreateRequest(BaseModel):
                 "technician_id": "uuid-del-tecnico",
                 "provider_service_id": "uuid-del-servicio-del-proveedor",
                 "skill_level": "ADVANCED",
-                "is_enabled": True,
             }
         }
     )

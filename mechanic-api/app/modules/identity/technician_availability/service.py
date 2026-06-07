@@ -2,11 +2,12 @@ from __future__ import annotations
 
 from sqlalchemy import select
 
-from app.common.exceptions import ForbiddenException, NotFoundException
+from app.common.exceptions import ConflictException, ForbiddenException, NotFoundException
 from app.core.audit.constants import TechnicianAvailabilityAuditEvent
 from app.common.uuid import to_uuid
 from app.core.context import RequestContext
 from app.core.services.base import BaseService
+from app.modules.assignment.repository import AssignmentRepository
 from app.modules.identity.provider.models import ProviderProfile
 from app.modules.identity.technician.models import Technician
 from app.modules.identity.technician_availability.models import TechnicianAvailability
@@ -34,9 +35,10 @@ class TechnicianAvailabilityService(BaseService):
         self,
         repository: TechnicianAvailabilityRepository,
         context: RequestContext | None = None,
-    ) -> None:
+        ) -> None:
         super().__init__(db=repository.db, context=context or _system_context())
         self.repository = repository
+        self.assignment_repository = AssignmentRepository(self.db)
 
     def get_or_fail(self, technician_id: str) -> TechnicianAvailability:
         availability = self.repository.get_by_technician_id(
@@ -61,6 +63,7 @@ class TechnicianAvailabilityService(BaseService):
         payload: TechnicianAvailabilityUpsertRequest,
     ) -> TechnicianAvailability:
         technician = self._get_technician_or_fail(technician_id)
+        self._ensure_no_active_assignment(technician.id)
 
         availability = self.repository.get_by_technician_id(technician.id)
 
@@ -138,6 +141,16 @@ class TechnicianAvailabilityService(BaseService):
             raise NotFoundException("Técnico no encontrado.")
 
         return technician
+
+    def _ensure_no_active_assignment(self, technician_id: str) -> None:
+        active_assignment = self.assignment_repository.get_active_by_technician(
+            technician_id
+        )
+
+        if active_assignment is not None:
+            raise ConflictException(
+                "No se puede cambiar la disponibilidad mientras exista una asignación activa."
+            )
 
     def _tenant_id_from_technician(self, technician: Technician) -> str | None:
         provider_profile = self.db.get(ProviderProfile, technician.provider_profile_id)

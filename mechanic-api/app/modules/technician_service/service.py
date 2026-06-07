@@ -113,8 +113,8 @@ class TechnicianServiceService(BaseService):
         technician_service = TechnicianService(
             technician_id=technician.id,
             provider_service_id=provider_service.id,
-            skill_level=payload.skill_level,
-            is_enabled=payload.is_enabled,
+            skill_level=payload.skill_level or "INTERMEDIATE",
+            is_enabled=True,
         )
 
         technician_service = self.repository.add(technician_service)

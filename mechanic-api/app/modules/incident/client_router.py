@@ -40,7 +40,15 @@ def _incident_service(
     )
 
 
-@router.get("", response_model=IncidentsResponse)
+@router.get(
+    "",
+    response_model=IncidentsResponse,
+    summary="Listar mis incidentes",
+    description=(
+        "Devuelve los incidentes creados por el cliente actual, con filtros de "
+        "estado, prioridad, catálogo y rango de fechas."
+    ),
+)
 def list_my_incidents(
     identity: CurrentIdentity = Depends(require_user_types("CLIENT")),
     service: IncidentService = Depends(_incident_service),
@@ -78,7 +86,15 @@ def list_my_incidents(
     )
 
 
-@router.post("", response_model=IncidentResponse)
+@router.post(
+    "",
+    response_model=IncidentResponse,
+    summary="Crear incidente",
+    description=(
+        "Crea un incidente desde el cliente. El backend completa y normaliza "
+        "la información antes de disparar la IA."
+    ),
+)
 def create_my_incident(
     payload: IncidentCreateRequest,
     identity: CurrentIdentity = Depends(require_user_types("CLIENT")),
@@ -95,6 +111,11 @@ def create_my_incident(
 @router.post(
     "/with-files",
     response_model=IncidentResponse,
+    summary="Crear incidente con archivos",
+    description=(
+        "Crea un incidente con soporte de archivos multimedia. "
+        "Se usa cuando el cliente adjunta fotos, audio, video o PDF junto con la descripción."
+    ),
     openapi_extra={
         "requestBody": {
             "content": {
@@ -180,7 +201,12 @@ async def create_my_incident_with_files(
     )
 
 
-@router.get("/{incident_id}", response_model=IncidentResponse)
+@router.get(
+    "/{incident_id}",
+    response_model=IncidentResponse,
+    summary="Obtener incidente",
+    description="Devuelve el detalle de un incidente del cliente actual.",
+)
 def get_my_incident(
     incident_id: str,
     identity: CurrentIdentity = Depends(require_user_types("CLIENT")),
@@ -194,7 +220,12 @@ def get_my_incident(
     )
 
 
-@router.put("/{incident_id}", response_model=IncidentResponse)
+@router.put(
+    "/{incident_id}",
+    response_model=IncidentResponse,
+    summary="Actualizar incidente",
+    description="Permite al cliente actualizar datos editables de un incidente activo.",
+)
 def update_my_incident(
     incident_id: str,
     payload: IncidentUpdateRequest,
@@ -209,7 +240,12 @@ def update_my_incident(
     )
 
 
-@router.patch("/{incident_id}/cancel", response_model=IncidentResponse)
+@router.patch(
+    "/{incident_id}/cancel",
+    response_model=IncidentResponse,
+    summary="Cancelar incidente",
+    description="Cancela un incidente del cliente con el motivo enviado en el request.",
+)
 def cancel_my_incident(
     incident_id: str,
     payload: IncidentCancelRequest,

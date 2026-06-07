@@ -10,6 +10,7 @@ from app.core.database import get_db
 from app.core.request_context import get_request_context
 from app.modules.identity.auth.authorization import CurrentIdentity, require_user_types
 from app.modules.incident_offer.mappers import incident_offer_detail_public
+from app.modules.incident_offer.mappers import incident_offer_list_item_public
 from app.modules.incident_offer.repository import IncidentOfferRepository
 from app.modules.incident_offer.schemas import (
     IncidentOfferCreateRequest,
@@ -33,7 +34,12 @@ def _offer_service(
     )
 
 
-@router.get("", response_model=IncidentOffersResponse)
+@router.get(
+    "",
+    response_model=IncidentOffersResponse,
+    summary="Listar ofertas",
+    description="Lista todas las ofertas de incidentes registradas en la plataforma.",
+)
 def list_platform_incident_offers(
     identity: CurrentIdentity = Depends(require_user_types("SUPERADMIN")),
     service: IncidentOfferService = Depends(_offer_service),
@@ -54,8 +60,14 @@ def list_platform_incident_offers(
 
     data = IncidentOfferListData(
         items=[
-            incident_offer_detail_public(offer, incident, candidate, provider)
-            for offer, incident, candidate, provider in items
+            incident_offer_list_item_public(
+                offer,
+                incident,
+                service_catalog,
+                vehicle,
+                ai_analysis,
+            )
+            for offer, incident, service_catalog, vehicle, ai_analysis in items
         ],
         pagination=build_pagination_meta(
             page=pagination.page,
@@ -70,7 +82,12 @@ def list_platform_incident_offers(
     )
 
 
-@router.post("/incidents/{incident_id}", response_model=IncidentOfferResponse)
+@router.post(
+    "/incidents/{incident_id}",
+    response_model=IncidentOfferResponse,
+    summary="Crear oferta de incidente",
+    description="Crea manualmente una oferta para un incidente y un candidato.",
+)
 def create_platform_incident_offer(
     incident_id: str,
     payload: IncidentOfferCreateRequest,
@@ -82,7 +99,7 @@ def create_platform_incident_offer(
         payload=payload,
     )
 
-    detail = service.get_detail_or_fail(str(offer.id))
+    detail = service.get_public_detail_or_fail(str(offer.id))
 
     return success_response(
         message="Oferta creada correctamente.",
@@ -90,13 +107,18 @@ def create_platform_incident_offer(
     )
 
 
-@router.get("/{offer_id}", response_model=IncidentOfferResponse)
+@router.get(
+    "/{offer_id}",
+    response_model=IncidentOfferResponse,
+    summary="Obtener oferta",
+    description="Devuelve el detalle completo de una oferta de incidente.",
+)
 def get_platform_incident_offer(
     offer_id: str,
     identity: CurrentIdentity = Depends(require_user_types("SUPERADMIN")),
     service: IncidentOfferService = Depends(_offer_service),
 ) -> dict:
-    detail = service.get_detail_or_fail(offer_id)
+    detail = service.get_public_detail_or_fail(offer_id)
 
     return success_response(
         message="Oferta obtenida correctamente.",
@@ -104,10 +126,15 @@ def get_platform_incident_offer(
     )
 
 
-@router.patch("/{offer_id}/accept", response_model=IncidentOfferResponse)
+@router.patch(
+    "/{offer_id}/accept",
+    response_model=IncidentOfferResponse,
+    summary="Aceptar oferta",
+    description="Marca una oferta como aceptada desde plataforma.",
+)
 def accept_platform_incident_offer(
     offer_id: str,
-    payload: IncidentOfferResponseRequest,
+    payload: IncidentOfferResponseRequest | None = None,
     identity: CurrentIdentity = Depends(require_user_types("SUPERADMIN")),
     service: IncidentOfferService = Depends(_offer_service),
 ) -> dict:
@@ -118,7 +145,7 @@ def accept_platform_incident_offer(
         offer_id=offer_id,
         payload=payload,
     )
-    detail = service.get_detail_or_fail(str(offer.id))
+    detail = service.get_public_detail_or_fail(str(offer.id))
 
     return success_response(
         message="Oferta aceptada correctamente.",
@@ -126,10 +153,15 @@ def accept_platform_incident_offer(
     )
 
 
-@router.patch("/{offer_id}/reject", response_model=IncidentOfferResponse)
+@router.patch(
+    "/{offer_id}/reject",
+    response_model=IncidentOfferResponse,
+    summary="Rechazar oferta",
+    description="Marca una oferta como rechazada desde plataforma.",
+)
 def reject_platform_incident_offer(
     offer_id: str,
-    payload: IncidentOfferResponseRequest,
+    payload: IncidentOfferResponseRequest | None = None,
     identity: CurrentIdentity = Depends(require_user_types("SUPERADMIN")),
     service: IncidentOfferService = Depends(_offer_service),
 ) -> dict:
@@ -140,7 +172,7 @@ def reject_platform_incident_offer(
         offer_id=offer_id,
         payload=payload,
     )
-    detail = service.get_detail_or_fail(str(offer.id))
+    detail = service.get_public_detail_or_fail(str(offer.id))
 
     return success_response(
         message="Oferta rechazada correctamente.",
@@ -148,14 +180,19 @@ def reject_platform_incident_offer(
     )
 
 
-@router.patch("/{offer_id}/cancel", response_model=IncidentOfferResponse)
+@router.patch(
+    "/{offer_id}/cancel",
+    response_model=IncidentOfferResponse,
+    summary="Cancelar oferta",
+    description="Cancela una oferta desde plataforma.",
+)
 def cancel_platform_incident_offer(
     offer_id: str,
     identity: CurrentIdentity = Depends(require_user_types("SUPERADMIN")),
     service: IncidentOfferService = Depends(_offer_service),
 ) -> dict:
     offer = service.cancel(offer_id)
-    detail = service.get_detail_or_fail(str(offer.id))
+    detail = service.get_public_detail_or_fail(str(offer.id))
 
     return success_response(
         message="Oferta cancelada correctamente.",
@@ -163,14 +200,19 @@ def cancel_platform_incident_offer(
     )
 
 
-@router.patch("/{offer_id}/expire", response_model=IncidentOfferResponse)
+@router.patch(
+    "/{offer_id}/expire",
+    response_model=IncidentOfferResponse,
+    summary="Vencer oferta",
+    description="Marca una oferta como vencida desde plataforma.",
+)
 def expire_platform_incident_offer(
     offer_id: str,
     identity: CurrentIdentity = Depends(require_user_types("SUPERADMIN")),
     service: IncidentOfferService = Depends(_offer_service),
 ) -> dict:
     offer = service.expire(offer_id)
-    detail = service.get_detail_or_fail(str(offer.id))
+    detail = service.get_public_detail_or_fail(str(offer.id))
 
     return success_response(
         message="Oferta vencida correctamente.",

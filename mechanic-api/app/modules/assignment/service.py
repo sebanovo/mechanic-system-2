@@ -23,6 +23,9 @@ from app.modules.identity.technician_availability.repository import (
     TechnicianAvailabilityRepository,
 )
 from app.modules.identity.technician_availability.models import TechnicianAvailability
+from app.modules.identity.technician_availability.utils import (
+    is_technician_available_now,
+)
 from app.modules.incident_offer.repository import IncidentOfferRepository
 from app.modules.notification.business_notifications import BusinessNotificationService
 from app.modules.technician_service.repository import TechnicianServiceRepository
@@ -100,6 +103,14 @@ class AssignmentService(BaseService):
         offset: int = 0,
     ):
         technician = self._get_current_technician_or_fail()
+
+        if assignment_status is None:
+            return self.repository.list_by_technician(
+                technician.id,
+                exclude_assignment_statuses=["COMPLETED", "CANCELLED"],
+                limit=limit,
+                offset=offset,
+            )
 
         return self.repository.list_by_technician(
             technician.id,
@@ -566,7 +577,7 @@ class AssignmentService(BaseService):
         if availability is None:
             raise ConflictException("El técnico no tiene disponibilidad configurada.")
 
-        if availability.availability_status != "AVAILABLE":
+        if not is_technician_available_now(availability):
             raise ConflictException("El técnico no está disponible.")
 
         active_assignment = self.repository.get_active_by_technician(
@@ -645,12 +656,20 @@ class AssignmentService(BaseService):
         if self.context.tenant_id is None:
             raise NotFoundException("Técnico no encontrado.")
 
-        technician = self.technician_repository.get_by_provider_and_user(
+        technician = self.technician_repository.get_by_tenant_and_user(
             self.context.tenant_id,
             self.context.user_id,
         )
 
         if technician is None or technician.status != "ACTIVE":
+            raise NotFoundException("Técnico no encontrado.")
+
+        return technician
+
+    def _get_technician_or_fail(self, technician_id: str) -> Technician:
+        technician = self.technician_repository.get_by_id(technician_id)
+
+        if technician is None or technician.deleted_at is not None:
             raise NotFoundException("Técnico no encontrado.")
 
         return technician

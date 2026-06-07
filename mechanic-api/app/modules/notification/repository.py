@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from sqlalchemy import Select, func, select
+from sqlalchemy import Select, func, or_, select
 from sqlalchemy.orm import Session
 
 from app.common.uuid import to_uuid
@@ -25,6 +25,7 @@ class NotificationRepository:
         user_id: str | UUID,
         *,
         status: str | None = None,
+        audience: str | None = None,
         limit: int = 100,
         offset: int = 0,
     ) -> tuple[list[Notification], int]:
@@ -34,6 +35,17 @@ class NotificationRepository:
 
         if status is not None:
             query = query.where(Notification.notification_status == status)
+
+        if audience is not None:
+            audience_key = Notification.data["audience"].as_string()
+            query = query.where(
+                or_(
+                    audience_key == audience,
+                    audience_key == "ALL",
+                    Notification.data.is_(None),
+                    ~Notification.data.has_key("audience"),
+                )
+            )
 
         return self._paginate(
             query.order_by(Notification.created_at.desc()),
@@ -51,6 +63,30 @@ class NotificationRepository:
             Notification.recipient_user_id == _to_uuid(user_id, "user_id"),
             Notification.notification_status != "READ",
         )
+
+        return list(self.db.scalars(query.order_by(Notification.created_at.desc())))
+
+    def list_unread_by_user_and_audience(
+        self,
+        user_id: str | UUID,
+        *,
+        audience: str | None = None,
+    ) -> list[Notification]:
+        query = select(Notification).where(
+            Notification.recipient_user_id == _to_uuid(user_id, "user_id"),
+            Notification.notification_status != "READ",
+        )
+
+        if audience is not None:
+            audience_key = Notification.data["audience"].as_string()
+            query = query.where(
+                or_(
+                    audience_key == audience,
+                    audience_key == "ALL",
+                    Notification.data.is_(None),
+                    ~Notification.data.has_key("audience"),
+                )
+            )
 
         return list(self.db.scalars(query.order_by(Notification.created_at.desc())))
 

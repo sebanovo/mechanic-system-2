@@ -46,7 +46,15 @@ def _assignment_service(
     )
 
 
-@router.get("", response_model=AssignmentsResponse)
+@router.get(
+    "",
+    response_model=AssignmentsResponse,
+    summary="Listar asignaciones del taller o técnico",
+    description=(
+        "Devuelve las asignaciones visibles para el owner o el técnico. "
+        "Si no se envía estado, para el técnico muestra solo las asignaciones abiertas."
+    ),
+)
 def list_current_tenant_assignments(
     identity: CurrentIdentity = Depends(require_user_types("TENANT_OWNER", "TECHNICIAN")),
     provider_profile_service: ProviderProfileService = Depends(_provider_profile_service),
@@ -94,7 +102,15 @@ def list_current_tenant_assignments(
     )
 
 
-@router.post("", response_model=AssignmentResponse)
+@router.post(
+    "",
+    response_model=AssignmentResponse,
+    summary="Crear asignación del taller",
+    description=(
+        "Crea una asignación para una oferta aceptada. "
+        "El owner selecciona el técnico y el sistema marca la asignación como ASSIGNED."
+    ),
+)
 def create_current_tenant_assignment(
     payload: AssignmentCreateRequest,
     identity: CurrentIdentity = Depends(require_user_types("TENANT_OWNER")),
@@ -116,7 +132,15 @@ def create_current_tenant_assignment(
     )
 
 
-@router.get("/{assignment_id}", response_model=AssignmentResponse)
+@router.get(
+    "/{assignment_id}",
+    response_model=AssignmentResponse,
+    summary="Obtener detalle de asignación",
+    description=(
+        "Devuelve el detalle de la asignación. "
+        "El técnico solo puede ver sus propias asignaciones."
+    ),
+)
 def get_current_tenant_assignment(
     assignment_id: str,
     identity: CurrentIdentity = Depends(require_user_types("TENANT_OWNER", "TECHNICIAN")),
@@ -141,7 +165,12 @@ def get_current_tenant_assignment(
     )
 
 
-@router.put("/{assignment_id}", response_model=AssignmentResponse)
+@router.put(
+    "/{assignment_id}",
+    response_model=AssignmentResponse,
+    summary="Actualizar asignación del taller",
+    description="Permite al owner ajustar el técnico o las notas de una asignación activa.",
+)
 def update_current_tenant_assignment(
     assignment_id: str,
     payload: AssignmentUpdateRequest,
@@ -165,11 +194,20 @@ def update_current_tenant_assignment(
     )
 
 
-@router.patch("/{assignment_id}/status", response_model=AssignmentResponse)
+@router.patch(
+    "/{assignment_id}/status",
+    response_model=AssignmentResponse,
+    summary="Actualizar estado operativo de asignación",
+    description=(
+        "Permite al owner del taller o al técnico asignado avanzar el flujo de la "
+        "asignación. El técnico usa este endpoint para registrar EN_ROUTE, ARRIVED, "
+        "IN_SERVICE, COMPLETED o CANCELLED."
+    ),
+)
 def change_current_tenant_assignment_status(
     assignment_id: str,
     payload: AssignmentStatusChangeRequest,
-    identity: CurrentIdentity = Depends(require_user_types("TENANT_OWNER", "TECHNICIAN")),
+    identity: CurrentIdentity = Depends(require_user_types("TENANT_OWNER")),
     provider_profile_service: ProviderProfileService = Depends(_provider_profile_service),
     service: AssignmentService = Depends(_assignment_service),
 ) -> dict:

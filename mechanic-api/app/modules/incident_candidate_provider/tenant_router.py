@@ -53,7 +53,15 @@ def _candidate_service(
     )
 
 
-@router.get("", response_model=IncidentCandidateProvidersResponse)
+@router.get(
+    "",
+    response_model=IncidentCandidateProvidersResponse,
+    summary="Listar candidatos de proveedor",
+    description=(
+        "Lista los proveedores candidatos asociados al taller actual. "
+        "Se usa para revisar qué talleres fueron sugeridos por el dispatch."
+    ),
+)
 def list_current_tenant_candidate_providers(
     identity: CurrentIdentity = Depends(require_user_types("TENANT_OWNER", "TECHNICIAN")),
     provider_service: ProviderProfileService = Depends(_provider_service),
@@ -88,7 +96,12 @@ def list_current_tenant_candidate_providers(
     )
 
 
-@router.get("/{candidate_id}", response_model=IncidentCandidateProviderResponse)
+@router.get(
+    "/{candidate_id}",
+    response_model=IncidentCandidateProviderResponse,
+    summary="Obtener candidato de proveedor",
+    description="Devuelve el detalle de un proveedor candidato del taller actual.",
+)
 def get_current_tenant_candidate_provider(
     candidate_id: str,
     identity: CurrentIdentity = Depends(require_user_types("TENANT_OWNER", "TECHNICIAN")),
@@ -108,7 +121,12 @@ def get_current_tenant_candidate_provider(
     )
 
 
-@router.patch("/{candidate_id}/status", response_model=IncidentCandidateProviderResponse)
+@router.patch(
+    "/{candidate_id}/status",
+    response_model=IncidentCandidateProviderResponse,
+    summary="Cambiar estado de candidato de proveedor",
+    description="Actualiza el estado de un proveedor candidato desde el taller actual.",
+)
 def change_current_tenant_candidate_provider_status(
     candidate_id: str,
     payload: IncidentCandidateProviderStatusChangeRequest,

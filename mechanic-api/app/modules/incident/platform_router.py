@@ -36,7 +36,12 @@ def _incident_service(
     )
 
 
-@router.get("", response_model=IncidentsResponse)
+@router.get(
+    "",
+    response_model=IncidentsResponse,
+    summary="Listar incidentes",
+    description="Lista todos los incidentes de la plataforma con filtros avanzados.",
+)
 def list_platform_incidents(
     identity: CurrentIdentity = Depends(require_user_types("SUPERADMIN")),
     service: IncidentService = Depends(_incident_service),
@@ -78,7 +83,12 @@ def list_platform_incidents(
     )
 
 
-@router.get("/{incident_id}", response_model=IncidentResponse)
+@router.get(
+    "/{incident_id}",
+    response_model=IncidentResponse,
+    summary="Obtener incidente",
+    description="Devuelve el detalle completo de un incidente.",
+)
 def get_platform_incident(
     incident_id: str,
     identity: CurrentIdentity = Depends(require_user_types("SUPERADMIN")),
@@ -92,7 +102,12 @@ def get_platform_incident(
     )
 
 
-@router.put("/{incident_id}", response_model=IncidentResponse)
+@router.put(
+    "/{incident_id}",
+    response_model=IncidentResponse,
+    summary="Actualizar incidente",
+    description="Actualiza un incidente desde plataforma.",
+)
 def update_platform_incident(
     incident_id: str,
     payload: IncidentUpdateRequest,
@@ -107,7 +122,12 @@ def update_platform_incident(
     )
 
 
-@router.patch("/{incident_id}/status", response_model=IncidentResponse)
+@router.patch(
+    "/{incident_id}/status",
+    response_model=IncidentResponse,
+    summary="Cambiar estado de incidente",
+    description="Actualiza el estado operativo de un incidente.",
+)
 def change_platform_incident_status(
     incident_id: str,
     payload: IncidentStatusChangeRequest,
@@ -122,7 +142,12 @@ def change_platform_incident_status(
     )
 
 
-@router.patch("/{incident_id}/cancel", response_model=IncidentResponse)
+@router.patch(
+    "/{incident_id}/cancel",
+    response_model=IncidentResponse,
+    summary="Cancelar incidente",
+    description="Cancela un incidente desde plataforma.",
+)
 def cancel_platform_incident(
     incident_id: str,
     payload: IncidentCancelRequest,
@@ -137,7 +162,12 @@ def cancel_platform_incident(
     )
 
 
-@router.patch("/{incident_id}/complete", response_model=IncidentResponse)
+@router.patch(
+    "/{incident_id}/complete",
+    response_model=IncidentResponse,
+    summary="Completar incidente",
+    description="Marca un incidente como completado desde plataforma.",
+)
 def complete_platform_incident(
     incident_id: str,
     identity: CurrentIdentity = Depends(require_user_types("SUPERADMIN")),
@@ -151,7 +181,12 @@ def complete_platform_incident(
     )
 
 
-@router.delete("/{incident_id}", response_model=IncidentResponse)
+@router.delete(
+    "/{incident_id}",
+    response_model=IncidentResponse,
+    summary="Eliminar incidente",
+    description="Elimina lógicamente un incidente desde plataforma.",
+)
 def delete_platform_incident(
     incident_id: str,
     identity: CurrentIdentity = Depends(require_user_types("SUPERADMIN")),
@@ -165,7 +200,12 @@ def delete_platform_incident(
     )
 
 
-@router.patch("/{incident_id}/restore", response_model=IncidentResponse)
+@router.patch(
+    "/{incident_id}/restore",
+    response_model=IncidentResponse,
+    summary="Restaurar incidente",
+    description="Restaura un incidente eliminado lógicamente.",
+)
 def restore_platform_incident(
     incident_id: str,
     identity: CurrentIdentity = Depends(require_user_types("SUPERADMIN")),

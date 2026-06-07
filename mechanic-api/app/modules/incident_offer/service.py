@@ -58,7 +58,7 @@ class IncidentOfferService(BaseService):
         limit: int = 100,
         offset: int = 0,
     ):
-        return self.repository.list(
+        return self.repository.list_public(
             incident_id=incident_id,
             candidate_provider_id=candidate_provider_id,
             provider_profile_id=provider_profile_id,
@@ -75,7 +75,7 @@ class IncidentOfferService(BaseService):
         limit: int = 100,
         offset: int = 0,
     ):
-        return self.repository.list_by_provider(
+        return self.repository.list_public_by_provider(
             provider_profile_id,
             offer_status=self._normalize_upper(offer_status),
             limit=limit,
@@ -84,6 +84,14 @@ class IncidentOfferService(BaseService):
 
     def get_detail_or_fail(self, offer_id: str):
         detail = self.repository.get_detail_by_id(offer_id)
+
+        if detail is None:
+            raise NotFoundException("Oferta de incidente no encontrada.")
+
+        return detail
+
+    def get_public_detail_or_fail(self, offer_id: str):
+        detail = self.repository.get_public_detail_by_id(offer_id)
 
         if detail is None:
             raise NotFoundException("Oferta de incidente no encontrada.")
@@ -186,7 +194,7 @@ class IncidentOfferService(BaseService):
         *,
         provider_profile_id: str,
         offer_id: str,
-        payload: IncidentOfferResponseRequest,
+        payload: IncidentOfferResponseRequest | None = None,
     ) -> IncidentOffer:
         offer, incident, candidate, provider_profile = self.get_detail_or_fail(offer_id)
 
@@ -206,7 +214,7 @@ class IncidentOfferService(BaseService):
         *,
         provider_profile_id: str,
         offer_id: str,
-        payload: IncidentOfferResponseRequest,
+        payload: IncidentOfferResponseRequest | None = None,
     ) -> IncidentOffer:
         offer, incident, candidate, provider_profile = self.get_detail_or_fail(offer_id)
 
@@ -247,7 +255,7 @@ class IncidentOfferService(BaseService):
         incident: Incident,
         candidate: IncidentCandidateProvider,
         tenant_id: str | None,
-        payload: IncidentOfferResponseRequest,
+        payload: IncidentOfferResponseRequest | None,
     ) -> IncidentOffer:
         self._ensure_pending(offer)
         self._ensure_valid_transition(offer.offer_status, "ACCEPTED")
@@ -269,7 +277,11 @@ class IncidentOfferService(BaseService):
             raise ConflictException("El incidente ya tiene una asignación activa.")
 
         offer.offer_status = "ACCEPTED"
-        offer.response_message = self._normalize_text(payload.response_message)
+        offer.response_message = (
+            self._normalize_text(payload.response_message)
+            if payload is not None
+            else None
+        )
         offer.responded_at = datetime.now(timezone.utc)
 
         incident.status = "PROVIDER_ACCEPTED"
@@ -330,6 +342,7 @@ class IncidentOfferService(BaseService):
                 recipient_user_id=str(customer_user.id),
                 tenant_id=tenant_id,
                 incident_id=str(incident.id),
+                offer_id=str(offer.id),
                 provider_profile_id=provider_profile_id,
             )
         except Exception:
@@ -342,7 +355,7 @@ class IncidentOfferService(BaseService):
         incident: Incident,
         candidate: IncidentCandidateProvider,
         tenant_id: str | None,
-        payload: IncidentOfferResponseRequest,
+        payload: IncidentOfferResponseRequest | None,
     ) -> IncidentOffer:
         self._ensure_pending(offer)
         self._ensure_valid_transition(offer.offer_status, "REJECTED")
@@ -357,7 +370,11 @@ class IncidentOfferService(BaseService):
             raise ConflictException("La oferta ha vencido y no puede aceptarse.")
 
         offer.offer_status = "REJECTED"
-        offer.response_message = self._normalize_text(payload.response_message)
+        offer.response_message = (
+            self._normalize_text(payload.response_message)
+            if payload is not None
+            else None
+        )
         offer.responded_at = datetime.now(timezone.utc)
 
         candidate.candidate_status = "DISCARDED"

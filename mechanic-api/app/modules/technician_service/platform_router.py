@@ -37,7 +37,12 @@ def _technician_service_service(
     )
 
 
-@router.get("", response_model=TechnicianServicesResponse)
+@router.get(
+    "",
+    response_model=TechnicianServicesResponse,
+    summary="Listar servicios de técnicos",
+    description="Lista las relaciones entre técnicos, servicios y catálogos.",
+)
 def list_platform_technician_services(
     identity: CurrentIdentity = Depends(require_user_types("SUPERADMIN")),
     service: TechnicianServiceService = Depends(_technician_service_service),
@@ -83,7 +88,12 @@ def list_platform_technician_services(
     )
 
 
-@router.post("", response_model=TechnicianServiceResponse)
+@router.post(
+    "",
+    response_model=TechnicianServiceResponse,
+    summary="Crear servicio de técnico",
+    description="Crea la relación entre un técnico y un servicio de catálogo.",
+)
 def create_platform_technician_service(
     payload: TechnicianServiceCreateRequest,
     identity: CurrentIdentity = Depends(require_user_types("SUPERADMIN")),
@@ -98,7 +108,12 @@ def create_platform_technician_service(
     )
 
 
-@router.get("/{technician_service_id}", response_model=TechnicianServiceResponse)
+@router.get(
+    "/{technician_service_id}",
+    response_model=TechnicianServiceResponse,
+    summary="Obtener servicio de técnico",
+    description="Devuelve el detalle de un servicio de técnico.",
+)
 def get_platform_technician_service(
     technician_service_id: str,
     identity: CurrentIdentity = Depends(require_user_types("SUPERADMIN")),
@@ -112,7 +127,12 @@ def get_platform_technician_service(
     )
 
 
-@router.put("/{technician_service_id}", response_model=TechnicianServiceResponse)
+@router.put(
+    "/{technician_service_id}",
+    response_model=TechnicianServiceResponse,
+    summary="Actualizar servicio de técnico",
+    description="Actualiza la relación técnico-servicio desde plataforma.",
+)
 def update_platform_technician_service(
     technician_service_id: str,
     payload: TechnicianServiceUpdateRequest,
@@ -128,7 +148,12 @@ def update_platform_technician_service(
     )
 
 
-@router.patch("/{technician_service_id}/status", response_model=TechnicianServiceResponse)
+@router.patch(
+    "/{technician_service_id}/status",
+    response_model=TechnicianServiceResponse,
+    summary="Cambiar estado del servicio de técnico",
+    description="Activa o desactiva el servicio de un técnico desde plataforma.",
+)
 def change_platform_technician_service_status(
     technician_service_id: str,
     payload: TechnicianServiceStatusChangeRequest,
