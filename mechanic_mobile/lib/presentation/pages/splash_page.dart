@@ -40,7 +40,7 @@ void _scheduleBootstrap(BuildContext context) {
     if (!context.mounted) return;
     final authVm = context.read<AuthViewModel>();
     if (authVm.contextData != null) {
-      context.go(authVm.selectedRole == AppEntryRole.client ? '/home' : '/tenant-home');
+      context.go(authVm.selectedRole == AppEntryRole.client ? '/home' : '/select-tenants');
     } else {
       context.go('/entry');
     }

@@ -110,42 +110,16 @@ class TenantViewModel extends ChangeNotifier {
     error = null;
     notifyListeners();
     try {
-      final results = await Future.wait<dynamic>([
-        _tenantRepository.listMyTenants(),
-        _tenantRepository.getCurrentTenant(),
-        _tenantRepository.getCurrentTenantDetail(),
-        _tenantRepository.getCurrentProfile(),
-        _tenantRepository.getCurrentSettings(),
-        _tenantRepository.getCurrentProviderProfile(),
-        _tenantRepository.listCurrentTechnicians(page: 1, pageSize: 20),
-        _tenantRepository.listCurrentMembers(page: 1, pageSize: 20),
-        _tenantRepository.listMyTenantSessions(page: 1, pageSize: 20),
-        _tenantRepository.listCurrentTenantAuditEvents(page: 1, pageSize: 20),
-        _tenantRepository.listCurrentServiceCatalog(page: 1, pageSize: 20),
-        _tenantRepository.listCurrentProviderServices(page: 1, pageSize: 20),
-        _tenantRepository.listCurrentTechnicianServices(page: 1, pageSize: 20),
-        _tenantRepository.listCurrentCandidateProviders(page: 1, pageSize: 20),
-        _tenantRepository.listCurrentOffers(page: 1, pageSize: 20),
-        _tenantRepository.listCurrentIncidents(page: 1, pageSize: 20),
-        _tenantRepository.listCurrentAssignments(page: 1, pageSize: 20),
-      ]);
-      myTenants = List<Map<String, dynamic>>.from(results[0] as List);
-      currentTenant = Map<String, dynamic>.from(results[1] as Map);
-      currentTenantDetail = Map<String, dynamic>.from(results[2] as Map);
-      currentProfile = Map<String, dynamic>.from(results[3] as Map);
-      currentSettings = Map<String, dynamic>.from(results[4] as Map);
-      currentProviderProfile = Map<String, dynamic>.from(results[5] as Map);
-      technicians = results[6] as PagedResult<Map<String, dynamic>>;
-      members = results[7] as PagedResult<Map<String, dynamic>>;
-      sessions = results[8] as PagedResult<Map<String, dynamic>>;
-      auditEvents = results[9] as PagedResult<Map<String, dynamic>>;
-      serviceCatalog = results[10] as PagedResult<Map<String, dynamic>>;
-      providerServices = results[11] as PagedResult<Map<String, dynamic>>;
-      technicianServices = results[12] as PagedResult<Map<String, dynamic>>;
-      candidateProviders = results[13] as PagedResult<Map<String, dynamic>>;
-      offers = results[14] as PagedResult<Map<String, dynamic>>;
-      incidents = results[15] as PagedResult<Map<String, dynamic>>;
-      assignments = results[16] as PagedResult<Map<String, dynamic>>;
+      final tenants = await _safeList(() => _tenantRepository.listMyTenants());
+      final tenant = await _safeMap(() => _tenantRepository.getCurrentTenant());
+      final profile = await _safeMap(() => _tenantRepository.getCurrentProfile());
+      final settings = await _safeMap(() => _tenantRepository.getCurrentSettings());
+      myTenants = tenants;
+      currentTenant = tenant;
+      currentTenantDetail = const <String, dynamic>{};
+      currentProfile = profile;
+      currentSettings = settings;
+      currentProviderProfile = const <String, dynamic>{};
       _loadedWorkspaceKey = _workspaceKey();
     } catch (exception) {
       error = appFailureMessage(exception);
@@ -188,6 +162,28 @@ class TenantViewModel extends ChangeNotifier {
     } finally {
       loading = false;
       notifyListeners();
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> _safeList(
+    Future<List<Map<String, dynamic>>> Function() loader,
+  ) async {
+    try {
+      return await loader();
+    } catch (exception) {
+      error = appFailureMessage(exception);
+      return const <Map<String, dynamic>>[];
+    }
+  }
+
+  Future<Map<String, dynamic>> _safeMap(
+    Future<Map<String, dynamic>> Function() loader,
+  ) async {
+    try {
+      return await loader();
+    } catch (exception) {
+      error = appFailureMessage(exception);
+      return const <String, dynamic>{};
     }
   }
 
