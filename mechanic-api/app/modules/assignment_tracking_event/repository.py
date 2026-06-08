@@ -9,6 +9,9 @@ from sqlalchemy.orm import Session
 from app.common.uuid import to_uuid
 from app.modules.assignment.models import Assignment
 from app.modules.assignment_tracking_event.models import AssignmentTrackingEvent
+from app.modules.realtime_tracking.persistence_policy import (
+    LastPersistedLocation,
+)
 
 
 def _to_uuid(value: str | UUID, field_name: str = "id") -> UUID:
@@ -47,6 +50,34 @@ class AssignmentTrackingEventRepository:
             return None
 
         return row[0], row[1]
+
+    def get_latest_location_by_assignment(
+        self,
+        assignment_id: str | UUID,
+    ) -> LastPersistedLocation | None:
+        tracking_event = self.db.scalar(
+            select(AssignmentTrackingEvent)
+            .where(
+                AssignmentTrackingEvent.assignment_id == _to_uuid(
+                    assignment_id,
+                    "assignment_id",
+                ),
+                AssignmentTrackingEvent.event_type == "LOCATION_UPDATED",
+                AssignmentTrackingEvent.latitude.is_not(None),
+                AssignmentTrackingEvent.longitude.is_not(None),
+            )
+            .order_by(AssignmentTrackingEvent.occurred_at.desc())
+            .limit(1)
+        )
+
+        if tracking_event is None:
+            return None
+
+        return LastPersistedLocation(
+            latitude=float(tracking_event.latitude),
+            longitude=float(tracking_event.longitude),
+            occurred_at=tracking_event.occurred_at,
+        )
 
     def list(
         self,

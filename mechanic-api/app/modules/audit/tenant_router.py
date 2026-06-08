@@ -5,8 +5,8 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
-from app.common.pagination import PaginationParams, build_pagination_meta
 from app.common.exceptions import ForbiddenException, NotFoundException
+from app.common.pagination import PaginationParams, build_pagination_meta
 from app.common.responses import success_response
 from app.core.database import get_db
 from app.modules.audit.mappers import audit_event_public
@@ -31,7 +31,7 @@ def _current_tenant_id(identity: CurrentIdentity) -> str:
 
 @router.get("", response_model=AuditEventsResponse)
 def list_current_tenant_audit_events(
-    identity: CurrentIdentity = Depends(require_user_types("TENANT_OWNER", "TECHNICIAN")),
+    identity: CurrentIdentity = Depends(require_user_types("TENANT_OWNER")),
     db: Session = Depends(get_db),
     pagination: PaginationParams = Depends(),
     actor_id: str | None = Query(default=None),
@@ -78,7 +78,7 @@ def list_current_tenant_audit_events(
 def get_current_tenant_resource_history(
     resource_type: str,
     resource_id: str,
-    identity: CurrentIdentity = Depends(require_user_types("TENANT_OWNER", "TECHNICIAN")),
+    identity: CurrentIdentity = Depends(require_user_types("TENANT_OWNER")),
     db: Session = Depends(get_db),
 ) -> dict:
     tenant_id = _current_tenant_id(identity)
@@ -108,7 +108,7 @@ def get_current_tenant_resource_history(
 @router.get("/{audit_event_id}", response_model=AuditEventResponse)
 def get_current_tenant_audit_event(
     audit_event_id: str,
-    identity: CurrentIdentity = Depends(require_user_types("TENANT_OWNER", "TECHNICIAN")),
+    identity: CurrentIdentity = Depends(require_user_types("TENANT_OWNER")),
     db: Session = Depends(get_db),
 ) -> dict:
     tenant_id = _current_tenant_id(identity)
