@@ -108,6 +108,16 @@ class Settings(BaseSettings):
         alias="AI_DEFAULT_MAX_OUTPUT_TOKENS",
     )
 
+    realtime_tracking_persist_interval_seconds: int = Field(
+        default=30,
+        alias="REALTIME_TRACKING_PERSIST_INTERVAL_SECONDS",
+    )
+
+    realtime_tracking_min_distance_meters: int = Field(
+        default=50,
+        alias="REALTIME_TRACKING_MIN_DISTANCE_METERS",
+    )
+
     gemini_api_key: str | None = Field(default=None, alias="GEMINI_API_KEY")
     gemini_model: str = Field(default="gemini-2.5-flash", alias="GEMINI_MODEL")
     gemini_json_model: str | None = Field(

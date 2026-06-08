@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from datetime import datetime, timezone
 
 from app.common.exceptions import ConflictException, ForbiddenException, NotFoundException
@@ -24,6 +25,10 @@ from app.modules.identity.technician_availability.repository import (
     TechnicianAvailabilityRepository,
 )
 from app.modules.notification.business_notifications import BusinessNotificationService
+from app.modules.realtime_tracking.connection_manager import (
+    realtime_tracking_manager,
+)
+from app.modules.realtime_tracking.events import assignment_status_changed_event
 
 
 class AssignmentTrackingEventService(BaseService):
@@ -142,6 +147,11 @@ class AssignmentTrackingEventService(BaseService):
             technician=technician,
             event_type=payload.event_type,
             tenant_id=str(provider_profile.tenant_id),
+        )
+        self._broadcast_status_change(
+            assignment=assignment,
+            incident=incident,
+            event_type=payload.event_type,
         )
         self._notify_tracking_update(
             assignment=assignment,
@@ -357,6 +367,40 @@ class AssignmentTrackingEventService(BaseService):
                     "availability_status": availability.availability_status,
                     "tracking_event_type": event_type,
                 },
+            )
+
+    def _broadcast_status_change(
+        self,
+        *,
+        assignment,
+        incident,
+        event_type: str,
+    ) -> None:
+        if event_type in {"NOTE", "LOCATION_UPDATED", "ASSIGNED"}:
+            return
+
+        message = assignment_status_changed_event(
+            assignment_id=str(assignment.id),
+            incident_id=str(incident.id),
+            assignment_status=assignment.assignment_status,
+            incident_status=incident.status,
+            event_type=event_type,
+        )
+
+        try:
+            loop = asyncio.get_running_loop()
+            loop.create_task(
+                realtime_tracking_manager.broadcast(
+                    assignment_id=str(assignment.id),
+                    message=message,
+                )
+            )
+        except RuntimeError:
+            asyncio.run(
+                realtime_tracking_manager.broadcast(
+                    assignment_id=str(assignment.id),
+                    message=message,
+                )
             )
 
     def _notify_tracking_update(
