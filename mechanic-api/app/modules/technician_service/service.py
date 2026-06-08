@@ -12,6 +12,7 @@ from app.modules.identity.provider.models import ProviderProfile
 from app.modules.identity.provider.repository import ProviderProfileRepository
 from app.modules.identity.technician.models import Technician
 from app.modules.identity.technician.repository import TechnicianRepository
+from app.modules.incident.models import Incident
 from app.modules.provider_service.models import ProviderService
 from app.modules.provider_service.repository import ProviderServiceRepository
 from app.modules.service_catalog.models import ServiceCatalog

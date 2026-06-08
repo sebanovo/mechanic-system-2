@@ -30,8 +30,8 @@ from app.modules.incident_ai_analysis.schemas import IncidentAiAnalysisCreateReq
 from app.modules.incident_candidate_provider.repository import (
     IncidentCandidateProviderRepository,
 )
-from app.modules.incident_dispatch.service import IncidentDispatchService
 from app.modules.incident_dispatch.repository import IncidentDispatchRepository
+from app.modules.incident_dispatch.service import IncidentDispatchService
 from app.modules.incident_offer.repository import IncidentOfferRepository
 from app.modules.service_catalog.models import ServiceCatalog
 from app.modules.service_catalog.repository import ServiceCatalogRepository

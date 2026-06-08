@@ -75,6 +75,9 @@ def get_current_tenant_tracking_session(
     assignment, incident, *_ = detail
 
     if identity.user.user_type == "TECHNICIAN":
+        if identity.tenant_id is None:
+            raise NotFoundException("Asignación no encontrada.")
+        
         technician = TechnicianRepository(db).get_by_tenant_and_user(
             identity.tenant_id,
             identity.user.id,

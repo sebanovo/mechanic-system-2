@@ -2,13 +2,11 @@ from __future__ import annotations
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Any
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.common.pagination import PaginationMeta
-from app.modules.identity.provider.schemas import ProviderProfilePublic
 from app.modules.incident.schemas import IncidentPriority, IncidentStatus
 
 IncidentOfferStatus = Literal[

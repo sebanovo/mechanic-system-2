@@ -10,16 +10,17 @@ from app.common.exceptions import (
     ConflictException,
     ForbiddenException,
     NotFoundException,
+    ValidationException,
 )
 from app.common.uuid import to_uuid
-from app.core.config import settings
 from app.core.ai.media import AIMediaInput
 from app.core.audit.constants import IncidentAuditEvent
+from app.core.config import settings
 from app.core.context import RequestContext
 from app.core.services.base import BaseService
-from app.modules.identity.provider.models import ProviderProfile
 from app.modules.identity.customer.models import Customer
 from app.modules.identity.customer.repository import CustomerRepository
+from app.modules.identity.provider.models import ProviderProfile
 from app.modules.incident.models import Incident
 from app.modules.incident.repository import IncidentRepository
 from app.modules.incident.schemas import (
@@ -259,7 +260,12 @@ class IncidentService(BaseService):
         payload: IncidentStatusChangeRequest,
     ) -> Incident:
         incident = self.get_or_fail(incident_id)
-        return self._change_status(incident, self._normalize_upper(payload.status))
+        
+        status = self._normalize_upper(payload.status)
+
+        if status is None:
+            raise ValidationException("Estado requerido")
+        return self._change_status(incident, status)
 
     def cancel_current_customer_incident(
         self,

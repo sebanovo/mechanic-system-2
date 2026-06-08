@@ -105,7 +105,7 @@ def get_current_tenant_incident_ai_analysis(
     identity: CurrentIdentity = Depends(require_user_types("TENANT_OWNER", "TECHNICIAN")),
     service: IncidentAiAnalysisService = Depends(_analysis_service),
 ) -> dict:
-    analysis = service.get_owned_by_incident_or_fail(
+    analysis = service.get_for_incident_or_fail(
         incident_id=incident_id,
         analysis_id=analysis_id,
     )
