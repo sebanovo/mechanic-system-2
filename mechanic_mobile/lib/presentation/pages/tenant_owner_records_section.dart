@@ -11,38 +11,18 @@ class TenantOwnerRecordsSection extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.items,
-    this.onLoad,
   });
 
   final String title;
   final String subtitle;
   final List<Map<String, dynamic>> items;
-  final VoidCallback? onLoad;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: SectionHeader(title: title, subtitle: subtitle),
-            ),
-            if (onLoad != null) ...[
-              const SizedBox(width: 12),
-              Padding(
-                padding: const EdgeInsets.only(top: 6),
-                child: FilledButton.tonalIcon(
-                  onPressed: onLoad,
-                  icon: const Icon(Icons.download_rounded, size: 18),
-                  label: const Text('Cargar'),
-                ),
-              ),
-            ],
-          ],
-        ),
+        SectionHeader(title: title, subtitle: subtitle),
         const SizedBox(height: 10),
         if (items.isEmpty)
           const Padding(
@@ -102,6 +82,22 @@ Widget _recordActions(
       itemBuilder: (context) => const [
         PopupMenuItem(value: 'ACTIVE', child: Text('Activo')),
         PopupMenuItem(value: 'INACTIVE', child: Text('Inactivo')),
+        PopupMenuItem(value: 'SUSPENDED', child: Text('Suspendido')),
+      ],
+      child: const Icon(Icons.more_vert_rounded),
+    );
+  }
+
+  if (title == 'Miembros') {
+    return PopupMenuButton<String>(
+      tooltip: 'Cambiar estado',
+      onSelected: (value) async {
+        final vm = context.read<TenantViewModel>();
+        await vm.changeCurrentMemberStatus(recordId, {'status': value});
+      },
+      itemBuilder: (context) => const [
+        PopupMenuItem(value: 'ACTIVE', child: Text('Activo')),
+        PopupMenuItem(value: 'INACTIVE', child: Text('Inactivo')),
         PopupMenuItem(value: 'BLOCKED', child: Text('Bloqueado')),
       ],
       child: const Icon(Icons.more_vert_rounded),
@@ -118,6 +114,91 @@ Widget _recordActions(
       itemBuilder: (context) => const [
         PopupMenuItem(value: 'true', child: Text('Disponible')),
         PopupMenuItem(value: 'false', child: Text('No disponible')),
+      ],
+      child: const Icon(Icons.more_vert_rounded),
+    );
+  }
+
+  if (title == 'Servicios técnicos') {
+    return PopupMenuButton<String>(
+      tooltip: 'Cambiar estado',
+      onSelected: (value) async {
+        final vm = context.read<TenantViewModel>();
+        await vm.changeTechnicianServiceStatus(recordId, value == 'true');
+      },
+      itemBuilder: (context) => const [
+        PopupMenuItem(value: 'true', child: Text('Habilitado')),
+        PopupMenuItem(value: 'false', child: Text('Deshabilitado')),
+      ],
+      child: const Icon(Icons.more_vert_rounded),
+    );
+  }
+
+  if (title == 'Candidatos') {
+    return PopupMenuButton<String>(
+      tooltip: 'Cambiar estado',
+      onSelected: (value) async {
+        final vm = context.read<TenantViewModel>();
+        await vm.updateCandidateProviderStatus(recordId, {'candidate_status': value});
+      },
+      itemBuilder: (context) => const [
+        PopupMenuItem(value: 'SUGGESTED', child: Text('Sugerido')),
+        PopupMenuItem(value: 'SELECTED', child: Text('Seleccionado')),
+        PopupMenuItem(value: 'DISCARDED', child: Text('Descartado')),
+        PopupMenuItem(value: 'EXPIRED', child: Text('Expirado')),
+      ],
+      child: const Icon(Icons.more_vert_rounded),
+    );
+  }
+
+  if (title == 'Ofertas') {
+    return PopupMenuButton<String>(
+      tooltip: 'Gestionar oferta',
+      onSelected: (value) async {
+        final vm = context.read<TenantViewModel>();
+        if (value == 'accept') {
+          await vm.acceptOffer(recordId);
+        } else if (value == 'reject') {
+          await vm.rejectOffer(recordId);
+        }
+      },
+      itemBuilder: (context) => const [
+        PopupMenuItem(value: 'accept', child: Text('Aceptar')),
+        PopupMenuItem(value: 'reject', child: Text('Rechazar')),
+      ],
+      child: const Icon(Icons.more_vert_rounded),
+    );
+  }
+
+  if (title == 'Asignaciones') {
+    return PopupMenuButton<String>(
+      tooltip: 'Cambiar estado',
+      onSelected: (value) async {
+        final vm = context.read<TenantViewModel>();
+        await vm.changeAssignmentStatus(recordId, {'assignment_status': value});
+      },
+      itemBuilder: (context) => const [
+        PopupMenuItem(value: 'PENDING', child: Text('Pendiente')),
+        PopupMenuItem(value: 'ASSIGNED', child: Text('Asignada')),
+        PopupMenuItem(value: 'EN_ROUTE', child: Text('En ruta')),
+        PopupMenuItem(value: 'ARRIVED', child: Text('Llegó')),
+        PopupMenuItem(value: 'IN_SERVICE', child: Text('En servicio')),
+        PopupMenuItem(value: 'COMPLETED', child: Text('Completada')),
+        PopupMenuItem(value: 'CANCELLED', child: Text('Cancelada')),
+      ],
+      child: const Icon(Icons.more_vert_rounded),
+    );
+  }
+
+  if (title == 'Sesiones') {
+    return PopupMenuButton<String>(
+      tooltip: 'Cerrar sesión',
+      onSelected: (value) async {
+        final vm = context.read<TenantViewModel>();
+        await vm.revokeTenantSession(recordId);
+      },
+      itemBuilder: (context) => const [
+        PopupMenuItem(value: 'revoke', child: Text('Revocar sesión')),
       ],
       child: const Icon(Icons.more_vert_rounded),
     );

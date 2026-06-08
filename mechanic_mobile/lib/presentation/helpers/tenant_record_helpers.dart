@@ -57,16 +57,29 @@ String tenantRecordSecondaryLabel(Map<String, dynamic> record) {
 
 String tenantRecordStatusLabel(Map<String, dynamic> record) {
   final source = _labelSource(record);
-  final candidates = [
-    source['status'],
-    source['session_status'],
-    source['availability_status'],
-    source['assignment_status'],
-    source['candidate_status'],
-    source['offer_status'],
+  final candidates = <MapEntry<String, dynamic>>[
+    MapEntry('status', source['status']),
+    MapEntry('session_status', source['session_status']),
+    MapEntry('availability_status', source['availability_status']),
+    MapEntry('is_available', source['is_available']),
+    MapEntry('is_enabled', source['is_enabled']),
+    MapEntry('assignment_status', source['assignment_status']),
+    MapEntry('candidate_status', source['candidate_status']),
+    MapEntry('offer_status', source['offer_status']),
+    MapEntry('operational_status', source['operational_status']),
   ];
   for (final candidate in candidates) {
-    final text = candidate?.toString().trim() ?? '';
+    final value = candidate.value;
+    if (value is bool) {
+      if (candidate.key == 'is_available') {
+        return value ? 'Disponible' : 'No disponible';
+      }
+      if (candidate.key == 'is_enabled') {
+        return value ? 'Habilitado' : 'Deshabilitado';
+      }
+      return value ? 'Activo' : 'Inactivo';
+    }
+    final text = value?.toString().trim() ?? '';
     if (text.isNotEmpty) return text;
   }
   return '-';

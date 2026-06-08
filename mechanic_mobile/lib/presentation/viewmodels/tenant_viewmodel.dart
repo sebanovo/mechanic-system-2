@@ -233,6 +233,18 @@ class TenantViewModel extends ChangeNotifier {
     }
   }
 
+  Future<Map<String, dynamic>?> reloadTechnician(String technicianId) async {
+    try {
+      final technician = await _tenantRepository.getCurrentTechnician(technicianId);
+      notifyListeners();
+      return technician;
+    } catch (exception) {
+      error = appFailureMessage(exception);
+      notifyListeners();
+      return null;
+    }
+  }
+
   Future<void> reloadMembers() async {
     try {
       members = await _tenantRepository.listCurrentMembers(page: 1, pageSize: 20);
@@ -240,6 +252,18 @@ class TenantViewModel extends ChangeNotifier {
     } catch (exception) {
       error = appFailureMessage(exception);
       notifyListeners();
+    }
+  }
+
+  Future<Map<String, dynamic>?> reloadMember(String membershipId) async {
+    try {
+      final member = await _tenantRepository.getCurrentMember(membershipId);
+      notifyListeners();
+      return member;
+    } catch (exception) {
+      error = appFailureMessage(exception);
+      notifyListeners();
+      return null;
     }
   }
 
