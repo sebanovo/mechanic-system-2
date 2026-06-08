@@ -3,15 +3,15 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import Select, func, select
+from sqlalchemy import Select, func, select, union
 from sqlalchemy.orm import Session
 
 from app.common.uuid import to_uuid
 from app.common.validators import escape_like
 from app.modules.assignment.models import Assignment
+from app.modules.incident.models import Incident
 from app.modules.incident_candidate_provider.models import IncidentCandidateProvider
 from app.modules.incident_offer.models import IncidentOffer
-from app.modules.incident.models import Incident
 
 
 def _to_uuid(value: str | UUID, field_name: str = "id") -> UUID:
@@ -77,19 +77,16 @@ class IncidentRepository:
     ) -> tuple[list[Incident], int]:
         provider_uuid = _to_uuid(provider_profile_id, "provider_profile_id")
 
-        related_incident_ids = (
-            select(IncidentCandidateProvider.incident_id)
-            .where(IncidentCandidateProvider.provider_profile_id == provider_uuid)
-            .union(
-                select(IncidentOffer.incident_id).where(
-                    IncidentOffer.provider_profile_id == provider_uuid
-                )
-            )
-            .union(
-                select(Assignment.incident_id).where(
-                    Assignment.provider_profile_id == provider_uuid
-                )
-            )
+        related_incident_ids = union(
+            select(IncidentCandidateProvider.incident_id).where(
+                IncidentCandidateProvider.provider_profile_id == provider_uuid
+            ),
+            select(IncidentOffer.incident_id).where(
+                IncidentOffer.provider_profile_id == provider_uuid
+            ),
+            select(Assignment.incident_id).where(
+                Assignment.provider_profile_id == provider_uuid
+            ),
         )
 
         query = select(Incident).where(
@@ -117,24 +114,19 @@ class IncidentRepository:
         provider_uuid = _to_uuid(provider_profile_id, "provider_profile_id")
         incident_uuid = _to_uuid(incident_id, "incident_id")
 
-        related_exists = (
-            select(IncidentCandidateProvider.id)
-            .where(
+        related_exists = union(
+            select(IncidentCandidateProvider.id).where(
                 IncidentCandidateProvider.incident_id == incident_uuid,
                 IncidentCandidateProvider.provider_profile_id == provider_uuid,
-            )
-            .union(
-                select(IncidentOffer.id).where(
-                    IncidentOffer.incident_id == incident_uuid,
-                    IncidentOffer.provider_profile_id == provider_uuid,
-                )
-            )
-            .union(
-                select(Assignment.id).where(
-                    Assignment.incident_id == incident_uuid,
-                    Assignment.provider_profile_id == provider_uuid,
-                )
-            )
+            ),
+            select(IncidentOffer.id).where(
+                IncidentOffer.incident_id == incident_uuid,
+                IncidentOffer.provider_profile_id == provider_uuid,
+            ),
+            select(Assignment.id).where(
+                Assignment.incident_id == incident_uuid,
+                Assignment.provider_profile_id == provider_uuid,
+            ),
         )
 
         return self.db.scalar(

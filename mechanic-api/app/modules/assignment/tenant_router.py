@@ -199,8 +199,8 @@ def update_current_tenant_assignment(
     response_model=AssignmentResponse,
     summary="Actualizar estado operativo de asignación",
     description=(
-        "Permite al owner del taller o al técnico asignado avanzar el flujo de la "
-        "asignación. El técnico usa este endpoint para registrar EN_ROUTE, ARRIVED, "
+        "Permite al owner del taller modificar al tecnico asignado, avanzar el flujo de la "
+        "asignación. El owner usa este endpoint para registrar EN_ROUTE, ARRIVED, "
         "IN_SERVICE, COMPLETED o CANCELLED."
     ),
 )

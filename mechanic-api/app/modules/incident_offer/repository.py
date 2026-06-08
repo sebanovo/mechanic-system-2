@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import Select, and_, func, select
@@ -7,10 +8,10 @@ from sqlalchemy.orm import Session
 
 from app.common.uuid import to_uuid
 from app.modules.identity.customer.models import Customer
-from app.modules.identity.user.models import User
 from app.modules.identity.provider.models import ProviderProfile
-from app.modules.incident_ai_analysis.models import IncidentAiAnalysis
+from app.modules.identity.user.models import User
 from app.modules.incident.models import Incident
+from app.modules.incident_ai_analysis.models import IncidentAiAnalysis
 from app.modules.incident_candidate_provider.models import IncidentCandidateProvider
 from app.modules.incident_offer.models import IncidentOffer
 from app.modules.service_catalog.models import ServiceCatalog
@@ -475,15 +476,7 @@ class IncidentOfferRepository:
 
     def _paginate_public(
         self,
-        query: Select[
-            tuple[
-                IncidentOffer,
-                Incident,
-                ServiceCatalog | None,
-                Vehicle | None,
-                IncidentAiAnalysis | None,
-            ]
-        ],
+        query: Select[Any],
         limit: int,
         offset: int,
     ) -> tuple[

@@ -9,8 +9,8 @@ from app.core.audit.constants import (
 )
 from app.core.context import RequestContext
 from app.core.services.base import BaseService
-from app.modules.identity.customer.repository import CustomerRepository
 from app.modules.assignment.repository import AssignmentRepository
+from app.modules.identity.customer.repository import CustomerRepository
 from app.modules.incident.models import Incident
 from app.modules.incident_candidate_provider.models import IncidentCandidateProvider
 from app.modules.incident_candidate_provider.repository import (
@@ -299,6 +299,7 @@ class IncidentOfferService(BaseService):
         )
         self._notify_incident_offer_accepted(
             incident=incident,
+            offer=offer,
             provider_profile_id=str(offer.provider_profile_id),
             tenant_id=tenant_id,
         )
@@ -327,6 +328,7 @@ class IncidentOfferService(BaseService):
         self,
         *,
         incident: Incident,
+        offer: IncidentOffer,
         provider_profile_id: str,
         tenant_id: str | None,
     ) -> None:

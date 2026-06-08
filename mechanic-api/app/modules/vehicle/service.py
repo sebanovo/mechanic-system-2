@@ -8,6 +8,7 @@ from app.core.context import RequestContext
 from app.core.services.base import BaseService
 from app.modules.identity.customer.models import Customer
 from app.modules.identity.customer.repository import CustomerRepository
+from app.modules.identity.user.models import User
 from app.modules.vehicle.models import Vehicle
 from app.modules.vehicle.repository import VehicleRepository
 from app.modules.vehicle.schemas import (

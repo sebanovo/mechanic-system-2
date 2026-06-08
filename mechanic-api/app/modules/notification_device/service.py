@@ -31,8 +31,11 @@ class NotificationDeviceService(BaseService):
     ) -> tuple[list[NotificationDevice], int]:
         self._ensure_user_context()
 
+        user_id = self.context.user_id
+        assert user_id is not None
+
         return self.repository.list_by_user(
-            self.context.user_id,
+            user_id,
             status=self._normalize_status(status),
             limit=limit,
             offset=offset,
@@ -56,7 +59,11 @@ class NotificationDeviceService(BaseService):
         payload: NotificationDeviceCreateRequest,
     ) -> NotificationDevice:
         self._ensure_user_context()
-        user_id = to_uuid(self.context.user_id, "user_id")
+
+        current_user_id = self.context.user_id
+        assert current_user_id is not None
+
+        user_id = to_uuid(current_user_id, "user_id")
         device_token = payload.device_token.strip()
         now = datetime.now(timezone.utc)
 

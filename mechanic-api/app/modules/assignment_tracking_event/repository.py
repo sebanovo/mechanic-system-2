@@ -72,6 +72,9 @@ class AssignmentTrackingEventRepository:
 
         if tracking_event is None:
             return None
+        
+        if tracking_event.latitude is None or tracking_event.longitude is None:
+            return None
 
         return LastPersistedLocation(
             latitude=float(tracking_event.latitude),
