@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import math
 import logging
+from decimal import Decimal, ROUND_HALF_UP
 from datetime import datetime, timedelta, timezone
 
 from app.common.uuid import to_uuid
@@ -22,6 +24,7 @@ from app.modules.incident_ai_analysis.repository import IncidentAiAnalysisReposi
 from app.modules.incident_offer.models import IncidentOffer
 from app.modules.incident_offer.repository import IncidentOfferRepository
 from app.modules.incident_dispatch.schemas import IncidentDispatchResult
+from app.modules.identity.tenant.repository import TenantRepository
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +48,7 @@ class IncidentDispatchService(BaseService):
         self.dispatch_repository = dispatch_repository
         self.candidate_provider_repository = candidate_provider_repository
         self.offer_repository = offer_repository
+        self.tenant_repository = TenantRepository(self.db)
         self.business_notifications = BusinessNotificationService(self.db, context)
 
     def run_after_ai_analysis(
@@ -110,11 +114,16 @@ class IncidentDispatchService(BaseService):
 
         eligible_providers = self.find_eligible_providers(
             service_catalog_id=str(incident.service_catalog_id),
+            incident_latitude=incident.latitude,
+            incident_longitude=incident.longitude,
         )
 
         if not eligible_providers:
             incident.status = "SEARCHING_PROVIDER"
             self.db.flush()
+            self.business_notifications.send_no_providers_available(
+                incident_id=str(incident.id),
+            )
             logger.info(
                 "No eligible providers found. incident_id=%s analysis_id=%s service_catalog_id=%s",
                 incident.id,
@@ -199,6 +208,8 @@ class IncidentDispatchService(BaseService):
         self,
         *,
         service_catalog_id: str,
+        incident_latitude,
+        incident_longitude,
     ) -> list[EligibleProviderCandidate]:
         rows = self.dispatch_repository.find_eligible_providers(
             service_catalog_id=service_catalog_id,
@@ -207,6 +218,20 @@ class IncidentDispatchService(BaseService):
         candidates: list[EligibleProviderCandidate] = []
 
         for provider_profile, provider_service, enabled_count, available_count in rows:
+            tenant_profile = self.tenant_repository.get_profile(
+                str(provider_profile.tenant_id)
+            )
+            distance_km = self._calculate_distance_km(
+                incident_latitude=incident_latitude,
+                incident_longitude=incident_longitude,
+                provider_latitude=(
+                    tenant_profile.latitude if tenant_profile is not None else None
+                ),
+                provider_longitude=(
+                    tenant_profile.longitude if tenant_profile is not None else None
+                ),
+            )
+
             candidates.append(
                 EligibleProviderCandidate(
                     provider_profile_id=str(provider_profile.id),
@@ -218,7 +243,7 @@ class IncidentDispatchService(BaseService):
                     average_rating=provider_profile.average_rating,
                     response_score=provider_profile.response_score,
                     total_reviews=provider_profile.total_reviews,
-                    distance_km=None,
+                    distance_km=distance_km,
                 )
             )
 
@@ -386,3 +411,41 @@ class IncidentDispatchService(BaseService):
 
         normalized = value.strip().upper()
         return normalized or None
+
+    def _calculate_distance_km(
+        self,
+        *,
+        incident_latitude,
+        incident_longitude,
+        provider_latitude,
+        provider_longitude,
+    ) -> Decimal | None:
+        if (
+            incident_latitude is None
+            or incident_longitude is None
+            or provider_latitude is None
+            or provider_longitude is None
+        ):
+            return None
+
+        earth_radius_km = 6371.0
+
+        lat1 = math.radians(float(incident_latitude))
+        lon1 = math.radians(float(incident_longitude))
+        lat2 = math.radians(float(provider_latitude))
+        lon2 = math.radians(float(provider_longitude))
+
+        delta_lat = lat2 - lat1
+        delta_lon = lon2 - lon1
+
+        a = (
+            math.sin(delta_lat / 2) ** 2
+            + math.cos(lat1) * math.cos(lat2) * math.sin(delta_lon / 2) ** 2
+        )
+        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+        distance = earth_radius_km * c
+
+        return Decimal(str(distance)).quantize(
+            Decimal("0.01"),
+            rounding=ROUND_HALF_UP,
+        )

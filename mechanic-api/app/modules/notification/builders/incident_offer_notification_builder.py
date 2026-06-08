@@ -308,6 +308,7 @@ def _build_push_data(
         "reject_url": tenant_offer_reject_url(payload.offer_id),
         "accept_method": "PATCH",
         "reject_method": "PATCH",
+        "distance_km": _decimal_to_string(payload.distance_km),
     }
 
 

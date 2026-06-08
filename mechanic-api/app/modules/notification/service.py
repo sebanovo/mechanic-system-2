@@ -113,18 +113,20 @@ class NotificationService(BaseService):
 
             if devices:
                 push_payload_data = push_data or self._stringify_push_data(data)
+                push_payload_data = {
+                    **push_payload_data,
+                    "notification_id": str(notification.id),
+                    "notification_type": notification.notification_type,
+                    "notification_title": notification.title,
+                    "notification_body": notification.body,
+                    "notification_created_at": notification.created_at.isoformat(),
+                }
 
                 for device in devices:
                     message_id = NotificationDispatcher().send_push(
                         PushNotificationPayload(
                             token=device.device_token,
-                            title=notification.title,
-                            body=notification.body,
-                            data={
-                                **push_payload_data,
-                                "notification_id": str(notification.id),
-                                "notification_type": notification.notification_type,
-                            },
+                            data=push_payload_data,
                         )
                     )
 
