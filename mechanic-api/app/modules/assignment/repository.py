@@ -170,6 +170,50 @@ class AssignmentRepository:
             offset=offset,
         )
 
+    def list_by_customer(
+        self,
+        customer_id: str | UUID,
+        *,
+        assignment_status: str | None = None,
+        exclude_assignment_statuses: list[str] | None = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> tuple[
+        list[tuple[Assignment, Incident, IncidentOffer, ProviderProfile, Technician]],
+        int,
+    ]:
+        query = (
+            select(
+                Assignment,
+                Incident,
+                IncidentOffer,
+                ProviderProfile,
+                Technician,
+            )
+            .join(Incident, Incident.id == Assignment.incident_id)
+            .join(IncidentOffer, IncidentOffer.id == Assignment.offer_id)
+            .join(ProviderProfile, ProviderProfile.id == Assignment.provider_profile_id)
+            .join(Technician, Technician.id == Assignment.technician_id)
+            .where(
+                Incident.customer_id == _to_uuid(customer_id, "customer_id"),
+                Incident.deleted_at.is_(None),
+            )
+        )
+
+        if assignment_status is not None:
+            query = query.where(Assignment.assignment_status == assignment_status)
+
+        if exclude_assignment_statuses is not None:
+            query = query.where(
+                Assignment.assignment_status.notin_(exclude_assignment_statuses)
+            )
+
+        return self._paginate(
+            query.order_by(Assignment.created_at.desc()),
+            limit,
+            offset,
+        )
+
     def get_owned_by_technician(
         self,
         assignment_id: str | UUID,

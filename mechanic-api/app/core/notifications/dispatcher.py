@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+import logging
+
 from app.core.config import settings
 from app.core.notifications.firebase_client import FirebasePushClient
 from app.core.notifications.schemas import PushNotificationPayload
+
+logger = logging.getLogger(__name__)
 
 
 class NotificationDispatcher:
@@ -16,9 +20,13 @@ class NotificationDispatcher:
             return None
 
         if settings.notifications_provider != "FIREBASE":
-            raise RuntimeError("Proveedor de notificaciones no soportado.")
+            return None
 
-        if self.firebase_client is None:
-            self.firebase_client = FirebasePushClient()
+        try:
+            if self.firebase_client is None:
+                self.firebase_client = FirebasePushClient()
 
-        return self.firebase_client.send(payload)
+            return self.firebase_client.send(payload)
+        except Exception as exc:
+            logger.warning("Push notification skipped: %s", exc)
+            return None

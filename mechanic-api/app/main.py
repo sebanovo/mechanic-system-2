@@ -115,6 +115,15 @@ from app.modules.notification_device.platform_router import (
     router as notification_device_platform_router,
 )
 from app.modules.platform.summary_router import router as platform_summary_router
+from app.modules.realtime_tracking.client_router import (
+    router as realtime_tracking_client_router,
+)
+from app.modules.realtime_tracking.tenant_router import (
+    router as realtime_tracking_tenant_router,
+)
+from app.modules.realtime_tracking.websocket_router import (
+    router as realtime_tracking_router,
+)
 from app.modules.provider_service.platform_router import (
     router as provider_service_platform_router,
 )
@@ -200,6 +209,7 @@ def create_application() -> FastAPI:
     application.include_router(system_router, prefix=settings.api_v1_prefix)
     application.include_router(auth_router, prefix=settings.api_v1_prefix)
     application.include_router(ai_test_router, prefix=settings.api_v1_prefix)
+    application.include_router(realtime_tracking_router)
 
     # Client context
     application.include_router(clients_router, prefix=settings.api_v1_prefix)
@@ -236,6 +246,10 @@ def create_application() -> FastAPI:
     )
     application.include_router(
         notification_device_client_router,
+        prefix=settings.api_v1_prefix,
+    )
+    application.include_router(
+        realtime_tracking_client_router,
         prefix=settings.api_v1_prefix,
     )
 
@@ -321,6 +335,11 @@ def create_application() -> FastAPI:
 
     application.include_router(
         assignment_tracking_event_tenant_router,
+        prefix=settings.api_v1_prefix,
+        dependencies=[Depends(require_tenant_selected())],
+    )
+    application.include_router(
+        realtime_tracking_tenant_router,
         prefix=settings.api_v1_prefix,
         dependencies=[Depends(require_tenant_selected())],
     )
