@@ -10,6 +10,16 @@ String tenantKindLabelFromApi(String? value) {
   };
 }
 
+String tenantUserTypeLabelFromApi(String? value) {
+  final normalized = (value ?? '').toUpperCase();
+  return switch (normalized) {
+    'TENANT_OWNER' => TenantUserType.tenantOwner.label,
+    'TECHNICIAN' => TenantUserType.technician.label,
+    'CLIENT' => TenantUserType.client.label,
+    _ => value ?? '-',
+  };
+}
+
 String vehicleTypeLabelFromApi(String? value) {
   final normalized = (value ?? '').toUpperCase();
   return switch (normalized) {

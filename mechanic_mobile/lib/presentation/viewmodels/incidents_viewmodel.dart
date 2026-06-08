@@ -11,22 +11,27 @@ class IncidentsViewModel extends ChangeNotifier {
     required GetIncidentUseCase getIncident,
     required UpdateIncidentUseCase updateIncident,
     required CancelIncidentUseCase cancelIncident,
+    required RunIncidentAiAnalysisUseCase runIncidentAiAnalysis,
   })  : _listMyIncidents = listMyIncidents,
         _createIncident = createIncident,
         _getIncident = getIncident,
         _updateIncident = updateIncident,
-        _cancelIncident = cancelIncident;
+        _cancelIncident = cancelIncident,
+        _runIncidentAiAnalysis = runIncidentAiAnalysis;
 
   final ListMyIncidentsUseCase _listMyIncidents;
   final CreateIncidentUseCase _createIncident;
   final GetIncidentUseCase _getIncident;
   final UpdateIncidentUseCase _updateIncident;
   final CancelIncidentUseCase _cancelIncident;
+  final RunIncidentAiAnalysisUseCase _runIncidentAiAnalysis;
 
   PagedResult<IncidentEntity>? incidents;
   IncidentEntity? selectedIncident;
+  Map<String, dynamic>? aiAnalysis;
   bool loading = false;
   bool detailLoading = false;
+  bool analysisLoading = false;
   bool submitting = false;
   bool loaded = false;
   bool detailLoaded = false;
@@ -51,6 +56,8 @@ class IncidentsViewModel extends ChangeNotifier {
   Future<void> loadIncident(String incidentId) async {
     detailLoading = true;
     error = null;
+    aiAnalysis = null;
+    selectedIncident = null;
     notifyListeners();
     try {
       selectedIncident = await _getIncident(incidentId);
@@ -118,6 +125,22 @@ class IncidentsViewModel extends ChangeNotifier {
       return false;
     } finally {
       submitting = false;
+      notifyListeners();
+    }
+  }
+
+  Future<Map<String, dynamic>?> runAiAnalysis(String incidentId) async {
+    analysisLoading = true;
+    error = null;
+    notifyListeners();
+    try {
+      aiAnalysis = await _runIncidentAiAnalysis(incidentId);
+      return aiAnalysis;
+    } catch (exception) {
+      error = appFailureMessage(exception);
+      return null;
+    } finally {
+      analysisLoading = false;
       notifyListeners();
     }
   }

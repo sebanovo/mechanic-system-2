@@ -112,6 +112,13 @@ class ProfilePage extends StatelessWidget {
           onTap: () => context.push('/sessions'),
         ),
         const SizedBox(height: 12),
+        ActionCard(
+          title: 'Notificaciones',
+          subtitle: 'Dispositivos push y mensajes del backend.',
+          icon: Icons.notifications_rounded,
+          onTap: () => context.push('/notifications'),
+        ),
+        const SizedBox(height: 12),
         if (sessionsVm.loading)
           const Center(
             child: Padding(

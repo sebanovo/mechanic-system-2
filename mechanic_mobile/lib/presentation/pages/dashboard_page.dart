@@ -43,10 +43,17 @@ class DashboardPage extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         ActionCard(
+          title: 'Asignaciones',
+          subtitle: 'Controlar seguimiento, sesión de tracking y eventos.',
+          icon: Icons.assignment_turned_in_rounded,
+          onTap: () => shellVm.setIndex(3),
+        ),
+        const SizedBox(height: 12),
+        ActionCard(
           title: 'Perfil',
           subtitle: 'Datos personales, configuración y seguridad.',
           icon: Icons.person_rounded,
-          onTap: () => shellVm.setIndex(3),
+          onTap: () => shellVm.setIndex(4),
         ),
         const SizedBox(height: 12),
         ActionCard(
@@ -97,6 +104,14 @@ class DashboardPage extends StatelessWidget {
                       onTap: () => shellVm.setIndex(2),
                     ),
                   ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _compactAction(
+                      context: context,
+                      label: 'Asignaciones',
+                      onTap: () => shellVm.setIndex(3),
+                    ),
+                  ),
                 ],
               ),
             ],
@@ -114,6 +129,8 @@ String _sectionLabel(int index) {
     case 2:
       return 'Incidentes';
     case 3:
+      return 'Asignaciones';
+    case 4:
       return 'Perfil';
     default:
       return 'Inicio';

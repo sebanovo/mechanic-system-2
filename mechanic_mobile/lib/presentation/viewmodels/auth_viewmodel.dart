@@ -139,6 +139,7 @@ class AuthViewModel extends ChangeNotifier {
     notifyListeners();
     try {
       contextData = await _selectTenant(SelectTenantInput(tenantId: tenantId));
+      selectedRole = _roleFromUserType(contextData?.userType);
       await _sessionStorage.setAuthMeta(tenantId: tenantId);
       message = 'Tenant seleccionado';
       return true;
@@ -167,6 +168,15 @@ class AuthViewModel extends ChangeNotifier {
     }
   }
 
+  bool get needsTenantSelection {
+    final context = contextData;
+    if (context == null) return false;
+    if (selectedRole == AppEntryRole.client) return false;
+    if (context.availableTenants.isEmpty) return false;
+    return context.requiresTenantSelection ||
+        (context.tenantId == null || context.tenantId!.isEmpty);
+  }
+
   Future<void> signOut() async {
     try {
       await _logout();
@@ -181,10 +191,12 @@ class AuthViewModel extends ChangeNotifier {
 
 AppEntryRole _roleFromUserType(String? userType) {
   final normalized = (userType ?? '').toLowerCase();
-  if (normalized.contains('client')) {
+  if (normalized == 'client' || normalized.contains('client')) {
     return AppEntryRole.client;
   }
-  if (normalized.contains('mechanic') || normalized.contains('technician')) {
+  if (normalized == 'technician' ||
+      normalized.contains('mechanic') ||
+      normalized.contains('technician')) {
     return AppEntryRole.mechanic;
   }
   return AppEntryRole.workshop;

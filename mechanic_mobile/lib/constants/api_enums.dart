@@ -4,6 +4,12 @@ enum TenantKind {
   independentTechnician,
 }
 
+enum TenantUserType {
+  tenantOwner,
+  technician,
+  client,
+}
+
 enum VehicleType {
   car,
   motorcycle,
@@ -51,6 +57,20 @@ extension TenantKindX on TenantKind {
         TenantKind.workshop => 'Taller',
         TenantKind.workshopNetwork => 'Red de talleres',
         TenantKind.independentTechnician => 'Mecánico independiente',
+  };
+}
+
+extension TenantUserTypeX on TenantUserType {
+  String get apiValue => switch (this) {
+        TenantUserType.tenantOwner => 'TENANT_OWNER',
+        TenantUserType.technician => 'TECHNICIAN',
+        TenantUserType.client => 'CLIENT',
+      };
+
+  String get label => switch (this) {
+        TenantUserType.tenantOwner => 'Propietario',
+        TenantUserType.technician => 'Técnico',
+        TenantUserType.client => 'Cliente',
       };
 }
 
@@ -135,6 +155,7 @@ extension IncidentStatusX on IncidentStatus {
 }
 
 List<TenantKind> tenantKindOptions = TenantKind.values;
+List<TenantUserType> tenantUserTypeOptions = TenantUserType.values;
 List<VehicleType> vehicleTypeOptions = VehicleType.values;
 List<VehicleStatus> vehicleStatusOptions = VehicleStatus.values;
 List<IncidentPriority> incidentPriorityOptions = IncidentPriority.values;

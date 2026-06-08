@@ -170,4 +170,58 @@ class ClientRepositoryImpl
         await _remoteDataSource.cancelIncident(incidentId, input.toJson());
     return IncidentModel.fromJson(_envelopeData(response));
   }
+
+  @override
+  Future<Map<String, dynamic>> runIncidentAiAnalysis(String incidentId) async {
+    final response = await _remoteDataSource.runIncidentAiAnalysis(incidentId);
+    return _envelopeData(response);
+  }
+
+  @override
+  Future<PagedResult<Map<String, dynamic>>> listMyAssignments({
+    String? assignmentStatus,
+    int? page,
+    int? pageSize,
+  }) async {
+    final response = await _remoteDataSource.listAssignments(
+      assignmentStatus: assignmentStatus,
+      page: page,
+      pageSize: pageSize,
+    );
+    return _paged<Map<String, dynamic>>(
+      response,
+      (json) => json,
+    );
+  }
+
+  @override
+  Future<Map<String, dynamic>> getMyAssignment(String assignmentId) async {
+    final response = await _remoteDataSource.getAssignment(assignmentId);
+    return _envelopeData(response);
+  }
+
+  @override
+  Future<PagedResult<Map<String, dynamic>>> listMyAssignmentTrackingEvents(
+    String assignmentId, {
+    String? eventType,
+    int? page,
+    int? pageSize,
+  }) async {
+    final response = await _remoteDataSource.listAssignmentTrackingEvents(
+      assignmentId,
+      eventType: eventType,
+      page: page,
+      pageSize: pageSize,
+    );
+    return _paged<Map<String, dynamic>>(response, (json) => json);
+  }
+
+  @override
+  Future<Map<String, dynamic>> getMyAssignmentTrackingSession(
+    String assignmentId,
+  ) async {
+    final response =
+        await _remoteDataSource.getAssignmentTrackingSession(assignmentId);
+    return _envelopeData(response);
+  }
 }

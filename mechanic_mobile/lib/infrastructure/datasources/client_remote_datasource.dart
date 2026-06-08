@@ -79,10 +79,68 @@ class ClientRemoteDataSource {
         data: payload,
       );
 
+  Future<Map<String, dynamic>> listAssignments({
+    String? assignmentStatus,
+    int? page,
+    int? pageSize,
+  }) =>
+      _apiClient.get(
+        '/api/clients/me/assignments',
+        queryParameters: _query(
+          assignmentStatus: assignmentStatus,
+          page: page,
+          pageSize: pageSize,
+        ),
+      );
+
+  Future<Map<String, dynamic>> getAssignment(String assignmentId) =>
+      _apiClient.get('/api/clients/me/assignments/$assignmentId');
+
+  Future<Map<String, dynamic>> listAssignmentTrackingEvents(
+    String assignmentId, {
+    String? eventType,
+    int? page,
+    int? pageSize,
+  }) =>
+      _apiClient.get(
+        '/api/clients/me/assignments/$assignmentId/tracking-events',
+        queryParameters: _query(
+          eventType: eventType,
+          page: page,
+          pageSize: pageSize,
+        ),
+      );
+
+  Future<Map<String, dynamic>> getAssignmentTrackingSession(
+    String assignmentId,
+  ) =>
+      _apiClient.get(
+        '/api/clients/me/assignments/$assignmentId/tracking-session',
+      );
+
+  Future<Map<String, dynamic>> runIncidentAiAnalysis(String incidentId) =>
+      _apiClient.post('/api/incidents/$incidentId/ai-analysis/run');
+
   Map<String, dynamic> _paging({int? page, int? pageSize}) {
     final query = <String, dynamic>{};
     if (page != null) query['page'] = page;
     if (pageSize != null) query['page_size'] = pageSize;
+    return query;
+  }
+
+  Map<String, dynamic> _query({
+    String? assignmentStatus,
+    String? eventType,
+    int? page,
+    int? pageSize,
+  }) {
+    final query = _paging(page: page, pageSize: pageSize);
+    if (assignmentStatus != null && assignmentStatus.isNotEmpty) {
+      query['assignment_status'] = assignmentStatus;
+    }
+    if (eventType != null && eventType.isNotEmpty) {
+      query['event_type'] = eventType;
+    }
     return query;
   }
 }

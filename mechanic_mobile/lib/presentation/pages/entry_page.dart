@@ -110,7 +110,7 @@ class EntryPage extends StatelessWidget {
                                   if (authVm.selectedRole == AppEntryRole.client) {
                                     context.go('/home');
                                   } else {
-                                    context.go('/tenant-home');
+                                    context.go('/select-tenants');
                                   }
                                 },
                                 child: const Text('Continuar sesión'),

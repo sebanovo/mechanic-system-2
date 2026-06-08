@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../viewmodels/app_viewmodels.dart';
 import '../widgets/app_widgets.dart';
+import 'assignments_page.dart';
 import 'dashboard_page.dart';
 import 'incidents_page.dart';
 import 'profile_page.dart';
@@ -19,6 +20,7 @@ class ShellPage extends StatelessWidget {
       const DashboardPage(),
       const VehiclesPage(),
       const IncidentsPage(),
+      const AssignmentsPage(),
       const ProfilePage(),
     ];
 
@@ -42,6 +44,10 @@ class ShellPage extends StatelessWidget {
           NavigationDestination(
             icon: Icon(Icons.sos_rounded),
             label: 'Incidentes',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.assignment_turned_in_rounded),
+            label: 'Asignaciones',
           ),
           NavigationDestination(
             icon: Icon(Icons.person_rounded),
