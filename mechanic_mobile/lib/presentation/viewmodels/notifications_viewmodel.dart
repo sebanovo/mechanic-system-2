@@ -122,7 +122,9 @@ class NotificationsViewModel extends ChangeNotifier {
       await _notificationService.initialize();
       final token = await _notificationService.getDeviceToken();
       if (token == null || token.isEmpty) {
-        throw StateError('No se pudo obtener el token de Firebase.');
+        error =
+            'No se pudo obtener el token de Firebase. Verifica la configuración web y vuelve a intentar.';
+        return false;
       }
       final info = await _deviceMetadata();
       await _registerMyNotificationDevice({
@@ -169,9 +171,9 @@ class NotificationsViewModel extends ChangeNotifier {
       final web = await deviceInfo.webBrowserInfo;
       return {
         'platform': 'WEB',
-        'device_name': web.browserName.name,
-        'app_version': packageInfo.version,
-        'os_version': web.userAgent ?? 'web',
+        'device_name': _limit(web.browserName.name, 150),
+        'app_version': _limit(packageInfo.version, 40),
+        'os_version': _limit(web.userAgent ?? 'web', 40),
       };
     }
 
@@ -179,9 +181,9 @@ class NotificationsViewModel extends ChangeNotifier {
       final android = await deviceInfo.androidInfo;
       return {
         'platform': 'ANDROID',
-        'device_name': '${android.manufacturer} ${android.model}',
-        'app_version': packageInfo.version,
-        'os_version': android.version.release,
+        'device_name': _limit('${android.manufacturer} ${android.model}', 150),
+        'app_version': _limit(packageInfo.version, 40),
+        'os_version': _limit(android.version.release, 40),
       };
     }
 
@@ -189,17 +191,23 @@ class NotificationsViewModel extends ChangeNotifier {
       final ios = await deviceInfo.iosInfo;
       return {
         'platform': 'IOS',
-        'device_name': ios.name,
-        'app_version': packageInfo.version,
-        'os_version': ios.systemVersion,
+        'device_name': _limit(ios.name, 150),
+        'app_version': _limit(packageInfo.version, 40),
+        'os_version': _limit(ios.systemVersion, 40),
       };
     }
 
     return {
       'platform': 'ANDROID',
-      'device_name': packageInfo.appName,
-      'app_version': packageInfo.version,
+      'device_name': _limit(packageInfo.appName, 150),
+      'app_version': _limit(packageInfo.version, 40),
       'os_version': 'unknown',
     };
+  }
+
+  String _limit(String value, int maxLength) {
+    final normalized = value.trim();
+    if (normalized.length <= maxLength) return normalized;
+    return normalized.substring(0, maxLength);
   }
 }

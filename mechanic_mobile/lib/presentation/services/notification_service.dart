@@ -2,12 +2,17 @@ import 'dart:math';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+
+import '../../firebase_options.dart';
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   try {
-    await Firebase.initializeApp();
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
   } catch (_) {
     // If Firebase cannot be initialized here, continue without crashing.
   }
@@ -19,15 +24,21 @@ class NotificationService {
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
   bool _initialized = false;
+  static const String _webVapidKey =
+      'BNKs9MawNjRfsrgM8vj4xYnPVWMOCYlsJZVnM4-7R7yK9xChXQR0WaYJiJsdo4_sfOshIxGnx78zQCK2DPepPLs';
 
   Future<void> initialize() async {
     if (_initialized) return;
 
     try {
       if (Firebase.apps.isEmpty) {
-        await Firebase.initializeApp();
+        await Firebase.initializeApp(
+          options: DefaultFirebaseOptions.currentPlatform,
+        );
       }
-      FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+      if (!kIsWeb) {
+        FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+      }
       await FirebaseMessaging.instance.requestPermission(
         alert: true,
         badge: true,
@@ -47,9 +58,11 @@ class NotificationService {
     }
 
     try {
-      const android = AndroidInitializationSettings('@mipmap/ic_launcher');
-      const settings = InitializationSettings(android: android);
-      await _localNotifications.initialize(settings: settings);
+      if (!kIsWeb) {
+        const android = AndroidInitializationSettings('@mipmap/ic_launcher');
+        const settings = InitializationSettings(android: android);
+        await _localNotifications.initialize(settings: settings);
+      }
     } catch (_) {
       // Local notifications are also best-effort in web/test environments.
     }
@@ -59,7 +72,16 @@ class NotificationService {
   Future<String?> getDeviceToken() async {
     try {
       await initialize();
-      return FirebaseMessaging.instance.getToken();
+      for (var attempt = 0; attempt < 3; attempt++) {
+        final token = await FirebaseMessaging.instance.getToken(
+          vapidKey: kIsWeb ? _webVapidKey : null,
+        );
+        if (token != null && token.isNotEmpty) {
+          return token;
+        }
+        await Future<void>.delayed(Duration(milliseconds: 500 * (attempt + 1)));
+      }
+      return null;
     } catch (_) {
       return null;
     }
@@ -71,6 +93,9 @@ class NotificationService {
     required String body,
   }) async {
     try {
+      if (kIsWeb) {
+        return;
+      }
       await initialize();
       const details = NotificationDetails(
         android: AndroidNotificationDetails(
@@ -132,5 +157,11 @@ class NotificationService {
     final text = value?.toString().trim();
     if (text == null || text.isEmpty || text == 'null') return null;
     return text;
+  }
+
+  String _limit(String value, int maxLength) {
+    final normalized = value.trim();
+    if (normalized.length <= maxLength) return normalized;
+    return normalized.substring(0, maxLength);
   }
 }
