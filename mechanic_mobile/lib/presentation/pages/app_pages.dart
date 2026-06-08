@@ -1,9 +1,12 @@
 export 'incident_detail_page.dart';
 export 'incidents_page.dart';
 export 'dashboard_page.dart';
+export 'assignments_page.dart';
 export 'profile_page.dart';
 export 'settings_page.dart';
+export 'notifications_page.dart';
 export 'sessions_page.dart';
+export 'tenant_sessions_page.dart';
 export 'shell_page.dart';
 export 'splash_page.dart';
 export 'tenant_client_page.dart';

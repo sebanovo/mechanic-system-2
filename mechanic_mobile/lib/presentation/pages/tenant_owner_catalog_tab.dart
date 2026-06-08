@@ -36,6 +36,7 @@ class _TenantOwnerCatalogTabState extends State<TenantOwnerCatalogTab> {
     final vm = context.read<TenantViewModel>();
     await Future.wait<void>([
       vm.reloadServiceCatalog(),
+      vm.reloadTechnicians(),
       vm.reloadProviderServices(),
       vm.reloadTechnicianServices(),
       vm.reloadCandidateProviders(),
@@ -97,6 +98,13 @@ class _TenantOwnerCatalogTabState extends State<TenantOwnerCatalogTab> {
               subtitle: 'Dar de alta un servicio de proveedor.',
               icon: Icons.add_business_rounded,
               onTap: () => showCreateProviderServiceSheet(context, vm),
+            ),
+            const SizedBox(height: 12),
+            ActionCard(
+              title: 'Nuevo servicio técnico',
+              subtitle: 'Asignar un servicio de catálogo a un técnico.',
+              icon: Icons.engineering_rounded,
+              onTap: () => showCreateTechnicianServiceSheet(context, vm),
             ),
             const SizedBox(height: 18),
             TenantOwnerRecordsSection(

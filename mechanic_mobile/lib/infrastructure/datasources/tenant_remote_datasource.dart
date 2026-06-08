@@ -61,9 +61,6 @@ class TenantRemoteDataSource {
   ) =>
       _apiClient.post('/api/tenants/current/technicians', data: payload);
 
-  Future<Map<String, dynamic>> getCurrentTechnician(String technicianId) =>
-      _apiClient.get('/api/tenants/current/technicians/$technicianId');
-
   Future<Map<String, dynamic>> changeCurrentTechnicianStatus(
     String technicianId,
     Map<String, dynamic> payload,

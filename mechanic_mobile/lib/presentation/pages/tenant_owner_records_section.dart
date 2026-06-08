@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../helpers/tenant_record_helpers.dart';
 import '../viewmodels/tenant_viewmodel.dart';
 import '../widgets/app_widgets.dart';
+import 'tenant_owner_sheets.dart';
 
 class TenantOwnerRecordsSection extends StatelessWidget {
   const TenantOwnerRecordsSection({
@@ -50,11 +51,7 @@ class TenantOwnerRecordsSection extends StatelessWidget {
                       _recordActions(context, title, item),
                     ],
                   ),
-                  onTap: () => showTenantRecordDetails(
-                    context,
-                    title: title,
-                    record: item,
-                  ),
+                  onTap: () => _openRecord(context, title, item),
                 ),
               ),
             ),
@@ -62,6 +59,74 @@ class TenantOwnerRecordsSection extends StatelessWidget {
       ],
     );
   }
+}
+
+Future<void> _openRecord(
+  BuildContext context,
+  String title,
+  Map<String, dynamic> item,
+) async {
+  final vm = context.read<TenantViewModel>();
+  if (title == 'Técnicos') {
+    if (!context.mounted) return;
+    showTechnicianManagementSheet(context, vm, item);
+    return;
+  }
+
+  if (title == 'Miembros') {
+    final detail = await vm.reloadMember(tenantRecordId(item));
+    if (!context.mounted) return;
+    showMemberManagementSheet(context, vm, detail ?? item);
+    return;
+  }
+
+  if (title == 'Servicios del proveedor') {
+    final detail = await vm.reloadProviderService(tenantRecordId(item));
+    if (!context.mounted) return;
+    showTenantRecordDetails(context, title: title, record: detail ?? item);
+    return;
+  }
+
+  if (title == 'Servicios técnicos') {
+    final detail = await vm.reloadTechnicianService(tenantRecordId(item));
+    if (!context.mounted) return;
+    showTenantRecordDetails(context, title: title, record: detail ?? item);
+    return;
+  }
+
+  if (title == 'Candidatos') {
+    final detail = await vm.reloadCandidateProvider(tenantRecordId(item));
+    if (!context.mounted) return;
+    showTenantRecordDetails(context, title: title, record: detail ?? item);
+    return;
+  }
+
+  if (title == 'Ofertas') {
+    final detail = await vm.reloadOffer(tenantRecordId(item));
+    if (!context.mounted) return;
+    showTenantRecordDetails(context, title: title, record: detail ?? item);
+    return;
+  }
+
+  if (title == 'Asignaciones') {
+    final detail = await vm.reloadAssignment(tenantRecordId(item));
+    if (!context.mounted) return;
+    showTenantRecordDetails(context, title: title, record: detail ?? item);
+    return;
+  }
+
+  if (title == 'Catálogo de servicios') {
+    final detail = await vm.reloadServiceCatalogItem(tenantRecordId(item));
+    if (!context.mounted) return;
+    showTenantRecordDetails(context, title: title, record: detail ?? item);
+    return;
+  }
+
+  showTenantRecordDetails(
+    context,
+    title: title,
+    record: item,
+  );
 }
 
 Widget _recordActions(

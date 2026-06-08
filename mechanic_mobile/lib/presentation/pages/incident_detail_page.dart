@@ -30,6 +30,25 @@ class IncidentDetailPage extends StatelessWidget {
         title: const Text('Detalle del incidente'),
         actions: [
           IconButton(
+            onPressed: vm.analysisLoading
+                ? null
+                : () async {
+                    final result = await context
+                        .read<IncidentsViewModel>()
+                        .runAiAnalysis(incidentId);
+                    if (!context.mounted || result == null) return;
+                    await showAiAnalysisDialog(context, result);
+                  },
+            icon: vm.analysisLoading
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.psychology_rounded),
+            tooltip: 'Ejecutar análisis IA',
+          ),
+          IconButton(
             onPressed: incident == null ? null : () => showIncidentForm(context, existing: incident),
             icon: const Icon(Icons.edit_rounded),
           ),
@@ -102,6 +121,25 @@ class IncidentDetailPage extends StatelessWidget {
                               ),
                             ),
                           ],
+                          if (vm.aiAnalysis != null) ...[
+                            const SizedBox(height: 12),
+                            SurfaceCard(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Análisis IA',
+                                    style: Theme.of(context).textTheme.titleLarge,
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Text(
+                                    _analysisSummary(vm.aiAnalysis!),
+                                    style: Theme.of(context).textTheme.bodyLarge,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                           const SizedBox(height: 12),
                           ElevatedButton.icon(
                             onPressed: () async {
@@ -120,6 +158,66 @@ class IncidentDetailPage extends StatelessWidget {
       ),
     );
   }
+}
+
+Future<void> showAiAnalysisDialog(
+  BuildContext context,
+  Map<String, dynamic> analysis,
+) async {
+  await showDialog<void>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: const Text('Análisis IA'),
+      content: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _analysisRow('Versión', analysis['analysis_version']),
+            _analysisRow('Resultado', analysis['analysis_result']),
+            _analysisRow('Probable servicio', analysis['probable_service_code']),
+            _analysisRow('Problema probable', analysis['probable_problem']),
+            _analysisRow('Confianza', analysis['confidence_score']),
+            _analysisRow('Precio mínimo', analysis['estimated_min_price']),
+            _analysisRow('Precio máximo', analysis['estimated_max_price']),
+            _analysisRow(
+              'Duración mínima',
+              analysis['estimated_min_duration_minutes'],
+            ),
+            _analysisRow(
+              'Duración máxima',
+              analysis['estimated_max_duration_minutes'],
+            ),
+            _analysisRow('Prioridad recomendada', analysis['recommended_priority']),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(dialogContext).pop(),
+          child: const Text('Cerrar'),
+        ),
+      ],
+    ),
+  );
+}
+
+Widget _analysisRow(String label, Object? value) {
+  return Padding(
+    padding: const EdgeInsets.only(bottom: 10),
+    child: Text('$label: ${value ?? "-"}'),
+  );
+}
+
+String _analysisSummary(Map<String, dynamic> analysis) {
+  final problem = analysis['probable_problem']?.toString().trim();
+  final service = analysis['probable_service_code']?.toString().trim();
+  final confidence = analysis['confidence_score']?.toString().trim();
+  return [
+    if (problem != null && problem.isNotEmpty) problem,
+    if (service != null && service.isNotEmpty) 'Servicio: $service',
+    if (confidence != null && confidence.isNotEmpty) 'Confianza: $confidence',
+  ].join(' • ');
 }
 
 String _formatDate(DateTime? value) {

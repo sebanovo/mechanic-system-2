@@ -69,7 +69,9 @@ void showCreateTechnicianSheet(BuildContext context, TenantViewModel vm) {
 }
 
 void showCreateProviderServiceSheet(BuildContext context, TenantViewModel vm) {
-  final serviceCatalogId = TextEditingController();
+  var selectedServiceCatalogId = vm.serviceCatalog.items.isNotEmpty
+      ? vm.serviceCatalog.items.first['id']?.toString() ?? ''
+      : '';
   final minPrice = TextEditingController();
   final maxPrice = TextEditingController();
 
@@ -102,7 +104,28 @@ void showCreateProviderServiceSheet(BuildContext context, TenantViewModel vm) {
               const SizedBox(height: 16),
               Text('Nuevo servicio', style: Theme.of(context).textTheme.headlineSmall),
               const SizedBox(height: 14),
-              TextField(controller: serviceCatalogId, decoration: const InputDecoration(labelText: 'Service catalog ID')),
+              DropdownButtonFormField<String>(
+                value: selectedServiceCatalogId.isEmpty ? null : selectedServiceCatalogId,
+                decoration: const InputDecoration(labelText: 'Servicio de catálogo'),
+                items: vm.serviceCatalog.items
+                    .map(
+                      (item) => DropdownMenuItem<String>(
+                        value: item['id']?.toString(),
+                        child: Text(
+                          item['name']?.toString() ??
+                              item['title']?.toString() ??
+                              item['code']?.toString() ??
+                              item['id']?.toString() ??
+                              '-',
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (value) {
+                  if (value != null) selectedServiceCatalogId = value;
+                },
+              ),
               const SizedBox(height: 12),
               TextField(controller: minPrice, decoration: const InputDecoration(labelText: 'Precio mínimo')),
               const SizedBox(height: 12),
@@ -112,8 +135,9 @@ void showCreateProviderServiceSheet(BuildContext context, TenantViewModel vm) {
                 onPressed: vm.submitting
                     ? null
                     : () async {
+                        if (selectedServiceCatalogId.isEmpty) return;
                         final ok = await vm.createProviderService({
-                          'service_catalog_id': serviceCatalogId.text.trim(),
+                          'service_catalog_id': selectedServiceCatalogId,
                           if (minPrice.text.trim().isNotEmpty) 'custom_min_price': minPrice.text.trim(),
                           if (maxPrice.text.trim().isNotEmpty) 'custom_max_price': maxPrice.text.trim(),
                         });
@@ -125,6 +149,292 @@ void showCreateProviderServiceSheet(BuildContext context, TenantViewModel vm) {
             ],
           ),
         ),
+      );
+    },
+  );
+}
+
+void showCreateTechnicianServiceSheet(BuildContext context, TenantViewModel vm) {
+  var selectedTechnicianId = vm.technicians.items.isNotEmpty
+      ? vm.technicians.items.first['id']?.toString() ?? ''
+      : '';
+  var selectedProviderServiceId = vm.providerServices.items.isNotEmpty
+      ? vm.providerServices.items.first['id']?.toString() ?? ''
+      : '';
+  final skillLevel = TextEditingController();
+
+  showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (sheetContext) {
+      return Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(sheetContext).viewInsets.bottom),
+        child: Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: ListView(
+            shrinkWrap: true,
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
+            children: [
+              Center(
+                child: Container(
+                  width: 42,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFD6E2F7),
+                    borderRadius: BorderRadius.circular(100),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text('Nuevo servicio técnico', style: Theme.of(context).textTheme.headlineSmall),
+              const SizedBox(height: 14),
+              DropdownButtonFormField<String>(
+                value: selectedTechnicianId.isEmpty ? null : selectedTechnicianId,
+                decoration: const InputDecoration(labelText: 'Técnico'),
+                items: vm.technicians.items
+                    .map(
+                      (item) => DropdownMenuItem<String>(
+                        value: item['id']?.toString(),
+                        child: Text(
+                          item['technician_code']?.toString() ??
+                              item['full_name']?.toString() ??
+                              item['id']?.toString() ??
+                              '-',
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (value) {
+                  if (value != null) selectedTechnicianId = value;
+                },
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                value: selectedProviderServiceId.isEmpty ? null : selectedProviderServiceId,
+                decoration: const InputDecoration(labelText: 'Servicio de proveedor'),
+                items: vm.providerServices.items
+                    .map(
+                      (item) => DropdownMenuItem<String>(
+                        value: item['id']?.toString(),
+                        child: Text(
+                          item['service_name']?.toString() ??
+                              item['name']?.toString() ??
+                              item['id']?.toString() ??
+                              '-',
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (value) {
+                  if (value != null) selectedProviderServiceId = value;
+                },
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: skillLevel,
+                decoration: const InputDecoration(labelText: 'Skill level'),
+              ),
+              const SizedBox(height: 18),
+              ElevatedButton(
+                onPressed: vm.submitting
+                    ? null
+                    : () async {
+                        if (selectedTechnicianId.isEmpty || selectedProviderServiceId.isEmpty) return;
+                        final ok = await vm.createTechnicianService({
+                          'technician_id': selectedTechnicianId,
+                          'provider_service_id': selectedProviderServiceId,
+                          if (skillLevel.text.trim().isNotEmpty) 'skill_level': skillLevel.text.trim(),
+                        });
+                        if (!context.mounted) return;
+                        if (ok) Navigator.of(sheetContext).pop();
+                      },
+                child: const Text('Crear servicio técnico'),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
+void showTechnicianManagementSheet(
+  BuildContext context,
+  TenantViewModel vm,
+  Map<String, dynamic> record,
+) {
+  final technician = record['technician'] is Map
+      ? Map<String, dynamic>.from(record['technician'])
+      : record;
+  final user = record['user'] is Map
+      ? Map<String, dynamic>.from(record['user'])
+      : record;
+  var status = (technician['status']?.toString().isNotEmpty ?? false)
+      ? technician['status'].toString()
+      : 'ACTIVE';
+  var availabilityStatus = (record['availability_status']?.toString().isNotEmpty ?? false)
+      ? record['availability_status'].toString()
+      : 'AVAILABLE';
+  final availableFrom = TextEditingController(
+    text: record['available_from']?.toString() ?? '',
+  );
+  final availableUntil = TextEditingController(
+    text: record['available_until']?.toString() ?? '',
+  );
+
+  showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (sheetContext) {
+      return StatefulBuilder(
+        builder: (context, setState) {
+          return _SheetScaffold(
+            title: 'Gestión de técnico',
+            children: [
+              _sheetSummary('Nombre', '${user['first_name'] ?? ''} ${user['last_name'] ?? ''}'.trim()),
+              _sheetSummary('Email', user['email']?.toString() ?? '-'),
+              _sheetSummary('Código', technician['technician_code']?.toString() ?? '-'),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                value: status,
+                decoration: const InputDecoration(labelText: 'Estado del técnico'),
+                items: const [
+                  DropdownMenuItem(value: 'ACTIVE', child: Text('Activo')),
+                  DropdownMenuItem(value: 'INACTIVE', child: Text('Inactivo')),
+                  DropdownMenuItem(value: 'BLOCKED', child: Text('Bloqueado')),
+                ],
+                onChanged: (value) {
+                  if (value == null) return;
+                  setState(() => status = value);
+                },
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                value: availabilityStatus,
+                decoration: const InputDecoration(labelText: 'Disponibilidad'),
+                items: const [
+                  DropdownMenuItem(value: 'AVAILABLE', child: Text('Disponible')),
+                  DropdownMenuItem(value: 'BUSY', child: Text('Ocupado')),
+                  DropdownMenuItem(value: 'OFFLINE', child: Text('Desconectado')),
+                  DropdownMenuItem(value: 'ON_BREAK', child: Text('En pausa')),
+                ],
+                onChanged: (value) {
+                  if (value == null) return;
+                  setState(() => availabilityStatus = value);
+                },
+              ),
+              const SizedBox(height: 12),
+              _sheetField(availableFrom, 'Disponible desde (ISO 8601)', obscureText: false),
+              _sheetField(availableUntil, 'Disponible hasta (ISO 8601)', obscureText: false),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: vm.submitting
+                    ? null
+                    : () async {
+                        final technicianId = technician['id']?.toString() ?? '';
+                        final okStatus = technicianId.isNotEmpty
+                            ? await vm.updateTechnicianStatus(technicianId, status)
+                            : false;
+                        final okAvailability = technicianId.isNotEmpty
+                            ? await vm.updateTechnicianAvailability(technicianId, {
+                                'availability_status': availabilityStatus,
+                                'available_from': _parseNullableDateTime(availableFrom.text),
+                                'available_until': _parseNullableDateTime(availableUntil.text),
+                              })
+                            : false;
+                        if (!sheetContext.mounted) return;
+                        if (okStatus && okAvailability) Navigator.of(sheetContext).pop();
+                      },
+                child: const Text('Guardar técnico'),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+}
+
+void showMemberManagementSheet(
+  BuildContext context,
+  TenantViewModel vm,
+  Map<String, dynamic> record,
+) {
+  final membership = record['membership'] is Map
+      ? Map<String, dynamic>.from(record['membership'])
+      : record;
+  final user = record['user'] is Map
+      ? Map<String, dynamic>.from(record['user'])
+      : record;
+  var status = (membership['status']?.toString().isNotEmpty ?? false)
+      ? membership['status'].toString()
+      : 'ACTIVE';
+
+  showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (sheetContext) {
+      return StatefulBuilder(
+        builder: (context, setState) {
+          return _SheetScaffold(
+            title: 'Gestión de miembro',
+            children: [
+              _sheetSummary('Nombre', '${user['first_name'] ?? ''} ${user['last_name'] ?? ''}'.trim()),
+              _sheetSummary('Email', user['email']?.toString() ?? '-'),
+              _sheetSummary('Tenant', membership['tenant_id']?.toString() ?? '-'),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                value: status,
+                decoration: const InputDecoration(labelText: 'Estado'),
+                items: const [
+                  DropdownMenuItem(value: 'ACTIVE', child: Text('Activo')),
+                  DropdownMenuItem(value: 'INACTIVE', child: Text('Inactivo')),
+                  DropdownMenuItem(value: 'SUSPENDED', child: Text('Suspendido')),
+                ],
+                onChanged: (value) {
+                  if (value == null) return;
+                  setState(() => status = value);
+                },
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: vm.submitting
+                    ? null
+                    : () async {
+                        final membershipId = membership['id']?.toString() ?? '';
+                        final ok = membershipId.isNotEmpty
+                            ? await vm.changeCurrentMemberStatus(membershipId, {'status': status})
+                            : false;
+                        if (!sheetContext.mounted) return;
+                        if (ok) Navigator.of(sheetContext).pop();
+                      },
+                child: const Text('Guardar miembro'),
+              ),
+              const SizedBox(height: 10),
+              OutlinedButton(
+                onPressed: vm.submitting
+                    ? null
+                    : () async {
+                        final membershipId = membership['id']?.toString() ?? '';
+                        final ok = membershipId.isNotEmpty
+                            ? await vm.removeCurrentMember(membershipId)
+                            : false;
+                        if (!sheetContext.mounted) return;
+                        if (ok) Navigator.of(sheetContext).pop();
+                      },
+                child: const Text('Dar de baja'),
+              ),
+            ],
+          );
+        },
       );
     },
   );
@@ -337,10 +647,35 @@ Widget _sheetField(
   );
 }
 
+Widget _sheetSummary(String label, String value) {
+  return Padding(
+    padding: const EdgeInsets.only(bottom: 10),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 110,
+          child: Text(
+            label,
+            style: const TextStyle(fontWeight: FontWeight.w800),
+          ),
+        ),
+        Expanded(child: Text(value)),
+      ],
+    ),
+  );
+}
+
 double? _parseNullableDouble(String value) {
   final trimmed = value.trim();
   if (trimmed.isEmpty) return null;
   return double.tryParse(trimmed);
+}
+
+String? _parseNullableDateTime(String value) {
+  final trimmed = value.trim();
+  if (trimmed.isEmpty) return null;
+  return trimmed;
 }
 
 class _SheetScaffold extends StatelessWidget {

@@ -1,4 +1,5 @@
 export 'client_repository.dart';
+export 'notification_repository.dart';
 export 'incident_repository.dart';
 export 'session_repository.dart';
 export 'tenant_repository.dart';

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../viewmodels/auth_viewmodel.dart';
-import 'tenant_client_page.dart';
+import 'shell_page.dart';
 import 'tenant_owner_page.dart';
 import 'tenant_technician_page.dart';
 
@@ -20,7 +20,7 @@ class TenantHomePage extends StatelessWidget {
       case 'TECHNICIAN':
         return const TenantTechnicianPage();
       case 'CLIENT':
-        return const TenantClientPage();
+        return const ShellPage();
       default:
         return const TenantOwnerPage();
     }

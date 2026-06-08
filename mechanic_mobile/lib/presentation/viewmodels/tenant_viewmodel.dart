@@ -233,18 +233,6 @@ class TenantViewModel extends ChangeNotifier {
     }
   }
 
-  Future<Map<String, dynamic>?> reloadTechnician(String technicianId) async {
-    try {
-      final technician = await _tenantRepository.getCurrentTechnician(technicianId);
-      notifyListeners();
-      return technician;
-    } catch (exception) {
-      error = appFailureMessage(exception);
-      notifyListeners();
-      return null;
-    }
-  }
-
   Future<void> reloadMembers() async {
     try {
       members = await _tenantRepository.listCurrentMembers(page: 1, pageSize: 20);
@@ -294,6 +282,18 @@ class TenantViewModel extends ChangeNotifier {
     } catch (exception) {
       error = appFailureMessage(exception);
       notifyListeners();
+    }
+  }
+
+  Future<Map<String, dynamic>?> reloadAssignment(String assignmentId) async {
+    try {
+      final assignment = await _tenantRepository.getCurrentAssignment(assignmentId);
+      notifyListeners();
+      return assignment;
+    } catch (exception) {
+      error = appFailureMessage(exception);
+      notifyListeners();
+      return null;
     }
   }
 
@@ -394,6 +394,18 @@ class TenantViewModel extends ChangeNotifier {
     }
   }
 
+  Future<Map<String, dynamic>?> reloadProviderService(String providerServiceId) async {
+    try {
+      final providerService = await _tenantRepository.getCurrentProviderService(providerServiceId);
+      notifyListeners();
+      return providerService;
+    } catch (exception) {
+      error = appFailureMessage(exception);
+      notifyListeners();
+      return null;
+    }
+  }
+
   Future<void> reloadTechnicianServices() async {
     try {
       technicianServices = await _tenantRepository.listCurrentTechnicianServices(
@@ -404,6 +416,18 @@ class TenantViewModel extends ChangeNotifier {
     } catch (exception) {
       error = appFailureMessage(exception);
       notifyListeners();
+    }
+  }
+
+  Future<Map<String, dynamic>?> reloadTechnicianService(String technicianServiceId) async {
+    try {
+      final technicianService = await _tenantRepository.getCurrentTechnicianService(technicianServiceId);
+      notifyListeners();
+      return technicianService;
+    } catch (exception) {
+      error = appFailureMessage(exception);
+      notifyListeners();
+      return null;
     }
   }
 
@@ -420,6 +444,18 @@ class TenantViewModel extends ChangeNotifier {
     }
   }
 
+  Future<Map<String, dynamic>?> reloadCandidateProvider(String candidateId) async {
+    try {
+      final candidate = await _tenantRepository.getCurrentCandidateProvider(candidateId);
+      notifyListeners();
+      return candidate;
+    } catch (exception) {
+      error = appFailureMessage(exception);
+      notifyListeners();
+      return null;
+    }
+  }
+
   Future<void> reloadOffers() async {
     try {
       offers = await _tenantRepository.listCurrentOffers(page: 1, pageSize: 20);
@@ -427,6 +463,18 @@ class TenantViewModel extends ChangeNotifier {
     } catch (exception) {
       error = appFailureMessage(exception);
       notifyListeners();
+    }
+  }
+
+  Future<Map<String, dynamic>?> reloadOffer(String offerId) async {
+    try {
+      final offer = await _tenantRepository.getCurrentOffer(offerId);
+      notifyListeners();
+      return offer;
+    } catch (exception) {
+      error = appFailureMessage(exception);
+      notifyListeners();
+      return null;
     }
   }
 
@@ -453,6 +501,18 @@ class TenantViewModel extends ChangeNotifier {
     } catch (exception) {
       error = appFailureMessage(exception);
       notifyListeners();
+    }
+  }
+
+  Future<Map<String, dynamic>?> reloadServiceCatalogItem(String serviceCatalogId) async {
+    try {
+      final serviceCatalogItem = await _tenantRepository.getCurrentServiceCatalog(serviceCatalogId);
+      notifyListeners();
+      return serviceCatalogItem;
+    } catch (exception) {
+      error = appFailureMessage(exception);
+      notifyListeners();
+      return null;
     }
   }
 

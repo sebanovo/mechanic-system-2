@@ -34,8 +34,16 @@ final appRouter = GoRouter(
       builder: (context, state) => const SettingsPage(),
     ),
     GoRoute(
+      path: '/notifications',
+      builder: (context, state) => const NotificationsPage(),
+    ),
+    GoRoute(
       path: '/sessions',
       builder: (context, state) => const SessionsPage(),
+    ),
+    GoRoute(
+      path: '/tenant-sessions',
+      builder: (context, state) => const TenantSessionsPage(),
     ),
     GoRoute(
       path: '/vehicles/:id',

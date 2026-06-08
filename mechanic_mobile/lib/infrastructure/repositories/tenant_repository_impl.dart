@@ -118,11 +118,6 @@ class TenantRepositoryImpl implements TenantRepository {
   }
 
   @override
-  Future<Map<String, dynamic>> getCurrentTechnician(String technicianId) async {
-    return _data(await _remoteDataSource.getCurrentTechnician(technicianId));
-  }
-
-  @override
   Future<Map<String, dynamic>> changeCurrentTechnicianStatus(
     String technicianId,
     Map<String, dynamic> payload,

@@ -22,6 +22,8 @@ class MechanicMobileApp extends StatelessWidget {
         ChangeNotifierProvider.value(value: sl<SessionsViewModel>()),
         ChangeNotifierProvider.value(value: sl<VehiclesViewModel>()),
         ChangeNotifierProvider.value(value: sl<IncidentsViewModel>()),
+        ChangeNotifierProvider.value(value: sl<AssignmentsViewModel>()),
+        ChangeNotifierProvider.value(value: sl<NotificationsViewModel>()),
         ChangeNotifierProvider.value(value: sl<TenantViewModel>()),
         ChangeNotifierProvider.value(value: sl<SessionStorage>()),
       ],

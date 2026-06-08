@@ -102,7 +102,7 @@ class TenantOwnerHero extends StatelessWidget {
                       context,
                       label: 'Sesiones',
                       icon: Icons.devices_other_rounded,
-                      onTap: () => context.push('/sessions'),
+                      onTap: () => context.push('/tenant-sessions'),
                     ),
                   ),
                 ],

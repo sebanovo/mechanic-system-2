@@ -16,4 +16,6 @@ abstract class IncidentRepository {
     String incidentId,
     IncidentCancelInput input,
   );
+
+  Future<Map<String, dynamic>> runIncidentAiAnalysis(String incidentId);
 }

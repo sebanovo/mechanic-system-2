@@ -125,6 +125,13 @@ class _TenantOwnerProfileTabState extends State<TenantOwnerProfileTab> {
               icon: Icons.apartment_rounded,
               onTap: () => showTenantRecordDetails(context, title: 'Tenant activo', record: tenantDetail.isEmpty ? tenant : tenantDetail),
             ),
+            const SizedBox(height: 10),
+            ActionCard(
+              title: 'Notificaciones',
+              subtitle: 'Mensajes, dispositivos y pushes del backend.',
+              icon: Icons.notifications_rounded,
+              onTap: () => context.push('/notifications'),
+            ),
             const SizedBox(height: 18),
             SurfaceCard(
               child: Column(

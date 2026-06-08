@@ -33,8 +33,6 @@ abstract class TenantRepository {
     Map<String, dynamic> payload,
   );
 
-  Future<Map<String, dynamic>> getCurrentTechnician(String technicianId);
-
   Future<Map<String, dynamic>> changeCurrentTechnicianStatus(
     String technicianId,
     Map<String, dynamic> payload,

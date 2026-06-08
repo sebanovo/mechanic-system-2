@@ -28,7 +28,7 @@ class TenantTechnicianPage extends StatelessWidget {
             icon: const Icon(Icons.refresh_rounded),
           ),
           IconButton(
-            onPressed: () => context.push('/sessions'),
+            onPressed: () => context.push('/tenant-sessions'),
             icon: const Icon(Icons.devices_other_rounded),
           ),
         ],

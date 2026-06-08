@@ -40,6 +40,7 @@ class _TenantOwnerOperationsTabState extends State<TenantOwnerOperationsTab> {
       vm.reloadIncidents(),
       vm.reloadAssignments(),
       vm.reloadTenantSessions(),
+      vm.reloadServiceCatalog(),
     ]);
   }
 
