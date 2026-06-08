@@ -140,8 +140,17 @@ class AuthPage extends StatelessWidget {
   }
 
   void _goAfterAuth(BuildContext context) {
-    final selectedRole = context.read<AuthViewModel>().selectedRole;
-    if (selectedRole == AppEntryRole.client) {
+    final auth = context.read<AuthViewModel>();
+    final contextData = auth.contextData;
+    final userType = contextData?.userType?.toUpperCase() ?? '';
+    final tenantId = contextData?.tenantId ?? '';
+    if (tenantId.isNotEmpty ||
+        userType == 'TENANT_OWNER' ||
+        userType == 'TECHNICIAN') {
+      context.go('/tenant-home');
+      return;
+    }
+    if (auth.selectedRole == AppEntryRole.client) {
       context.go('/home');
     } else {
       context.go('/tenant-home');

@@ -107,6 +107,15 @@ class EntryPage extends StatelessWidget {
                               const SizedBox(height: 12),
                               ElevatedButton(
                                 onPressed: () {
+                                  final contextData = authVm.contextData;
+                                  final userType = contextData?.userType?.toUpperCase() ?? '';
+                                  final tenantId = contextData?.tenantId ?? '';
+                                  if (tenantId.isNotEmpty ||
+                                      userType == 'TENANT_OWNER' ||
+                                      userType == 'TECHNICIAN') {
+                                    context.go('/tenant-home');
+                                    return;
+                                  }
                                   if (authVm.selectedRole == AppEntryRole.client) {
                                     context.go('/home');
                                   } else {
