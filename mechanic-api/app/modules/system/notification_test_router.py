@@ -26,9 +26,13 @@ def test_push_notification(payload: PushTestRequest) -> dict:
     message_id = NotificationDispatcher().send_push(
         PushNotificationPayload(
             token=payload.token,
-            title=payload.title,
-            body=payload.body,
-            data=payload.data,
+            data={
+                **payload.data,
+                "notification_title": payload.title,
+                "notification_body": payload.body,
+                "notification_type": "TEST_PUSH",
+                "notification_id": "test-push",
+            },
         )
     )
 

@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import math
 import logging
 
+from decimal import Decimal, ROUND_HALF_UP
 from typing import Any
 
 from sqlalchemy.orm import Session
@@ -27,6 +29,10 @@ from app.modules.notification.builders.incident_offer_notification_builder impor
     IncidentOfferNotificationInput,
     build_client_offer_accepted_notification,
     build_incident_offer_notification,
+)
+from app.modules.notification.builders.incident_no_providers_notification_builder import (
+    IncidentNoProvidersAvailableNotificationInput,
+    build_incident_no_providers_available_notification,
 )
 from app.modules.notification.repository import NotificationRepository
 from app.modules.notification.schemas import NotificationSendRequest
@@ -527,6 +533,24 @@ class BusinessNotificationService:
         if incident is None or offer is None or provider_profile is None:
             return
 
+        provider_tenant_profile = self.tenant_repository.get_profile(
+            provider_profile.tenant_id
+        )
+        distance_km = self._calculate_distance_km(
+            incident_latitude=incident.latitude,
+            incident_longitude=incident.longitude,
+            provider_latitude=(
+                provider_tenant_profile.latitude
+                if provider_tenant_profile is not None
+                else None
+            ),
+            provider_longitude=(
+                provider_tenant_profile.longitude
+                if provider_tenant_profile is not None
+                else None
+            ),
+        )
+
         service_catalog = None
         if incident.service_catalog_id is not None:
             service_catalog = self.service_catalog_repository.get_by_id(
@@ -629,7 +653,7 @@ class BusinessNotificationService:
                     if ai_analysis is not None
                     else None
                 ),
-                distance_km=None,
+                distance_km=distance_km,
             )
         )
 
@@ -655,6 +679,131 @@ class BusinessNotificationService:
                     "audience": audience or "ALL",
                 },
             )
+
+    def send_no_providers_available(
+        self,
+        *,
+        incident_id: str,
+    ) -> None:
+        incident = self.incident_repository.get_by_id(incident_id)
+
+        if incident is None:
+            return
+
+        customer_detail = self.customer_repository.get_detail_by_customer_id(
+            incident.customer_id
+        )
+
+        customer = customer_detail[0] if customer_detail is not None else None
+        customer_user = customer_detail[1] if customer_detail is not None else None
+
+        if customer_user is None:
+            return
+
+        service_catalog = None
+        if incident.service_catalog_id is not None:
+            service_catalog = self.service_catalog_repository.get_by_id(
+                incident.service_catalog_id
+            )
+
+        ai_analysis = self.incident_ai_analysis_repository.get_latest_by_incident(
+            incident.id
+        )
+
+        vehicle = self.vehicle_repository.get_by_id(incident.vehicle_id)
+
+        content = build_incident_no_providers_available_notification(
+            IncidentNoProvidersAvailableNotificationInput(
+                notification_type=NotificationType.INCIDENT_NO_PROVIDERS_AVAILABLE,
+                incident_id=str(incident.id),
+                incident_code=incident.incident_code,
+                incident_title=incident.title,
+                incident_priority=incident.priority,
+                incident_status=incident.status,
+                customer_id=(
+                    str(customer.id)
+                    if customer is not None
+                    else str(incident.customer_id)
+                ),
+                customer_name=(
+                    self._build_customer_name(customer_user)
+                    if customer_user is not None
+                    else None
+                ),
+                service_catalog_id=(
+                    str(service_catalog.id)
+                    if service_catalog is not None
+                    else None
+                ),
+                service_code=(
+                    service_catalog.service_code
+                    if service_catalog is not None
+                    else None
+                ),
+                service_name=(
+                    service_catalog.service_name
+                    if service_catalog is not None
+                    else None
+                ),
+                service_category=(
+                    service_catalog.category
+                    if service_catalog is not None
+                    else None
+                ),
+                vehicle_id=str(incident.vehicle_id),
+                vehicle_label=(
+                    self._build_vehicle_label(vehicle)
+                    if vehicle is not None
+                    else None
+                ),
+                vehicle_plate=(
+                    vehicle.plate_number if vehicle is not None else None
+                ),
+                address_text=incident.address_text,
+                latitude=incident.latitude,
+                longitude=incident.longitude,
+                probable_problem=(
+                    ai_analysis.probable_problem
+                    if ai_analysis is not None
+                    else None
+                ),
+                confidence_score=(
+                    ai_analysis.confidence_score
+                    if ai_analysis is not None
+                    else None
+                ),
+                estimated_min_price=(
+                    ai_analysis.estimated_min_price
+                    if ai_analysis is not None
+                    else None
+                ),
+                estimated_max_price=(
+                    ai_analysis.estimated_max_price
+                    if ai_analysis is not None
+                    else None
+                ),
+                estimated_min_duration_minutes=(
+                    ai_analysis.estimated_min_duration_minutes
+                    if ai_analysis is not None
+                    else None
+                ),
+                estimated_max_duration_minutes=(
+                    ai_analysis.estimated_max_duration_minutes
+                    if ai_analysis is not None
+                    else None
+                ),
+            )
+        )
+
+        self._send(
+            recipient_user_id=str(customer_user.id),
+            tenant_id=None,
+            notification_type=NotificationType.INCIDENT_NO_PROVIDERS_AVAILABLE,
+            title=content.title,
+            body=content.body,
+            data=content.persisted_data,
+            push_data=content.push_data,
+        )
 
     def send_incident_offer_accepted(
         self,
@@ -804,3 +953,49 @@ class BusinessNotificationService:
             push_data[str(key)] = str(value)
 
         return push_data
+
+    def _calculate_distance_km(
+        self,
+        *,
+        incident_latitude,
+        incident_longitude,
+        provider_latitude,
+        provider_longitude,
+    ) -> Decimal | None:
+        if (
+            incident_latitude is None
+            or incident_longitude is None
+            or provider_latitude is None
+            or provider_longitude is None
+        ):
+            return None
+
+        earth_radius_km = 6371.0
+
+        lat1 = math.radians(float(incident_latitude))
+        lon1 = math.radians(float(incident_longitude))
+        lat2 = math.radians(float(provider_latitude))
+        lon2 = math.radians(float(provider_longitude))
+
+        delta_lat = lat2 - lat1
+        delta_lon = lon2 - lon1
+
+        a = (
+            math.sin(delta_lat / 2) ** 2
+            + math.cos(lat1) * math.cos(lat2) * math.sin(delta_lon / 2) ** 2
+        )
+        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+        distance = earth_radius_km * c
+
+        return Decimal(str(distance)).quantize(
+            Decimal("0.01"),
+            rounding=ROUND_HALF_UP,
+        )
+
+    def _decimal_to_string(self, value: Decimal | None) -> str | None:
+        if value is None:
+            return None
+
+        normalized = value.normalize()
+        text = format(normalized, "f")
+        return text if text != "" else "0"

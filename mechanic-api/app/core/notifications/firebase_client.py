@@ -15,10 +15,6 @@ class FirebasePushClient:
 
     def send(self, payload: PushNotificationPayload) -> str:
         message = messaging.Message(
-            notification=messaging.Notification(
-                title=payload.title,
-                body=payload.body,
-            ),
             data=payload.data,
             token=payload.token,
         )
