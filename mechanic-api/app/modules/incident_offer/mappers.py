@@ -1,17 +1,13 @@
 from __future__ import annotations
 
-from decimal import Decimal
-
 from app.modules.identity.customer.models import Customer
 from app.modules.identity.provider.models import ProviderProfile
 from app.modules.identity.user.models import User
-from app.modules.identity.user.mappers import user_public
 from app.modules.incident.models import Incident
 from app.modules.incident_ai_analysis.models import IncidentAiAnalysis
 from app.modules.incident_offer.models import IncidentOffer
 from app.modules.incident_offer.routes import (
     tenant_offer_accept_url,
-    tenant_offer_deeplink,
     tenant_offer_reject_url,
     tenant_offer_url,
 )

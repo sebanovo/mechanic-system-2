@@ -3,7 +3,11 @@ from __future__ import annotations
 import asyncio
 from datetime import datetime, timezone
 
-from app.common.exceptions import ConflictException, ForbiddenException, NotFoundException
+from app.common.exceptions import (
+    ConflictException,
+    ForbiddenException,
+    NotFoundException,
+)
 from app.core.audit.constants import (
     AssignmentAuditEvent,
     AssignmentTrackingEventAuditEvent,
@@ -392,14 +396,14 @@ class AssignmentTrackingEventService(BaseService):
             loop.create_task(
                 realtime_tracking_manager.broadcast(
                     assignment_id=str(assignment.id),
-                    message=message,
+                    payload=message,
                 )
             )
         except RuntimeError:
             asyncio.run(
                 realtime_tracking_manager.broadcast(
                     assignment_id=str(assignment.id),
-                    message=message,
+                    payload=message,
                 )
             )
 

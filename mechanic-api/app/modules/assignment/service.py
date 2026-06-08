@@ -17,12 +17,12 @@ from app.modules.assignment.schemas import (
     AssignmentUpdateRequest,
 )
 from app.modules.identity.customer.repository import CustomerRepository
-from app.modules.identity.technician.repository import TechnicianRepository
 from app.modules.identity.technician.models import Technician
+from app.modules.identity.technician.repository import TechnicianRepository
+from app.modules.identity.technician_availability.models import TechnicianAvailability
 from app.modules.identity.technician_availability.repository import (
     TechnicianAvailabilityRepository,
 )
-from app.modules.identity.technician_availability.models import TechnicianAvailability
 from app.modules.identity.technician_availability.utils import (
     is_technician_available_now,
 )
@@ -294,7 +294,7 @@ class AssignmentService(BaseService):
         return self._change_status(
             assignment=assignment,
             incident=incident,
-            status=self._normalize_upper(payload.assignment_status),
+            status=payload.assignment_status,
             tenant_id=str(provider_profile.tenant_id),
         )
 
@@ -315,7 +315,7 @@ class AssignmentService(BaseService):
         return self._change_status(
             assignment=assignment,
             incident=incident,
-            status=self._normalize_upper(payload.assignment_status),
+            status=payload.assignment_status,
             tenant_id=str(provider_profile.tenant_id),
         )
 
@@ -341,7 +341,7 @@ class AssignmentService(BaseService):
         return self._change_status(
             assignment=assignment,
             incident=incident,
-            status=self._normalize_upper(payload.assignment_status),
+            status=payload.assignment_status,
             tenant_id=str(provider_profile.tenant_id),
         )
 

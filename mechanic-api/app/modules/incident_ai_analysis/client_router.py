@@ -117,7 +117,7 @@ def get_my_incident_ai_analysis(
 ) -> dict:
     _assert_client_incident(identity=identity, db=db, incident_id=incident_id)
 
-    analysis = service.get_owned_by_incident_or_fail(
+    analysis = service.get_for_incident_or_fail(
         incident_id=incident_id,
         analysis_id=analysis_id,
     )
