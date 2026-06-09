@@ -66,6 +66,11 @@ class Assignment(BaseModel):
         nullable=False,
     )
 
+    en_route_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
     started_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,

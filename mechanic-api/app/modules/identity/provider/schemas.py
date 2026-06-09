@@ -5,6 +5,7 @@ from typing import Literal
 
 from pydantic import BaseModel
 
+from app.common.contracts import ApiResponse
 from app.common.pagination import PaginationMeta
 
 ProviderType = Literal["WORKSHOP", "WORKSHOP_NETWORK", "INDEPENDENT_TECHNICIAN"]
@@ -29,10 +30,8 @@ class ProviderProfilePublic(BaseModel):
     updated_at: datetime
 
 
-class ProviderProfileResponse(BaseModel):
-    success: bool = True
-    message: str
-    data: ProviderProfilePublic
+class ProviderProfileResponse(ApiResponse[ProviderProfilePublic]):
+    pass
 
 
 class ProviderProfileListData(BaseModel):
@@ -40,7 +39,5 @@ class ProviderProfileListData(BaseModel):
     pagination: PaginationMeta
 
 
-class ProviderProfilesResponse(BaseModel):
-    success: bool = True
-    message: str
-    data: ProviderProfileListData
+class ProviderProfilesResponse(ApiResponse[ProviderProfileListData]):
+    pass

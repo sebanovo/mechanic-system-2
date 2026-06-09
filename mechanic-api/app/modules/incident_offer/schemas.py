@@ -6,6 +6,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.common.contracts import ApiResponse
 from app.common.pagination import PaginationMeta
 from app.modules.incident.schemas import IncidentPriority, IncidentStatus
 
@@ -150,13 +151,9 @@ class IncidentOfferListData(BaseModel):
     pagination: PaginationMeta
 
 
-class IncidentOfferResponse(BaseModel):
-    success: bool = True
-    message: str
-    data: IncidentOfferDetailPublic
+class IncidentOfferResponse(ApiResponse[IncidentOfferDetailPublic]):
+    pass
 
 
-class IncidentOffersResponse(BaseModel):
-    success: bool = True
-    message: str
-    data: IncidentOfferListData
+class IncidentOffersResponse(ApiResponse[IncidentOfferListData]):
+    pass

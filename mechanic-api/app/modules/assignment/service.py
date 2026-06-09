@@ -31,6 +31,7 @@ from app.modules.identity.technician_availability.utils import (
     is_technician_available_now,
 )
 from app.modules.incident_offer.repository import IncidentOfferRepository
+from app.modules.incident.utils import mark_incident_cancelled
 from app.modules.notification.business_notifications import BusinessNotificationService
 from app.modules.technician_service.repository import TechnicianServiceRepository
 
@@ -184,6 +185,7 @@ class AssignmentService(BaseService):
             assignment_status="ASSIGNED",
             notes=self._normalize_text(payload.notes),
             assigned_at=datetime.now(timezone.utc),
+            en_route_at=None,
             started_at=None,
             arrived_at=None,
             completed_at=None,
@@ -506,7 +508,7 @@ class AssignmentService(BaseService):
         assignment.assignment_status = status
 
         if status == "EN_ROUTE":
-            assignment.started_at = datetime.now(timezone.utc)
+            assignment.en_route_at = datetime.now(timezone.utc)
             incident.status = "EN_ROUTE"
 
         elif status == "ARRIVED":
@@ -514,6 +516,7 @@ class AssignmentService(BaseService):
             incident.status = "ARRIVED"
 
         elif status == "IN_SERVICE":
+            assignment.started_at = datetime.now(timezone.utc)
             incident.status = "IN_SERVICE"
 
         elif status == "COMPLETED":
@@ -580,8 +583,12 @@ class AssignmentService(BaseService):
         assignment.assignment_status = "CANCELLED"
         assignment.cancelled_at = now
 
-        incident.status = "CANCELLED"
-        incident.cancelled_at = now
+        mark_incident_cancelled(
+            incident,
+            actor_type="TENANT_OWNER",
+            actor_user_id=self.context.user_id,
+            reason="La asignación fue cancelada por el taller.",
+        )
 
         offer.offer_status = "CANCELLED"
         offer.responded_at = now

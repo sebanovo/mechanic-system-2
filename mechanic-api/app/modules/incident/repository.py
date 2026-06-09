@@ -32,6 +32,31 @@ class IncidentRepository:
             )
         )
 
+    def get_active_by_customer(
+        self,
+        customer_id: str | UUID,
+    ) -> Incident | None:
+        active_statuses = [
+            "REPORTED",
+            "ANALYZING",
+            "SEARCHING_PROVIDER",
+            "WAITING_PROVIDER_RESPONSE",
+            "PROVIDER_ACCEPTED",
+            "ASSIGNING_TECHNICIAN",
+            "TECHNICIAN_ASSIGNED",
+            "EN_ROUTE",
+            "ARRIVED",
+            "IN_SERVICE",
+        ]
+
+        return self.db.scalar(
+            select(Incident).where(
+                Incident.customer_id == _to_uuid(customer_id, "customer_id"),
+                Incident.deleted_at.is_(None),
+                Incident.status.in_(active_statuses),
+            )
+        )
+
     def list_by_customer(
         self,
         customer_id: str | UUID,

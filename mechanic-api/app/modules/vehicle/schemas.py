@@ -5,6 +5,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.common.contracts import ApiResponse
 from app.common.pagination import PaginationMeta
 from app.modules.identity.customer.schemas import CustomerDetailPublic
 
@@ -67,10 +68,8 @@ class VehicleListData(BaseModel):
     pagination: PaginationMeta
 
 
-class VehicleResponse(BaseModel):
-    success: bool = True
-    message: str
-    data: VehiclePublic
+class VehicleResponse(ApiResponse[VehiclePublic]):
+    pass
 
 
 class VehicleDetailPublic(BaseModel):
@@ -127,13 +126,9 @@ class VehicleDetailPublic(BaseModel):
     )
 
 
-class VehicleDetailResponse(BaseModel):
-    success: bool = True
-    message: str
-    data: VehicleDetailPublic
+class VehicleDetailResponse(ApiResponse[VehicleDetailPublic]):
+    pass
 
 
-class VehiclesResponse(BaseModel):
-    success: bool = True
-    message: str
-    data: VehicleListData
+class VehiclesResponse(ApiResponse[VehicleListData]):
+    pass

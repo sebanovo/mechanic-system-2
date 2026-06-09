@@ -5,6 +5,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.common.contracts import ApiResponse
 from app.common.pagination import PaginationMeta
 from app.modules.identity.provider.schemas import ProviderProfilePublic
 from app.modules.identity.technician.schemas import TechnicianPublic
@@ -56,6 +57,7 @@ class AssignmentPublic(BaseModel):
     assignment_status: AssignmentStatus
     notes: str | None = None
     assigned_at: datetime
+    en_route_at: datetime | None = None
     started_at: datetime | None = None
     arrived_at: datetime | None = None
     completed_at: datetime | None = None
@@ -77,13 +79,9 @@ class AssignmentListData(BaseModel):
     pagination: PaginationMeta
 
 
-class AssignmentResponse(BaseModel):
-    success: bool = True
-    message: str
-    data: AssignmentDetailPublic
+class AssignmentResponse(ApiResponse[AssignmentDetailPublic]):
+    pass
 
 
-class AssignmentsResponse(BaseModel):
-    success: bool = True
-    message: str
-    data: AssignmentListData
+class AssignmentsResponse(ApiResponse[AssignmentListData]):
+    pass
