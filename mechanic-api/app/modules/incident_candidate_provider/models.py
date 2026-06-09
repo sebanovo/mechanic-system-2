@@ -19,7 +19,7 @@ class IncidentCandidateProvider(BaseModel):
             name="incident_candidate_provider_unique",
         ),
         CheckConstraint(
-            "candidate_status IN ('SUGGESTED', 'SELECTED', 'DISCARDED', 'EXPIRED')",
+            "candidate_status IN ('REQUESTED', 'SUGGESTED', 'SELECTED', 'DISCARDED', 'EXPIRED')",
             name="incident_candidate_provider_status_valid",
         ),
         CheckConstraint(
@@ -58,5 +58,5 @@ class IncidentCandidateProvider(BaseModel):
     candidate_status: Mapped[str] = mapped_column(
         String(30),
         nullable=False,
-        default="SUGGESTED",
+        default="REQUESTED",
     )

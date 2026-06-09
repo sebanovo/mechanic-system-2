@@ -33,11 +33,13 @@ class AssignmentTrackingEventCreateRequest(BaseModel):
     latitude: Decimal = Field(
         ge=-90,
         le=90,
+        examples=[-16.5291234],
         description="Latitud actual del técnico. Obligatoria para todos los eventos.",
     )
     longitude: Decimal = Field(
         ge=-180,
         le=180,
+        examples=[-68.1456789],
         description="Longitud actual del técnico. Obligatoria para todos los eventos.",
     )
     notes: str | None = Field(
@@ -53,42 +55,42 @@ class AssignmentTrackingEventCreateRequest(BaseModel):
         json_schema_extra={
             "example": {
                 "event_type": "EN_ROUTE",
-                "latitude": -16.5001,
-                "longitude": -68.1193,
+                "latitude": -16.5291234,
+                "longitude": -68.1456789,
                 "notes": "El técnico inició ruta hacia el cliente.",
             },
             "examples": [
                 {
                     "event_type": "EN_ROUTE",
-                    "latitude": -16.5001,
-                    "longitude": -68.1193,
+                    "latitude": -16.5291234,
+                    "longitude": -68.1456789,
                     "notes": "El técnico inició ruta hacia el cliente.",
                 },
                 {
                     "event_type": "ARRIVED",
-                    "latitude": -16.5001,
-                    "longitude": -68.1193,
+                    "latitude": -16.5291234,
+                    "longitude": -68.1456789,
                 },
                 {
                     "event_type": "SERVICE_STARTED",
-                    "latitude": -16.5001,
-                    "longitude": -68.1193,
+                    "latitude": -16.5291234,
+                    "longitude": -68.1456789,
                 },
                 {
                     "event_type": "SERVICE_COMPLETED",
-                    "latitude": -16.5001,
-                    "longitude": -68.1193,
+                    "latitude": -16.5291234,
+                    "longitude": -68.1456789,
                     "notes": "Se realizó el servicio correctamente.",
                 },
                 {
                     "event_type": "LOCATION_UPDATED",
-                    "latitude": -16.5001,
-                    "longitude": -68.1193,
+                    "latitude": -16.5291234,
+                    "longitude": -68.1456789,
                 },
                 {
                     "event_type": "CANCELLED",
-                    "latitude": -16.5001,
-                    "longitude": -68.1193,
+                    "latitude": -16.5291234,
+                    "longitude": -68.1456789,
                     "notes": "No fue posible continuar con la atención.",
                 },
             ]
@@ -100,8 +102,16 @@ class AssignmentTrackingEventPublic(BaseModel):
     id: str
     assignment_id: str
     event_type: AssignmentTrackingEventType
-    latitude: Decimal | None = None
-    longitude: Decimal | None = None
+    latitude: Decimal | None = Field(
+        default=None,
+        examples=[-16.5291234],
+        description="Latitud capturada para el evento.",
+    )
+    longitude: Decimal | None = Field(
+        default=None,
+        examples=[-68.1456789],
+        description="Longitud capturada para el evento.",
+    )
     notes: str | None = None
     occurred_at: datetime
     created_at: datetime

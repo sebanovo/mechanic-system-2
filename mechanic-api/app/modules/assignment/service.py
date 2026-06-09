@@ -5,6 +5,9 @@ from datetime import datetime, timezone
 from app.common.exceptions import ConflictException, NotFoundException
 from app.core.audit.constants import (
     AssignmentAuditEvent,
+    AssignmentTrackingEventAuditEvent,
+    IncidentAuditEvent,
+    IncidentOfferAuditEvent,
     TechnicianAvailabilityAuditEvent,
 )
 from app.core.context import RequestContext
@@ -16,6 +19,7 @@ from app.modules.assignment.schemas import (
     AssignmentStatusChangeRequest,
     AssignmentUpdateRequest,
 )
+from app.modules.assignment_tracking_event.models import AssignmentTrackingEvent
 from app.modules.identity.customer.repository import CustomerRepository
 from app.modules.identity.technician.models import Technician
 from app.modules.identity.technician.repository import TechnicianRepository
@@ -287,13 +291,16 @@ class AssignmentService(BaseService):
         assignment_id: str,
         payload: AssignmentStatusChangeRequest,
     ) -> Assignment:
-        assignment, incident, _, provider_profile, _ = self.get_detail_or_fail(
+        assignment, incident, offer, provider_profile, technician = self.get_detail_or_fail(
             assignment_id
         )
 
         return self._change_status(
             assignment=assignment,
             incident=incident,
+            offer=offer,
+            provider_profile=provider_profile,
+            technician=technician,
             status=payload.assignment_status,
             tenant_id=str(provider_profile.tenant_id),
         )
@@ -305,7 +312,12 @@ class AssignmentService(BaseService):
         assignment_id: str,
         payload: AssignmentStatusChangeRequest,
     ) -> Assignment:
-        assignment, incident, _, provider_profile, _ = self.get_detail_or_fail(
+        if payload.assignment_status != "CANCELLED":
+            raise ConflictException(
+                "El owner solo puede cancelar la asignación. El avance operativo lo registra el técnico."
+            )
+
+        assignment, incident, offer, provider_profile, technician = self.get_detail_or_fail(
             assignment_id
         )
 
@@ -315,6 +327,9 @@ class AssignmentService(BaseService):
         return self._change_status(
             assignment=assignment,
             incident=incident,
+            offer=offer,
+            provider_profile=provider_profile,
+            technician=technician,
             status=payload.assignment_status,
             tenant_id=str(provider_profile.tenant_id),
         )
@@ -330,7 +345,7 @@ class AssignmentService(BaseService):
         if detail is None:
             raise NotFoundException("Asignación no encontrada.")
 
-        assignment, incident, _, provider_profile, assignment_technician = detail
+        assignment, incident, offer, provider_profile, assignment_technician = detail
 
         if str(assignment.provider_profile_id) != str(provider_profile.id):
             raise NotFoundException("Asignación no encontrada.")
@@ -341,6 +356,9 @@ class AssignmentService(BaseService):
         return self._change_status(
             assignment=assignment,
             incident=incident,
+            offer=offer,
+            provider_profile=provider_profile,
+            technician=assignment_technician,
             status=payload.assignment_status,
             tenant_id=str(provider_profile.tenant_id),
         )
@@ -462,12 +480,28 @@ class AssignmentService(BaseService):
         *,
         assignment: Assignment,
         incident,
+        offer,
+        provider_profile,
+        technician,
         status: str,
         tenant_id: str | None,
     ) -> Assignment:
         previous_status = assignment.assignment_status
 
         self._ensure_valid_transition(previous_status, status)
+
+        if status == "CANCELLED":
+            self._cancel_assignment_flow(
+                assignment=assignment,
+                incident=incident,
+                offer=offer,
+                provider_profile=provider_profile,
+                technician=technician,
+                tenant_id=tenant_id,
+            )
+            self.db.commit()
+            self.db.refresh(assignment)
+            return assignment
 
         assignment.assignment_status = status
 
@@ -487,12 +521,7 @@ class AssignmentService(BaseService):
             incident.status = "COMPLETED"
             incident.completed_at = datetime.now(timezone.utc)
 
-        elif status == "CANCELLED":
-            assignment.cancelled_at = datetime.now(timezone.utc)
-            incident.status = "CANCELLED"
-            incident.cancelled_at = datetime.now(timezone.utc)
-
-        if status in {"COMPLETED", "CANCELLED"}:
+        if status == "COMPLETED":
             availability = self.technician_availability_repository.get_current_by_technician(
                 assignment.technician_id
             )
@@ -535,6 +564,157 @@ class AssignmentService(BaseService):
         self.db.refresh(assignment)
 
         return assignment
+
+    def _cancel_assignment_flow(
+        self,
+        *,
+        assignment: Assignment,
+        incident,
+        offer,
+        provider_profile,
+        technician: Technician,
+        tenant_id: str | None,
+    ) -> None:
+        now = datetime.now(timezone.utc)
+
+        assignment.assignment_status = "CANCELLED"
+        assignment.cancelled_at = now
+
+        incident.status = "CANCELLED"
+        incident.cancelled_at = now
+
+        offer.offer_status = "CANCELLED"
+        offer.responded_at = now
+        offer.response_message = "La asignación fue cancelada por el taller."
+
+        tracking_event = AssignmentTrackingEvent(
+            assignment_id=assignment.id,
+            event_type="CANCELLED",
+            latitude=None,
+            longitude=None,
+            notes="La asignación fue cancelada por el taller.",
+            occurred_at=now,
+        )
+        self.db.add(tracking_event)
+
+        availability = self.technician_availability_repository.get_current_by_technician(
+            technician.id
+        )
+        if availability is not None:
+            self._set_technician_availability_status(
+                technician=technician,
+                availability=availability,
+                availability_status="AVAILABLE",
+                tenant_id=tenant_id,
+                event_data={
+                    "assignment_id": str(assignment.id),
+                    "incident_id": str(incident.id),
+                    "reason": "ASSIGNMENT_CANCELLED_BY_OWNER",
+                },
+            )
+
+        self.db.flush()
+
+        self.audit.updated(
+            assignment,
+            AssignmentAuditEvent.ASSIGNMENT_CANCELLED,
+            resource_type="assignment",
+            tenant_id=tenant_id,
+            event_data={
+                "assignment_id": str(assignment.id),
+                "incident_id": str(incident.id),
+                "offer_id": str(offer.id),
+                "assignment_status": "CANCELLED",
+                "incident_status": "CANCELLED",
+                "offer_status": "CANCELLED",
+            },
+        )
+
+        self.audit.updated(
+            incident,
+            IncidentAuditEvent.INCIDENT_CANCELLED,
+            resource_type="incident",
+            tenant_id=tenant_id,
+            event_data={
+                "incident_code": incident.incident_code,
+                "assignment_id": str(assignment.id),
+                "offer_id": str(offer.id),
+                "status": "CANCELLED",
+            },
+        )
+
+        self.audit.updated(
+            offer,
+            IncidentOfferAuditEvent.INCIDENT_OFFER_CANCELLED,
+            resource_type="incident_offer",
+            tenant_id=tenant_id,
+            event_data={
+                "assignment_id": str(assignment.id),
+                "incident_id": str(incident.id),
+                "offer_id": str(offer.id),
+                "offer_status": "CANCELLED",
+            },
+        )
+
+        self.audit.created(
+            tracking_event,
+            AssignmentTrackingEventAuditEvent.ASSIGNMENT_TRACKING_EVENT_CREATED,
+            resource_type="assignment_tracking_event",
+            tenant_id=tenant_id,
+            event_data={
+                "assignment_id": str(assignment.id),
+                "event_type": tracking_event.event_type,
+                "notes": tracking_event.notes,
+            },
+        )
+
+        self._notify_assignment_cancelled_by_owner(
+            incident=incident,
+            assignment=assignment,
+            technician=technician,
+            tenant_id=tenant_id,
+        )
+
+    def _notify_assignment_cancelled_by_owner(
+        self,
+        *,
+        incident,
+        assignment: Assignment,
+        technician: Technician,
+        tenant_id: str | None,
+    ) -> None:
+        customer_detail = self.customer_repository.get_detail_by_customer_id(
+            incident.customer_id
+        )
+        customer_user = (
+            customer_detail[1] if customer_detail is not None else None
+        )
+
+        technician_detail = self.technician_repository.get_detail_by_id(
+            technician.id
+        )
+        technician_user = (
+            technician_detail[1] if technician_detail is not None else None
+        )
+
+        try:
+            if customer_user is not None:
+                self.business_notifications.send_service_cancelled(
+                    recipient_user_id=str(customer_user.id),
+                    tenant_id=tenant_id,
+                    assignment_id=str(assignment.id),
+                    incident_id=str(incident.id),
+                )
+
+            if technician_user is not None:
+                self.business_notifications.send_assignment_cancelled_for_technician(
+                    recipient_user_id=str(technician_user.id),
+                    tenant_id=tenant_id,
+                    assignment_id=str(assignment.id),
+                    incident_id=str(incident.id),
+                )
+        except Exception:
+            return
 
     def _ensure_technician_can_be_assigned(
         self,

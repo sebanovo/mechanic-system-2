@@ -12,6 +12,7 @@ class IncidentDispatchResult(BaseModel):
     analysis_id: str | None = None
     probable_service_code: str | None = None
     service_catalog_id: str | None = None
+    unattended_reason: str | None = None
 
 
 class EligibleProviderCandidate(BaseModel):

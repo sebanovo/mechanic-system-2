@@ -61,8 +61,14 @@ class IncidentSummaryPublic(BaseModel):
     priority: IncidentPriority
     status: IncidentStatus
     address_text: str | None
-    latitude: Decimal
-    longitude: Decimal
+    latitude: Decimal = Field(
+        examples=[-16.5291234],
+        description="Latitud del incidente.",
+    )
+    longitude: Decimal = Field(
+        examples=[-68.1456789],
+        description="Longitud del incidente.",
+    )
     reported_at: datetime
 
 

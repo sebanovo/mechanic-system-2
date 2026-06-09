@@ -77,6 +77,16 @@ from app.modules.identity.technician_availability.tenant_router import (
 from app.modules.identity.tenant.platform_router import router as tenant_platform_router
 from app.modules.identity.tenant.tenant_router import router as tenant_context_router
 from app.modules.identity.user.platform_router import router as user_platform_router
+from app.modules.dashboard.tenant_router import router as dashboard_tenant_router
+from app.modules.dashboard.client_router import (
+    router as dashboard_client_router,
+)
+from app.modules.dashboard.technician_router import (
+    router as dashboard_technician_router,
+)
+from app.modules.dashboard.platform_dashboard.router import (
+    router as dashboard_platform_router,
+)
 from app.modules.incident.client_router import router as incident_client_router
 from app.modules.incident.platform_router import router as incident_platform_router
 from app.modules.incident.tenant_router import router as incident_tenant_router
@@ -249,12 +259,21 @@ def create_application() -> FastAPI:
         prefix=settings.api_v1_prefix,
     )
     application.include_router(
+        dashboard_client_router,
+        prefix=settings.api_v1_prefix,
+    )
+    application.include_router(
         realtime_tracking_client_router,
         prefix=settings.api_v1_prefix,
     )
 
     # Tenant context
     application.include_router(tenant_context_router, prefix=settings.api_v1_prefix)
+    application.include_router(
+        dashboard_tenant_router,
+        prefix=settings.api_v1_prefix,
+        dependencies=[Depends(require_tenant_selected())],
+    )
     application.include_router(
         provider_tenant_router,
         prefix=settings.api_v1_prefix,
@@ -339,6 +358,11 @@ def create_application() -> FastAPI:
         dependencies=[Depends(require_tenant_selected())],
     )
     application.include_router(
+        dashboard_technician_router,
+        prefix=settings.api_v1_prefix,
+        dependencies=[Depends(require_tenant_selected())],
+    )
+    application.include_router(
         realtime_tracking_tenant_router,
         prefix=settings.api_v1_prefix,
         dependencies=[Depends(require_tenant_selected())],
@@ -346,6 +370,10 @@ def create_application() -> FastAPI:
 
     # Platform context
     application.include_router(platform_summary_router, prefix=settings.api_v1_prefix)
+    application.include_router(
+        dashboard_platform_router,
+        prefix=settings.api_v1_prefix,
+    )
     application.include_router(
         notification_platform_router,
         prefix=settings.api_v1_prefix,

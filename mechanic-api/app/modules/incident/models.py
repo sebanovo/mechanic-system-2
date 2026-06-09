@@ -40,7 +40,8 @@ class Incident(BaseModel):
                 'ARRIVED',
                 'IN_SERVICE',
                 'COMPLETED',
-                'CANCELLED'
+                'CANCELLED',
+                'UNATTENDED'
             )
             """,
             name="incident_status_valid",
@@ -86,6 +87,16 @@ class Incident(BaseModel):
         String(30),
         nullable=False,
         default="MEDIUM",
+    )
+
+    unattended_reason: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True,
+    )
+
+    unattended_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
     )
 
     status: Mapped[str] = mapped_column(

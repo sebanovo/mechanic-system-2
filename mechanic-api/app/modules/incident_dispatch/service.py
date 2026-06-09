@@ -6,8 +6,10 @@ from decimal import Decimal, ROUND_HALF_UP
 from datetime import datetime, timedelta, timezone
 
 from app.common.uuid import to_uuid
+from app.core.audit.constants import IncidentAuditEvent
 from app.core.context import RequestContext
 from app.core.services.base import BaseService
+from app.modules.incident.constants import IncidentUnattendedReason
 from app.modules.notification.business_notifications import (
     BusinessNotificationService,
 )
@@ -22,6 +24,7 @@ from app.modules.incident_dispatch.scoring import score_provider_candidates
 from app.modules.incident.repository import IncidentRepository
 from app.modules.incident_ai_analysis.repository import IncidentAiAnalysisRepository
 from app.modules.incident_offer.models import IncidentOffer
+from app.modules.incident_offer.constants import DEFAULT_OFFER_EXPIRATION_MINUTES
 from app.modules.incident_offer.repository import IncidentOfferRepository
 from app.modules.incident_dispatch.schemas import IncidentDispatchResult
 from app.modules.identity.tenant.repository import TenantRepository
@@ -95,21 +98,23 @@ class IncidentDispatchService(BaseService):
             )
 
         if probable_service_code is None or probable_service_code == "UNKNOWN":
-            return self._stop(
-                incident_id=str(incident.id),
+            return self._mark_as_unattended_and_stop(
+                incident=incident,
                 analysis_id=str(analysis.id),
                 probable_service_code=probable_service_code,
                 service_catalog_id=None,
-                reason="UNKNOWN_SERVICE_CODE",
+                unattended_reason=IncidentUnattendedReason.UNKNOWN_SERVICE,
+                reason=IncidentUnattendedReason.UNKNOWN_SERVICE,
             )
 
         if incident.service_catalog_id is None:
-            return self._stop(
-                incident_id=str(incident.id),
+            return self._mark_as_unattended_and_stop(
+                incident=incident,
                 analysis_id=str(analysis.id),
                 probable_service_code=probable_service_code,
                 service_catalog_id=None,
-                reason="INCIDENT_WITHOUT_SERVICE_CATALOG",
+                unattended_reason=IncidentUnattendedReason.UNKNOWN_SERVICE,
+                reason=IncidentUnattendedReason.UNKNOWN_SERVICE,
             )
 
         eligible_providers = self.find_eligible_providers(
@@ -119,10 +124,16 @@ class IncidentDispatchService(BaseService):
         )
 
         if not eligible_providers:
-            incident.status = "SEARCHING_PROVIDER"
-            self.db.flush()
-            self.business_notifications.send_no_providers_available(
+            unattended_reason = self._resolve_unattended_reason(
+                service_catalog_id=str(incident.service_catalog_id),
+            )
+            self._mark_incident_unattended(
+                incident,
+                reason=unattended_reason,
+            )
+            self.business_notifications.send_incident_unattended(
                 incident_id=str(incident.id),
+                unattended_reason=unattended_reason,
             )
             logger.info(
                 "No eligible providers found. incident_id=%s analysis_id=%s service_catalog_id=%s",
@@ -133,11 +144,12 @@ class IncidentDispatchService(BaseService):
 
             return IncidentDispatchResult(
                 should_continue=False,
-                reason="NO_ELIGIBLE_PROVIDERS_FOUND",
+                reason=unattended_reason,
                 incident_id=str(incident.id),
                 analysis_id=str(analysis.id),
                 probable_service_code=probable_service_code,
                 service_catalog_id=str(incident.service_catalog_id),
+                unattended_reason=unattended_reason,
             )
 
         scored_candidates = score_provider_candidates(eligible_providers)
@@ -172,7 +184,7 @@ class IncidentDispatchService(BaseService):
         if offers:
             incident.status = "WAITING_PROVIDER_RESPONSE"
         else:
-            incident.status = "SEARCHING_PROVIDER"
+            self.evaluate_incident_offer_outcome(str(incident.id))
 
         self.db.flush()
 
@@ -273,7 +285,7 @@ class IncidentDispatchService(BaseService):
                     candidate.provider_profile_id,
                     "provider_profile_id",
                 ),
-                candidate_status="SUGGESTED",
+                candidate_status="REQUESTED",
                 match_score=candidate.score,
             )
 
@@ -302,7 +314,7 @@ class IncidentDispatchService(BaseService):
         *,
         incident_id: str,
         candidate_providers: list[IncidentCandidateProvider],
-        expires_in_minutes: int = 5,
+        expires_in_minutes: int = DEFAULT_OFFER_EXPIRATION_MINUTES,
     ) -> list[IncidentOffer]:
         created_offers: list[IncidentOffer] = []
         expires_at = datetime.now(timezone.utc) + timedelta(
@@ -310,7 +322,7 @@ class IncidentDispatchService(BaseService):
         )
 
         for candidate in candidate_providers:
-            if candidate.candidate_status != "SUGGESTED":
+            if candidate.candidate_status not in {"REQUESTED", "SUGGESTED"}:
                 continue
 
             existing = self.offer_repository.get_by_incident_and_provider(
@@ -386,6 +398,7 @@ class IncidentDispatchService(BaseService):
         probable_service_code: str | None,
         service_catalog_id: str | None,
         reason: str,
+        unattended_reason: str | None = None,
     ) -> IncidentDispatchResult:
         logger.info(
             "Incident dispatch stopped. reason=%s incident_id=%s analysis_id=%s service_code=%s service_catalog_id=%s",
@@ -403,6 +416,117 @@ class IncidentDispatchService(BaseService):
             analysis_id=analysis_id,
             probable_service_code=probable_service_code,
             service_catalog_id=service_catalog_id,
+            unattended_reason=unattended_reason,
+        )
+
+    def _mark_as_unattended_and_stop(
+        self,
+        *,
+        incident,
+        analysis_id: str,
+        probable_service_code: str | None,
+        service_catalog_id: str | None,
+        unattended_reason: str,
+        reason: str,
+    ) -> IncidentDispatchResult:
+        self._mark_incident_unattended(
+            incident,
+            reason=unattended_reason,
+        )
+        self.business_notifications.send_incident_unattended(
+            incident_id=str(incident.id),
+            unattended_reason=unattended_reason,
+        )
+        return self._stop(
+            incident_id=str(incident.id),
+            analysis_id=analysis_id,
+            probable_service_code=probable_service_code,
+            service_catalog_id=service_catalog_id,
+            reason=reason,
+            unattended_reason=unattended_reason,
+        )
+
+    def _mark_incident_unattended(self, incident, *, reason: str) -> None:
+        if incident.status in FINAL_INCIDENT_STATUSES or incident.status == "UNATTENDED":
+            return
+
+        previous_status = incident.status
+        incident.status = "UNATTENDED"
+        incident.unattended_reason = reason
+        incident.unattended_at = datetime.now(timezone.utc)
+
+        self.db.flush()
+
+        self.audit.updated(
+            incident,
+            IncidentAuditEvent.INCIDENT_STATUS_CHANGED,
+            resource_type="incident",
+            event_data={
+                "incident_code": incident.incident_code,
+                "previous_status": previous_status,
+                "status": incident.status,
+                "unattended_reason": reason,
+            },
+        )
+
+    def _resolve_unattended_reason(self, *, service_catalog_id: str) -> str:
+        if not self.dispatch_repository.has_provider_services_for_catalog(
+            service_catalog_id=service_catalog_id,
+        ):
+            return IncidentUnattendedReason.NO_PROVIDER_SERVICE_FOUND
+
+        if not self.dispatch_repository.has_available_technicians_for_catalog(
+            service_catalog_id=service_catalog_id,
+        ):
+            return IncidentUnattendedReason.NO_AVAILABLE_TECHNICIAN_FOUND
+
+        return IncidentUnattendedReason.NO_ELIGIBLE_PROVIDERS_FOUND
+
+    def evaluate_incident_offer_outcome(self, incident_id: str) -> None:
+        incident = self.incident_repository.get_by_id(incident_id)
+
+        if incident is None or incident.deleted_at is not None:
+            return
+
+        if incident.status in FINAL_INCIDENT_STATUSES or incident.status == "UNATTENDED":
+            return
+
+        accepted = self.offer_repository.get_accepted_by_incident(incident_id)
+        if accepted is not None:
+            incident.status = "PROVIDER_ACCEPTED"
+            self.db.flush()
+            return
+
+        pending_offers, _ = self.offer_repository.list_pending_by_incident(
+            incident_id,
+            limit=1,
+            offset=0,
+        )
+
+        if pending_offers:
+            incident.status = "WAITING_PROVIDER_RESPONSE"
+            self.db.flush()
+            return
+
+        previous_status = incident.status
+        incident.status = "UNATTENDED"
+        incident.unattended_reason = IncidentUnattendedReason.NO_PROVIDER_ACCEPTED
+        incident.unattended_at = datetime.now(timezone.utc)
+        self.db.flush()
+        self.audit.updated(
+            incident,
+            IncidentAuditEvent.INCIDENT_STATUS_CHANGED,
+            resource_type="incident",
+            event_data={
+                "incident_code": incident.incident_code,
+                "previous_status": previous_status,
+                "status": incident.status,
+                "unattended_reason": incident.unattended_reason,
+            },
+        )
+        self.business_notifications.send_incident_unattended(
+            incident_id=str(incident.id),
+            unattended_reason=IncidentUnattendedReason.NO_PROVIDER_ACCEPTED,
         )
 
     def _normalize_upper(self, value: str | None) -> str | None:

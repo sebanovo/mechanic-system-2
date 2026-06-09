@@ -23,14 +23,25 @@ IncidentStatus = Literal[
     "IN_SERVICE",
     "COMPLETED",
     "CANCELLED",
+    "UNATTENDED",
 ]
 
 
 class IncidentCreateRequest(BaseModel):
     vehicle_id: str
     description: str | None = None
-    latitude: Decimal = Field(ge=-90, le=90)
-    longitude: Decimal = Field(ge=-180, le=180)
+    latitude: Decimal = Field(
+        ge=-90,
+        le=90,
+        examples=[-16.5291234],
+        description="Latitud geográfica del incidente.",
+    )
+    longitude: Decimal = Field(
+        ge=-180,
+        le=180,
+        examples=[-68.1456789],
+        description="Longitud geográfica del incidente.",
+    )
     priority: IncidentPriority = "MEDIUM"
 
     model_config = ConfigDict(
@@ -38,8 +49,8 @@ class IncidentCreateRequest(BaseModel):
             "example": {
                 "vehicle_id": "uuid-del-vehiculo",
                 "description": "El auto no arranca y parece problema de batería.",
-                "latitude": -16.5001,
-                "longitude": -68.1193,
+                "latitude": -16.5291234,
+                "longitude": -68.1456789,
                 "priority": "MEDIUM",
             }
         }
@@ -50,8 +61,20 @@ class IncidentUpdateRequest(BaseModel):
     service_catalog_id: str | None = None
     title: str | None = Field(default=None, min_length=1, max_length=150)
     description: str | None = None
-    latitude: Decimal | None = Field(default=None, ge=-90, le=90)
-    longitude: Decimal | None = Field(default=None, ge=-180, le=180)
+    latitude: Decimal | None = Field(
+        default=None,
+        ge=-90,
+        le=90,
+        examples=[-16.5291234],
+        description="Latitud geográfica del incidente.",
+    )
+    longitude: Decimal | None = Field(
+        default=None,
+        ge=-180,
+        le=180,
+        examples=[-68.1456789],
+        description="Longitud geográfica del incidente.",
+    )
     address_text: str | None = None
     priority: IncidentPriority | None = None
 
@@ -61,7 +84,18 @@ class IncidentStatusChangeRequest(BaseModel):
 
 
 class IncidentCancelRequest(BaseModel):
-    cancellation_reason: str | None = Field(default=None, max_length=500)
+    cancellation_reason: str | None = Field(
+        default=None,
+        max_length=500,
+        description="Motivo opcional de cancelación.",
+        examples=["CUSTOMER_NO_LONGER_NEEDS_SERVICE"],
+    )
+    cancellation_notes: str | None = Field(
+        default=None,
+        max_length=1000,
+        description="Nota opcional del cliente.",
+        examples=["Ya no necesito el servicio."],
+    )
 
 
 class IncidentPublic(BaseModel):
@@ -72,14 +106,22 @@ class IncidentPublic(BaseModel):
     incident_code: str
     title: str
     description: str | None = None
-    latitude: Decimal
-    longitude: Decimal
+    latitude: Decimal = Field(
+        examples=[-16.5291234],
+        description="Latitud geográfica del incidente.",
+    )
+    longitude: Decimal = Field(
+        examples=[-68.1456789],
+        description="Longitud geográfica del incidente.",
+    )
     address_text: str | None = None
     priority: IncidentPriority
     status: IncidentStatus
     reported_at: datetime
     cancelled_at: datetime | None = None
     completed_at: datetime | None = None
+    unattended_reason: str | None = None
+    unattended_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
     deleted_at: datetime | None = None

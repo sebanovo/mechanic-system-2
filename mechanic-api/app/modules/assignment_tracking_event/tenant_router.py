@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from datetime import datetime
-
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
@@ -23,6 +21,7 @@ from app.modules.assignment_tracking_event.schemas import (
     AssignmentTrackingEventListData,
     AssignmentTrackingEventResponse,
     AssignmentTrackingEventsResponse,
+    AssignmentTrackingEventType,
 )
 from app.modules.assignment_tracking_event.service import (
     AssignmentTrackingEventService,
@@ -92,7 +91,7 @@ def list_current_tenant_assignment_tracking_events(
     service: AssignmentTrackingEventService = Depends(_tracking_event_service),
     db: Session = Depends(get_db),
     pagination: PaginationParams = Depends(),
-    event_type: str | None = Query(default=None),
+    event_type: AssignmentTrackingEventType | None = Query(default=None),
 ) -> dict:
     provider_profile = provider_profile_service.get_current_or_fail()
 
@@ -144,7 +143,7 @@ def list_current_tenant_assignment_tracking_events(
 def create_current_tenant_assignment_tracking_event(
     assignment_id: str,
     payload: AssignmentTrackingEventCreateRequest,
-    identity: CurrentIdentity = Depends(require_user_types("TENANT_OWNER", "TECHNICIAN")),
+    identity: CurrentIdentity = Depends(require_user_types("TECHNICIAN")),
     provider_profile_service: ProviderProfileService = Depends(_provider_profile_service),
     service: AssignmentTrackingEventService = Depends(_tracking_event_service),
     db: Session = Depends(get_db),

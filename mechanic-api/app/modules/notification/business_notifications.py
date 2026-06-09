@@ -30,9 +30,9 @@ from app.modules.notification.builders.incident_offer_notification_builder impor
     build_client_offer_accepted_notification,
     build_incident_offer_notification,
 )
-from app.modules.notification.builders.incident_no_providers_notification_builder import (
-    IncidentNoProvidersAvailableNotificationInput,
-    build_incident_no_providers_available_notification,
+from app.modules.notification.builders.incident_unattended_notification_builder import (
+    IncidentUnattendedNotificationInput,
+    build_incident_unattended_notification,
 )
 from app.modules.notification.repository import NotificationRepository
 from app.modules.notification.schemas import NotificationSendRequest
@@ -516,6 +516,163 @@ class BusinessNotificationService:
             },
         )
 
+    def send_assignment_cancelled_for_technician(
+        self,
+        *,
+        recipient_user_id: str,
+        tenant_id: str | None,
+        assignment_id: str,
+        incident_id: str,
+    ) -> None:
+        self._send(
+            recipient_user_id=recipient_user_id,
+            tenant_id=tenant_id,
+            notification_type=NotificationType.ASSIGNMENT_CANCELLED,
+            title="Asignación cancelada",
+            body="El taller canceló la asignación del servicio.",
+            data={
+                "type": NotificationType.ASSIGNMENT_CANCELLED,
+                "audience": "TECHNICIAN",
+                "assignment_id": assignment_id,
+                "incident_id": incident_id,
+            },
+            push_data={
+                "type": NotificationType.ASSIGNMENT_CANCELLED,
+                "audience": "TECHNICIAN",
+                "assignment_id": assignment_id,
+                "incident_id": incident_id,
+            },
+        )
+
+    def send_assignment_cancelled_for_technician_by_customer(
+        self,
+        *,
+        recipient_user_id: str,
+        tenant_id: str | None,
+        assignment_id: str,
+        incident_id: str,
+    ) -> None:
+        self._send(
+            recipient_user_id=recipient_user_id,
+            tenant_id=tenant_id,
+            notification_type=NotificationType.ASSIGNMENT_CANCELLED,
+            title="Asignación cancelada",
+            body="El cliente canceló la solicitud de servicio.",
+            data={
+                "type": NotificationType.ASSIGNMENT_CANCELLED,
+                "audience": "TECHNICIAN",
+                "assignment_id": assignment_id,
+                "incident_id": incident_id,
+            },
+            push_data={
+                "type": NotificationType.ASSIGNMENT_CANCELLED,
+                "audience": "TECHNICIAN",
+                "assignment_id": assignment_id,
+                "incident_id": incident_id,
+            },
+        )
+
+    def send_assignment_cancelled_by_technician_to_owner(
+        self,
+        *,
+        recipient_user_id: str,
+        tenant_id: str | None,
+        assignment_id: str,
+        incident_id: str,
+    ) -> None:
+        self._send(
+            recipient_user_id=recipient_user_id,
+            tenant_id=tenant_id,
+            notification_type=NotificationType.ASSIGNMENT_CANCELLED,
+            title="Asignación cancelada por el técnico",
+            body="El técnico canceló la atención del servicio.",
+            data={
+                "type": NotificationType.ASSIGNMENT_CANCELLED,
+                "audience": "TENANT_OWNER",
+                "assignment_id": assignment_id,
+                "incident_id": incident_id,
+                "cancelled_by": "TECHNICIAN",
+            },
+            push_data={
+                "type": NotificationType.ASSIGNMENT_CANCELLED,
+                "audience": "TENANT_OWNER",
+                "assignment_id": assignment_id,
+                "incident_id": incident_id,
+                "cancelled_by": "TECHNICIAN",
+            },
+        )
+
+    def send_incident_cancelled_by_customer(
+        self,
+        *,
+        recipient_user_id: str,
+        tenant_id: str | None,
+        incident_id: str,
+        assignment_id: str | None = None,
+        audience: str = "CLIENT",
+        cancellation_reason: str | None = None,
+        cancellation_notes: str | None = None,
+    ) -> None:
+        body = (
+            "Cancelaste tu solicitud."
+            if audience == "CLIENT"
+            else "El cliente canceló la solicitud del servicio."
+        )
+
+        self._send(
+            recipient_user_id=recipient_user_id,
+            tenant_id=tenant_id,
+            notification_type=NotificationType.INCIDENT_CANCELLED,
+            title="Solicitud cancelada",
+            body=body,
+            data={
+                "type": NotificationType.INCIDENT_CANCELLED,
+                "audience": audience,
+                "incident_id": incident_id,
+                "assignment_id": assignment_id or "",
+                "cancelled_by": "CLIENT",
+                "cancellation_reason": cancellation_reason,
+                "cancellation_notes": cancellation_notes,
+            },
+            push_data={
+                "type": NotificationType.INCIDENT_CANCELLED,
+                "audience": audience,
+                "incident_id": incident_id,
+                "assignment_id": assignment_id or "",
+                "cancelled_by": "CLIENT",
+            },
+        )
+
+    def send_incident_cancelled_by_customer_to_tenant_owners(
+        self,
+        *,
+        tenant_id: str,
+        incident_id: str,
+        assignment_id: str | None = None,
+        cancellation_reason: str | None = None,
+        cancellation_notes: str | None = None,
+    ) -> None:
+        memberships, _ = self.membership_repository.list_by_tenant_with_users(
+            tenant_id,
+            status="ACTIVE",
+            limit=100,
+            offset=0,
+        )
+
+        for _, user in memberships:
+            if user.user_type != "TENANT_OWNER":
+                continue
+
+            self.send_incident_cancelled_by_customer(
+                recipient_user_id=str(user.id),
+                tenant_id=tenant_id,
+                incident_id=incident_id,
+                assignment_id=assignment_id,
+                audience="TENANT_OWNER",
+                cancellation_reason=cancellation_reason,
+                cancellation_notes=cancellation_notes,
+            )
+
     def send_incident_offer_created(
         self,
         *,
@@ -685,6 +842,17 @@ class BusinessNotificationService:
         *,
         incident_id: str,
     ) -> None:
+        self.send_incident_unattended(
+            incident_id=incident_id,
+            unattended_reason="NO_ELIGIBLE_PROVIDERS_FOUND",
+        )
+
+    def send_incident_unattended(
+        self,
+        *,
+        incident_id: str,
+        unattended_reason: str,
+    ) -> None:
         incident = self.incident_repository.get_by_id(incident_id)
 
         if incident is None:
@@ -712,9 +880,10 @@ class BusinessNotificationService:
 
         vehicle = self.vehicle_repository.get_by_id(incident.vehicle_id)
 
-        content = build_incident_no_providers_available_notification(
-            IncidentNoProvidersAvailableNotificationInput(
-                notification_type=NotificationType.INCIDENT_NO_PROVIDERS_AVAILABLE,
+        content = build_incident_unattended_notification(
+            IncidentUnattendedNotificationInput(
+                notification_type=NotificationType.INCIDENT_UNATTENDED,
+                unattended_reason=unattended_reason,
                 incident_id=str(incident.id),
                 incident_code=incident.incident_code,
                 incident_title=incident.title,
@@ -798,7 +967,7 @@ class BusinessNotificationService:
         self._send(
             recipient_user_id=str(customer_user.id),
             tenant_id=None,
-            notification_type=NotificationType.INCIDENT_NO_PROVIDERS_AVAILABLE,
+            notification_type=NotificationType.INCIDENT_UNATTENDED,
             title=content.title,
             body=content.body,
             data=content.persisted_data,

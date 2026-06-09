@@ -102,6 +102,23 @@ class TechnicianService(BaseService):
 
         return detail
 
+    def get_current_or_fail(self) -> Technician:
+        if self.context.actor_type != "TECHNICIAN" or self.context.user_id is None:
+            raise NotFoundException("Técnico no encontrado.")
+
+        if self.context.tenant_id is None:
+            raise NotFoundException("Técnico no encontrado.")
+
+        technician = self.repository.get_by_tenant_and_user(
+            self.context.tenant_id,
+            self.context.user_id,
+        )
+
+        if technician is None or technician.status != "ACTIVE":
+            raise NotFoundException("Técnico no encontrado.")
+
+        return technician
+
     def create_for_provider(
         self,
         provider_profile: ProviderProfile,

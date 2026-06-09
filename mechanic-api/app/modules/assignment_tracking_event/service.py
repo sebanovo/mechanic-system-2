@@ -12,6 +12,7 @@ from app.core.audit.constants import (
     AssignmentAuditEvent,
     AssignmentTrackingEventAuditEvent,
     IncidentAuditEvent,
+    IncidentOfferAuditEvent,
     TechnicianAvailabilityAuditEvent,
 )
 from app.core.context import RequestContext
@@ -25,6 +26,7 @@ from app.modules.assignment_tracking_event.schemas import (
     AssignmentTrackingEventCreateRequest,
 )
 from app.modules.identity.customer.repository import CustomerRepository
+from app.modules.identity.membership.repository import TenantMembershipRepository
 from app.modules.identity.technician_availability.repository import (
     TechnicianAvailabilityRepository,
 )
@@ -58,11 +60,12 @@ class AssignmentTrackingEventService(BaseService):
         self,
         repository: AssignmentTrackingEventRepository,
         context: RequestContext,
-        ) -> None:
+    ) -> None:
         super().__init__(db=repository.db, context=context)
         self.repository = repository
         self.assignment_repository = AssignmentRepository(self.db)
         self.customer_repository = CustomerRepository(self.db)
+        self.membership_repository = TenantMembershipRepository(self.db)
         self.technician_availability_repository = TechnicianAvailabilityRepository(
             self.db
         )
@@ -120,7 +123,7 @@ class AssignmentTrackingEventService(BaseService):
         actor_user_type: str | None = None,
         actor_user_id: str | None = None,
     ) -> AssignmentTrackingEvent:
-        assignment, incident, _, provider_profile, technician = (
+        assignment, incident, offer, provider_profile, technician = (
             self._get_assignment_detail_or_fail(assignment_id)
         )
 
@@ -148,6 +151,7 @@ class AssignmentTrackingEventService(BaseService):
         self._apply_event_effects(
             assignment=assignment,
             incident=incident,
+            offer=offer,
             technician=technician,
             event_type=payload.event_type,
             tenant_id=str(provider_profile.tenant_id),
@@ -160,9 +164,11 @@ class AssignmentTrackingEventService(BaseService):
         self._notify_tracking_update(
             assignment=assignment,
             incident=incident,
+            offer=offer,
             technician=technician,
             event_type=payload.event_type,
             tenant_id=str(provider_profile.tenant_id),
+            provider_profile=provider_profile,
         )
 
         self.audit.created(
@@ -243,6 +249,7 @@ class AssignmentTrackingEventService(BaseService):
         *,
         assignment,
         incident,
+        offer,
         technician,
         event_type: str,
         tenant_id: str | None,
@@ -250,12 +257,15 @@ class AssignmentTrackingEventService(BaseService):
         now = datetime.now(timezone.utc)
         assignment_previous_status = assignment.assignment_status
         incident_previous_status = incident.status
+        offer_previous_status = offer.offer_status if offer is not None else None
         assignment_event_type = AssignmentAuditEvent.ASSIGNMENT_STATUS_CHANGED
         incident_event_type = IncidentAuditEvent.INCIDENT_STATUS_CHANGED
+        offer_event_type = IncidentOfferAuditEvent.INCIDENT_OFFER_STATUS_CHANGED
         assignment_target_status: str | None = None
         incident_target_status: str | None = None
         should_update_assignment = False
         should_update_incident = False
+        should_update_offer = False
         release_technician = False
 
         if event_type in {"ASSIGNED", "NOTE", "LOCATION_UPDATED"}:
@@ -297,10 +307,16 @@ class AssignmentTrackingEventService(BaseService):
             assignment.cancelled_at = now
             incident_target_status = "CANCELLED"
             incident.cancelled_at = now
+            if offer is not None:
+                offer.offer_status = "CANCELLED"
+                offer.responded_at = now
+                offer.response_message = "La atención fue cancelada por el técnico."
+                should_update_offer = True
             should_update_assignment = True
             should_update_incident = True
             assignment_event_type = AssignmentAuditEvent.ASSIGNMENT_CANCELLED
             incident_event_type = IncidentAuditEvent.INCIDENT_CANCELLED
+            offer_event_type = IncidentOfferAuditEvent.INCIDENT_OFFER_CANCELLED
             release_technician = True
 
         if assignment_target_status is not None:
@@ -343,6 +359,22 @@ class AssignmentTrackingEventService(BaseService):
                     "incident_code": incident.incident_code,
                     "previous_status": incident_previous_status,
                     "status": incident.status,
+                    "tracking_event_type": event_type,
+                },
+            )
+
+        if should_update_offer and offer is not None:
+            self.audit.updated(
+                offer,
+                offer_event_type,
+                resource_type="incident_offer",
+                tenant_id=tenant_id,
+                event_data={
+                    "assignment_id": str(assignment.id),
+                    "incident_id": str(incident.id),
+                    "offer_id": str(offer.id),
+                    "previous_status": offer_previous_status,
+                    "offer_status": offer.offer_status,
                     "tracking_event_type": event_type,
                 },
             )
@@ -412,9 +444,11 @@ class AssignmentTrackingEventService(BaseService):
         *,
         assignment,
         incident,
+        offer,
         technician,
         event_type: str,
         tenant_id: str,
+        provider_profile,
     ) -> None:
         if event_type in {"ASSIGNED", "NOTE", "LOCATION_UPDATED"}:
             return
@@ -464,8 +498,38 @@ class AssignmentTrackingEventService(BaseService):
                     assignment_id=str(assignment.id),
                     incident_id=str(incident.id),
                 )
+
+                owner_user_id = self._get_owner_user_id_from_provider(
+                    provider_profile
+                )
+                if owner_user_id is not None:
+                    self.business_notifications.send_assignment_cancelled_by_technician_to_owner(
+                        recipient_user_id=owner_user_id,
+                        tenant_id=tenant_id,
+                        assignment_id=str(assignment.id),
+                        incident_id=str(incident.id),
+                    )
         except Exception:
             return
+
+    def _get_owner_user_id_from_provider(self, provider_profile) -> str | None:
+        tenant_id = getattr(provider_profile, "tenant_id", None)
+
+        if tenant_id is None:
+            return None
+
+        memberships, _ = self.membership_repository.list_by_tenant_with_users(
+            str(tenant_id),
+            status="ACTIVE",
+            limit=100,
+            offset=0,
+        )
+
+        for _, user in memberships:
+            if user.user_type == "TENANT_OWNER":
+                return str(user.id)
+
+        return None
 
     def _ensure_valid_transition(
         self,

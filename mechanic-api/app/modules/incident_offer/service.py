@@ -1,22 +1,26 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from app.common.exceptions import ConflictException, NotFoundException
 from app.core.audit.constants import (
     IncidentCandidateProviderAuditEvent,
     IncidentOfferAuditEvent,
+    IncidentAuditEvent,
 )
 from app.core.context import RequestContext
 from app.core.services.base import BaseService
 from app.modules.assignment.repository import AssignmentRepository
 from app.modules.identity.customer.repository import CustomerRepository
+from app.modules.incident.constants import IncidentUnattendedReason
+from app.modules.incident.repository import IncidentRepository
 from app.modules.incident.models import Incident
 from app.modules.incident_candidate_provider.models import IncidentCandidateProvider
 from app.modules.incident_candidate_provider.repository import (
     IncidentCandidateProviderRepository,
 )
 from app.modules.incident_offer.models import IncidentOffer
+from app.modules.incident_offer.constants import DEFAULT_OFFER_EXPIRATION_MINUTES
 from app.modules.incident_offer.repository import IncidentOfferRepository
 from app.modules.incident_offer.schemas import (
     IncidentOfferCreateRequest,
@@ -43,6 +47,7 @@ class IncidentOfferService(BaseService):
     ) -> None:
         super().__init__(db=repository.db, context=context)
         self.repository = repository
+        self.incident_repository = IncidentRepository(self.db)
         self.candidate_repository = IncidentCandidateProviderRepository(self.db)
         self.assignment_repository = AssignmentRepository(self.db)
         self.customer_repository = CustomerRepository(self.db)
@@ -58,6 +63,8 @@ class IncidentOfferService(BaseService):
         limit: int = 100,
         offset: int = 0,
     ):
+        self.expire_due_pending_offers()
+
         return self.repository.list_public(
             incident_id=incident_id,
             candidate_provider_id=candidate_provider_id,
@@ -75,6 +82,8 @@ class IncidentOfferService(BaseService):
         limit: int = 100,
         offset: int = 0,
     ):
+        self.expire_due_pending_offers()
+
         return self.repository.list_public_by_provider(
             provider_profile_id,
             offer_status=self._normalize_upper(offer_status),
@@ -88,9 +97,25 @@ class IncidentOfferService(BaseService):
         if detail is None:
             raise NotFoundException("Oferta de incidente no encontrada.")
 
+        _, incident, _, _ = detail
+        self.expire_due_pending_offers_for_incident(str(incident.id))
+
+        detail = self.repository.get_detail_by_id(offer_id)
+
+        if detail is None:
+            raise NotFoundException("Oferta de incidente no encontrada.")
+
         return detail
 
     def get_public_detail_or_fail(self, offer_id: str):
+        detail = self.repository.get_public_detail_by_id(offer_id)
+
+        if detail is None:
+            raise NotFoundException("Oferta de incidente no encontrada.")
+
+        _, incident, *_ = detail
+        self.expire_due_pending_offers_for_incident(str(incident.id))
+
         detail = self.repository.get_public_detail_by_id(offer_id)
 
         if detail is None:
@@ -136,7 +161,12 @@ class IncidentOfferService(BaseService):
             response_message=None,
             sent_at=datetime.now(timezone.utc),
             responded_at=None,
-            expires_at=payload.expires_at,
+            expires_at=(
+                payload.expires_at
+                if payload.expires_at is not None
+                else datetime.now(timezone.utc)
+                + timedelta(minutes=DEFAULT_OFFER_EXPIRATION_MINUTES)
+            ),
         )
 
         offer = self.repository.add(offer)
@@ -267,7 +297,7 @@ class IncidentOfferService(BaseService):
                 tenant_id=tenant_id,
                 reason="expired_by_validation",
             )
-            raise ConflictException("La oferta ha vencido y no puede aceptarse.")
+            raise ConflictException("La oferta ha vencido y no puede rechazarse.")
 
         accepted_offer = self.repository.get_accepted_by_incident(str(incident.id))
         if accepted_offer is not None and str(accepted_offer.id) != str(offer.id):
@@ -381,12 +411,6 @@ class IncidentOfferService(BaseService):
 
         candidate.candidate_status = "DISCARDED"
 
-        accepted_offer = self.repository.get_accepted_by_incident(str(incident.id))
-        if accepted_offer is None:
-            pending_offers, _ = self.repository.list_pending_by_incident(str(incident.id))
-            if len(pending_offers) == 0:
-                incident.status = "SEARCHING_PROVIDER"
-
         self.db.flush()
 
         self.audit.updated(
@@ -401,6 +425,8 @@ class IncidentOfferService(BaseService):
                 "response_message": offer.response_message,
             },
         )
+
+        self.evaluate_incident_offer_outcome(str(incident.id))
 
         self.db.commit()
         self.db.refresh(offer)
@@ -449,13 +475,18 @@ class IncidentOfferService(BaseService):
     ) -> IncidentOffer:
         self._ensure_pending(offer)
         self._ensure_valid_transition(offer.offer_status, "EXPIRED")
-        return self._expire_offer_and_candidate(
+        offer = self._expire_offer_and_candidate(
             offer=offer,
             incident=incident,
             candidate=candidate,
             tenant_id=tenant_id,
             reason="manual_expire",
         )
+
+        if incident is not None:
+            self.evaluate_incident_offer_outcome(str(incident.id))
+
+        return offer
 
     def _cancel_other_pending_offers(
         self,
@@ -614,3 +645,121 @@ class IncidentOfferService(BaseService):
     def _normalize_upper(self, value: str | None) -> str | None:
         normalized = self._normalize_text(value)
         return normalized.upper() if normalized else None
+
+    def evaluate_incident_offer_outcome(self, incident_id: str) -> None:
+        incident = self.incident_repository.get_by_id(incident_id)
+
+        if incident is None or incident.deleted_at is not None:
+            return
+
+        if incident.status in {"COMPLETED", "CANCELLED", "UNATTENDED"}:
+            return
+
+        offers, _ = self.repository.list_by_incident(
+            incident_id,
+            limit=200,
+            offset=0,
+        )
+
+        if not offers:
+            return
+
+        if any(offer.offer_status == "ACCEPTED" for offer, _, _, _ in offers):
+            incident.status = "PROVIDER_ACCEPTED"
+            self.db.flush()
+            return
+
+        now = datetime.now(timezone.utc)
+
+        if any(
+            offer.offer_status == "PENDING"
+            and offer.expires_at is not None
+            and offer.expires_at > now
+            for offer, _, _, _ in offers
+        ):
+            incident.status = "WAITING_PROVIDER_RESPONSE"
+            self.db.flush()
+            return
+
+        if any(
+            offer.offer_status == "PENDING" and offer.expires_at is None
+            for offer, _, _, _ in offers
+        ):
+            incident.status = "WAITING_PROVIDER_RESPONSE"
+            self.db.flush()
+            return
+
+        previous_status = incident.status
+        incident.status = "UNATTENDED"
+        incident.unattended_reason = IncidentUnattendedReason.NO_PROVIDER_ACCEPTED
+        incident.unattended_at = now
+
+        self.db.flush()
+
+        self.audit.updated(
+            incident,
+            IncidentAuditEvent.INCIDENT_STATUS_CHANGED,
+            resource_type="incident",
+            event_data={
+                "incident_code": incident.incident_code,
+                "previous_status": previous_status,
+                "status": incident.status,
+                "unattended_reason": incident.unattended_reason,
+            },
+        )
+
+        self.business_notifications.send_incident_unattended(
+            incident_id=str(incident.id),
+            unattended_reason=IncidentUnattendedReason.NO_PROVIDER_ACCEPTED,
+        )
+
+    def expire_due_pending_offers(self, *, limit: int = 200) -> int:
+        pending_due_offers, _ = self.repository.list_pending_due(
+            limit=limit,
+            offset=0,
+        )
+
+        expired_count = 0
+        impacted_incidents: set[str] = set()
+
+        for offer, incident, candidate, provider_profile in pending_due_offers:
+            if not self._is_expired(offer):
+                continue
+
+            self._expire_offer_and_candidate(
+                offer=offer,
+                incident=incident,
+                candidate=candidate,
+                tenant_id=str(provider_profile.tenant_id),
+                reason="scheduled_expiration",
+            )
+            impacted_incidents.add(str(incident.id))
+            expired_count += 1
+
+        for incident_id in impacted_incidents:
+            self.evaluate_incident_offer_outcome(incident_id)
+
+        return expired_count
+
+    def expire_due_pending_offers_for_incident(self, incident_id: str) -> int:
+        pending_offers = self.repository.list_pending_due_by_incident(
+            incident_id=incident_id,
+            now=datetime.now(timezone.utc),
+        )
+
+        expired_count = 0
+
+        for offer, candidate, provider_profile in pending_offers:
+            self._expire_offer_and_candidate(
+                offer=offer,
+                incident=None,
+                candidate=candidate,
+                tenant_id=str(provider_profile.tenant_id),
+                reason="scheduled_expiration",
+            )
+            expired_count += 1
+
+        if expired_count > 0:
+            self.evaluate_incident_offer_outcome(incident_id)
+
+        return expired_count

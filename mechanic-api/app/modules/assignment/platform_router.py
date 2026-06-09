@@ -15,6 +15,7 @@ from app.modules.assignment.schemas import (
     AssignmentListData,
     AssignmentResponse,
     AssignmentsResponse,
+    AssignmentStatus,
     AssignmentStatusChangeRequest,
     AssignmentUpdateRequest,
 )
@@ -48,7 +49,7 @@ def list_platform_assignments(
     offer_id: str | None = Query(default=None),
     provider_profile_id: str | None = Query(default=None),
     technician_id: str | None = Query(default=None),
-    assignment_status: str | None = Query(default=None),
+    assignment_status: AssignmentStatus | None = Query(default=None),
 ) -> dict:
     items, total = service.list(
         incident_id=incident_id,
