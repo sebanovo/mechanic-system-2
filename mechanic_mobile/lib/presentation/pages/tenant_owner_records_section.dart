@@ -35,27 +35,29 @@ class TenantOwnerRecordsSection extends StatelessWidget {
             ),
           )
         else
-          ...items.take(3).map(
-            (item) => Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: SurfaceCard(
-                child: ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(tenantRecordPrimaryLabel(item)),
-                  subtitle: Text(tenantRecordSecondaryLabel(item)),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      StatusBadge(label: tenantRecordStatusLabel(item)),
-                      const SizedBox(width: 8),
-                      _recordActions(context, title, item),
-                    ],
+          ...items
+              .take(3)
+              .map(
+                (item) => Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: SurfaceCard(
+                    child: ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(_recordTitle(title, item)),
+                      subtitle: Text(_recordSubtitle(title, item)),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          StatusBadge(label: _recordStatus(title, item)),
+                          const SizedBox(width: 8),
+                          _recordActions(context, title, item),
+                        ],
+                      ),
+                      onTap: () => _openRecord(context, title, item),
+                    ),
                   ),
-                  onTap: () => _openRecord(context, title, item),
                 ),
               ),
-            ),
-          ),
       ],
     );
   }
@@ -74,59 +76,55 @@ Future<void> _openRecord(
   }
 
   if (title == 'Miembros') {
-    final detail = await vm.reloadMember(tenantRecordId(item));
+    final detail = await vm.reloadMember(_recordId(title, item));
     if (!context.mounted) return;
     showMemberManagementSheet(context, vm, detail ?? item);
     return;
   }
 
   if (title == 'Servicios del proveedor') {
-    final detail = await vm.reloadProviderService(tenantRecordId(item));
+    final detail = await vm.reloadProviderService(_recordId(title, item));
     if (!context.mounted) return;
     showTenantRecordDetails(context, title: title, record: detail ?? item);
     return;
   }
 
   if (title == 'Servicios técnicos') {
-    final detail = await vm.reloadTechnicianService(tenantRecordId(item));
+    final detail = await vm.reloadTechnicianService(_recordId(title, item));
     if (!context.mounted) return;
     showTenantRecordDetails(context, title: title, record: detail ?? item);
     return;
   }
 
   if (title == 'Candidatos') {
-    final detail = await vm.reloadCandidateProvider(tenantRecordId(item));
+    final detail = await vm.reloadCandidateProvider(_recordId(title, item));
     if (!context.mounted) return;
     showTenantRecordDetails(context, title: title, record: detail ?? item);
     return;
   }
 
   if (title == 'Ofertas') {
-    final detail = await vm.reloadOffer(tenantRecordId(item));
+    final detail = await vm.reloadOffer(_recordId(title, item));
     if (!context.mounted) return;
     showTenantRecordDetails(context, title: title, record: detail ?? item);
     return;
   }
 
   if (title == 'Asignaciones') {
-    final detail = await vm.reloadAssignment(tenantRecordId(item));
+    final detail = await vm.reloadAssignment(_recordId(title, item));
     if (!context.mounted) return;
     showTenantRecordDetails(context, title: title, record: detail ?? item);
     return;
   }
 
   if (title == 'Catálogo de servicios') {
-    final detail = await vm.reloadServiceCatalogItem(tenantRecordId(item));
+    final detail = await vm.reloadServiceCatalogItem(_recordId(title, item));
     if (!context.mounted) return;
     showTenantRecordDetails(context, title: title, record: detail ?? item);
     return;
   }
 
-  showTenantRecordDetails(
-    context,
-    title: title,
-    record: item,
-  );
+  showTenantRecordDetails(context, title: title, record: item);
 }
 
 Widget _recordActions(
@@ -134,7 +132,7 @@ Widget _recordActions(
   String title,
   Map<String, dynamic> item,
 ) {
-  final recordId = tenantRecordId(item);
+  final recordId = _recordId(title, item);
   if (recordId.isEmpty) return const SizedBox.shrink();
 
   if (title == 'Técnicos') {
@@ -204,7 +202,9 @@ Widget _recordActions(
       tooltip: 'Cambiar estado',
       onSelected: (value) async {
         final vm = context.read<TenantViewModel>();
-        await vm.updateCandidateProviderStatus(recordId, {'candidate_status': value});
+        await vm.updateCandidateProviderStatus(recordId, {
+          'candidate_status': value,
+        });
       },
       itemBuilder: (context) => const [
         PopupMenuItem(value: 'SUGGESTED', child: Text('Sugerido')),
@@ -270,4 +270,102 @@ Widget _recordActions(
   }
 
   return const SizedBox.shrink();
+}
+
+String _recordTitle(String sectionTitle, Map<String, dynamic> item) {
+  switch (sectionTitle) {
+    case 'Catálogo de servicios':
+      return tenantCatalogSummary(item);
+    case 'Servicios del proveedor':
+      return tenantProviderServiceSummary(item);
+    case 'Servicios técnicos':
+      return tenantTechnicianServiceSummary(item);
+    default:
+      return tenantRecordPrimaryLabel(item);
+  }
+}
+
+String _recordSubtitle(String sectionTitle, Map<String, dynamic> item) {
+  switch (sectionTitle) {
+    case 'Catálogo de servicios':
+      return tenantServiceDetailsLabel(item);
+    case 'Servicios del proveedor':
+      return tenantProviderServiceDetailsLabel(item);
+    case 'Servicios técnicos':
+      return tenantTechnicianServiceDetailsLabel(item);
+    default:
+      return tenantRecordSecondaryLabel(item);
+  }
+}
+
+String _recordStatus(String sectionTitle, Map<String, dynamic> item) {
+  switch (sectionTitle) {
+    case 'Servicios del proveedor':
+      return _nestedBoolLabel(
+        item,
+        'provider_service',
+        'is_available',
+        trueLabel: 'Disponible',
+        falseLabel: 'No disponible',
+      );
+    case 'Servicios técnicos':
+      return _nestedBoolLabel(
+        item,
+        'technician_service',
+        'is_enabled',
+        trueLabel: 'Habilitado',
+        falseLabel: 'Deshabilitado',
+      );
+    default:
+      return tenantRecordStatusLabel(item);
+  }
+}
+
+String _recordId(String sectionTitle, Map<String, dynamic> item) {
+  switch (sectionTitle) {
+    case 'Servicios del proveedor':
+      return _sectionId(item, 'provider_service');
+    case 'Servicios técnicos':
+      return _sectionId(item, 'technician_service');
+    case 'Catálogo de servicios':
+      return _sectionId(item, 'service_catalog');
+    case 'Técnicos':
+      return _sectionId(item, 'technician');
+    case 'Miembros':
+      return _sectionId(item, 'membership');
+    case 'Candidatos':
+      return _sectionId(item, 'candidate');
+    case 'Ofertas':
+      return _sectionId(item, 'offer');
+    case 'Asignaciones':
+      return _sectionId(item, 'assignment');
+    default:
+      return tenantRecordId(item);
+  }
+}
+
+String _sectionId(Map<String, dynamic> item, String key) {
+  final nested = item[key];
+  if (nested is Map) {
+    final id = nested['id']?.toString().trim() ?? '';
+    if (id.isNotEmpty) return id;
+  }
+  return tenantRecordId(item);
+}
+
+String _nestedBoolLabel(
+  Map<String, dynamic> item,
+  String sectionKey,
+  String fieldKey, {
+  required String trueLabel,
+  required String falseLabel,
+}) {
+  final nested = item[sectionKey];
+  if (nested is Map) {
+    final value = nested[fieldKey];
+    if (value is bool) {
+      return value ? trueLabel : falseLabel;
+    }
+  }
+  return tenantRecordStatusLabel(item);
 }

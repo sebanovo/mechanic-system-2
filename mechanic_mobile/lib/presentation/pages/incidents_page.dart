@@ -114,12 +114,13 @@ Future<void> showIncidentForm(
     builder: (dialogContext) => StatefulBuilder(
       builder: (sheetContext, setState) {
         final vehicles = vehiclesVm.vehicles?.items ?? const <VehicleEntity>[];
-        final vehicleIds = vehicles.map((vehicle) => vehicle.id).toSet();
-        final selectedVehicleId =
-            vehicleController.text.isEmpty ||
-                !vehicleIds.contains(vehicleController.text)
-            ? null
-            : vehicleController.text;
+        VehicleEntity? selectedVehicle;
+        for (final vehicle in vehicles) {
+          if (vehicle.id == vehicleController.text) {
+            selectedVehicle = vehicle;
+            break;
+          }
+        }
         return AlertDialog(
           title: Text(
             existing == null ? 'Nuevo incidente' : 'Editar incidente',
@@ -137,30 +138,25 @@ Future<void> showIncidentForm(
                       ErrorBanner(message: formError!),
                       const SizedBox(height: 12),
                     ],
-                    DropdownButtonFormField<String>(
-                      initialValue: selectedVehicleId,
-                      isExpanded: true,
-                      menuMaxHeight: 320,
-                      decoration: const InputDecoration(
-                        labelText: 'Vehículo',
-                        helperText: 'Selecciona el vehículo afectado.',
-                      ),
-                      items: vehicles
-                          .map(
-                            (vehicle) => DropdownMenuItem<String>(
-                              value: vehicle.id,
-                              child: _vehicleOptionLabel(vehicle),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (value) {
-                        vehicleController.text = value ?? '';
+                    _vehiclePickerCard(
+                      context,
+                      helper: 'Selecciona el vehículo afectado.',
+                      value: selectedVehicle == null
+                          ? 'Selecciona un vehículo'
+                          : _vehicleSelectionLabel(selectedVehicle),
+                      detail: selectedVehicle == null
+                          ? 'Elige el vehículo afectado por el incidente.'
+                          : _vehicleSelectionDetail(selectedVehicle),
+                      icon: Icons.directions_car_rounded,
+                      onTap: () async {
+                        final chosen = await _pickVehicle(
+                          context,
+                          vehicles: vehicles,
+                        );
+                        if (!sheetContext.mounted || chosen == null) return;
+                        vehicleController.text = chosen.id;
                         setState(() {});
                       },
-                      validator: (value) =>
-                          value == null || value.trim().isEmpty
-                          ? 'Selecciona un vehículo'
-                          : null,
                     ),
                     const SizedBox(height: 10),
                     DropdownButtonFormField<IncidentPriority>(
@@ -328,6 +324,11 @@ Future<void> showIncidentForm(
             ElevatedButton(
               onPressed: () async {
                 if (!formKey.currentState!.validate()) return;
+                if (vehicleController.text.trim().isEmpty) {
+                  formError = 'Selecciona un vehículo';
+                  setState(() {});
+                  return;
+                }
                 final latitude = double.tryParse(latController.text.trim());
                 final longitude = double.tryParse(lngController.text.trim());
                 if (latitude == null || longitude == null) {
@@ -367,6 +368,43 @@ Future<void> showIncidentForm(
       existing == null ? 'Incidente creado' : 'Incidente actualizado',
     );
   }
+}
+
+Future<VehicleEntity?> _pickVehicle(
+  BuildContext context, {
+  required List<VehicleEntity> vehicles,
+}) {
+  return showModalBottomSheet<VehicleEntity>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (sheetContext) {
+      return Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
+        ),
+        child: _VehiclePickerSheet(vehicles: vehicles),
+      );
+    },
+  );
+}
+
+String _vehicleSelectionLabel(VehicleEntity vehicle) {
+  final parts = <String>[
+    vehicle.plateNumber,
+    if ((vehicle.brand ?? '').trim().isNotEmpty) vehicle.brand!.trim(),
+    if ((vehicle.model ?? '').trim().isNotEmpty) vehicle.model!.trim(),
+  ];
+  return parts.where((part) => part.trim().isNotEmpty).join(' • ');
+}
+
+String _vehicleSelectionDetail(VehicleEntity vehicle) {
+  final parts = <String>[
+    if (vehicle.vehicleType.trim().isNotEmpty) vehicle.vehicleType.trim(),
+    if (vehicle.year != null) vehicle.year.toString(),
+    if ((vehicle.color ?? '').trim().isNotEmpty) vehicle.color!.trim(),
+  ];
+  return parts.where((part) => part.trim().isNotEmpty).join(' • ');
 }
 
 Future<void> confirmCancelIncident(
@@ -430,6 +468,158 @@ Widget _vehicleOptionLabel(VehicleEntity vehicle) {
       ],
     ),
   );
+}
+
+Widget _vehiclePickerCard(
+  BuildContext context, {
+  required String value,
+  required String detail,
+  required String helper,
+  required IconData icon,
+  required VoidCallback onTap,
+}) {
+  return Material(
+    color: Colors.transparent,
+    child: InkWell(
+      borderRadius: BorderRadius.circular(22),
+      onTap: onTap,
+      child: SurfaceCard(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, color: const Color(0xFF166AE9)),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Vehículo',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              value,
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+            const SizedBox(height: 4),
+            Text(helper, style: Theme.of(context).textTheme.bodySmall),
+            const SizedBox(height: 6),
+            Text(
+              detail,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Colors.blueGrey,
+                  ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+class _VehiclePickerSheet extends StatelessWidget {
+  const _VehiclePickerSheet({required this.vehicles});
+
+  final List<VehicleEntity> vehicles;
+
+  @override
+  Widget build(BuildContext context) {
+    return _SheetScaffold(
+      title: 'Seleccionar vehículo',
+      children: vehicles.isEmpty
+          ? const [
+              EmptyStatePanel(
+                title: 'Sin vehículos',
+                subtitle: 'Primero registra un vehículo en tu perfil.',
+                icon: Icons.directions_car_rounded,
+              ),
+            ]
+          : vehicles
+              .map(
+                (vehicle) => Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(20),
+                    onTap: () => Navigator.of(context).pop(vehicle),
+                    child: SurfaceCard(
+                      padding: const EdgeInsets.all(14),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _vehicleSelectionLabel(vehicle),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            _vehicleSelectionDetail(vehicle),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              )
+              .toList(),
+    );
+  }
+}
+
+class _SheetScaffold extends StatelessWidget {
+  const _SheetScaffold({
+    required this.title,
+    required this.children,
+  });
+
+  final String title;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      child: ListView(
+        shrinkWrap: true,
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
+        children: [
+          Center(
+            child: Container(
+              width: 42,
+              height: 5,
+              decoration: BoxDecoration(
+                color: const Color(0xFFD6E2F7),
+                borderRadius: BorderRadius.circular(100),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(title, style: Theme.of(context).textTheme.headlineSmall),
+          const SizedBox(height: 14),
+          ...children,
+        ],
+      ),
+    );
+  }
 }
 
 String? _validateCoordinate(String? value, num min, num max) {
