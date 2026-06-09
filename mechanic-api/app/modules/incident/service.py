@@ -14,13 +14,33 @@ from app.common.exceptions import (
 )
 from app.common.uuid import to_uuid
 from app.core.ai.media import AIMediaInput
-from app.core.audit.constants import IncidentAuditEvent
+from app.core.audit.constants import (
+    AssignmentAuditEvent,
+    AssignmentTrackingEventAuditEvent,
+    IncidentAuditEvent,
+    IncidentCandidateProviderAuditEvent,
+    IncidentOfferAuditEvent,
+    TechnicianAvailabilityAuditEvent,
+)
 from app.core.config import settings
 from app.core.context import RequestContext
 from app.core.services.base import BaseService
+from app.modules.incident.constants import IncidentUnattendedReason
+from app.modules.assignment.models import Assignment
+from app.modules.assignment.repository import AssignmentRepository
+from app.modules.assignment_tracking_event.models import AssignmentTrackingEvent
+from app.modules.assignment_tracking_event.repository import (
+    AssignmentTrackingEventRepository,
+)
 from app.modules.identity.customer.models import Customer
 from app.modules.identity.customer.repository import CustomerRepository
 from app.modules.identity.provider.models import ProviderProfile
+from app.modules.identity.technician_availability.repository import (
+    TechnicianAvailabilityRepository,
+)
+from app.modules.incident_candidate_provider.repository import (
+    IncidentCandidateProviderRepository,
+)
 from app.modules.incident.models import Incident
 from app.modules.incident.repository import IncidentRepository
 from app.modules.incident.schemas import (
@@ -31,7 +51,11 @@ from app.modules.incident.schemas import (
 )
 from app.modules.incident_ai_analysis.repository import IncidentAiAnalysisRepository
 from app.modules.incident_ai_analysis.service import IncidentAiAnalysisService
+from app.modules.incident_offer.repository import IncidentOfferRepository
+from app.modules.notification.business_notifications import BusinessNotificationService
 from app.modules.service_catalog.repository import ServiceCatalogRepository
+from app.modules.realtime_tracking.connection_manager import realtime_tracking_manager
+from app.modules.realtime_tracking.events import assignment_status_changed_event
 from app.modules.vehicle.repository import VehicleRepository
 
 logger = logging.getLogger(__name__)
@@ -39,18 +63,19 @@ logger = logging.getLogger(__name__)
 FINAL_STATUSES = {"COMPLETED", "CANCELLED"}
 
 ALLOWED_INCIDENT_TRANSITIONS: dict[str, set[str]] = {
-    "REPORTED": {"ANALYZING", "SEARCHING_PROVIDER", "CANCELLED"},
-    "ANALYZING": {"SEARCHING_PROVIDER", "CANCELLED"},
-    "SEARCHING_PROVIDER": {"WAITING_PROVIDER_RESPONSE", "CANCELLED"},
-    "WAITING_PROVIDER_RESPONSE": {"PROVIDER_ACCEPTED", "SEARCHING_PROVIDER", "CANCELLED"},
-    "PROVIDER_ACCEPTED": {"TECHNICIAN_ASSIGNED", "SEARCHING_PROVIDER", "CANCELLED"},
-    "ASSIGNING_TECHNICIAN": {"TECHNICIAN_ASSIGNED", "PROVIDER_ACCEPTED", "CANCELLED"},
-    "TECHNICIAN_ASSIGNED": {"EN_ROUTE", "PROVIDER_ACCEPTED", "CANCELLED"},
+    "REPORTED": {"ANALYZING", "SEARCHING_PROVIDER", "UNATTENDED", "CANCELLED"},
+    "ANALYZING": {"SEARCHING_PROVIDER", "UNATTENDED", "CANCELLED"},
+    "SEARCHING_PROVIDER": {"WAITING_PROVIDER_RESPONSE", "UNATTENDED", "CANCELLED"},
+    "WAITING_PROVIDER_RESPONSE": {"PROVIDER_ACCEPTED", "SEARCHING_PROVIDER", "UNATTENDED", "CANCELLED"},
+    "PROVIDER_ACCEPTED": {"TECHNICIAN_ASSIGNED", "SEARCHING_PROVIDER", "UNATTENDED", "CANCELLED"},
+    "ASSIGNING_TECHNICIAN": {"TECHNICIAN_ASSIGNED", "PROVIDER_ACCEPTED", "UNATTENDED", "CANCELLED"},
+    "TECHNICIAN_ASSIGNED": {"EN_ROUTE", "PROVIDER_ACCEPTED", "UNATTENDED", "CANCELLED"},
     "EN_ROUTE": {"ARRIVED", "CANCELLED"},
     "ARRIVED": {"IN_SERVICE", "CANCELLED"},
     "IN_SERVICE": {"COMPLETED", "CANCELLED"},
     "COMPLETED": set(),
     "CANCELLED": set(),
+    "UNATTENDED": set(),
 }
 
 
@@ -65,6 +90,18 @@ class IncidentService(BaseService):
         self.customer_repository = CustomerRepository(self.db)
         self.vehicle_repository = VehicleRepository(self.db)
         self.service_catalog_repository = ServiceCatalogRepository(self.db)
+        self.offer_repository = IncidentOfferRepository(self.db)
+        self.candidate_provider_repository = IncidentCandidateProviderRepository(
+            self.db
+        )
+        self.assignment_repository = AssignmentRepository(self.db)
+        self.assignment_tracking_event_repository = AssignmentTrackingEventRepository(
+            self.db
+        )
+        self.technician_availability_repository = TechnicianAvailabilityRepository(
+            self.db
+        )
+        self.business_notifications = BusinessNotificationService(self.db, context)
 
     def list(
         self,
@@ -273,7 +310,12 @@ class IncidentService(BaseService):
         payload: IncidentCancelRequest,
     ) -> Incident:
         incident = self.get_current_customer_incident_or_fail(incident_id)
-        return self._cancel(incident, payload)
+        return self._cancel_incident_flow(
+            incident=incident,
+            cancelled_by="CLIENT",
+            cancellation_reason=payload.cancellation_reason,
+            cancellation_notes=payload.cancellation_notes,
+        )
 
     def cancel_any(
         self,
@@ -281,11 +323,46 @@ class IncidentService(BaseService):
         payload: IncidentCancelRequest,
     ) -> Incident:
         incident = self.get_or_fail(incident_id)
-        return self._cancel(incident, payload)
+        return self._cancel_incident_flow(
+            incident=incident,
+            cancelled_by=self.context.actor_type or "SYSTEM",
+            cancellation_reason=payload.cancellation_reason,
+            cancellation_notes=payload.cancellation_notes,
+        )
 
     def complete_any(self, incident_id: str) -> Incident:
         incident = self.get_or_fail(incident_id)
         return self._complete(incident)
+
+    def mark_as_unattended(
+        self,
+        incident: Incident,
+        *,
+        reason: str,
+    ) -> Incident:
+        if incident.status in FINAL_STATUSES or incident.status == "UNATTENDED":
+            return incident
+
+        previous_status = incident.status
+        incident.status = "UNATTENDED"
+        incident.unattended_reason = reason
+        incident.unattended_at = datetime.now(timezone.utc)
+
+        self.db.flush()
+
+        self.audit.updated(
+            incident,
+            IncidentAuditEvent.INCIDENT_STATUS_CHANGED,
+            resource_type="incident",
+            event_data={
+                "incident_code": incident.incident_code,
+                "previous_status": previous_status,
+                "status": incident.status,
+                "unattended_reason": reason,
+            },
+        )
+
+        return incident
 
     def soft_delete_any(self, incident_id: str) -> Incident:
         incident = self.get_or_fail(incident_id)
@@ -425,36 +502,6 @@ class IncidentService(BaseService):
 
         return incident
 
-    def _cancel(
-        self,
-        incident: Incident,
-        payload: IncidentCancelRequest,
-    ) -> Incident:
-        self._ensure_valid_transition(incident.status, "CANCELLED")
-
-        previous_status = incident.status
-        incident.status = "CANCELLED"
-        incident.cancelled_at = datetime.now(timezone.utc)
-
-        self.db.flush()
-
-        self.audit.updated(
-            incident,
-            IncidentAuditEvent.INCIDENT_CANCELLED,
-            resource_type="incident",
-            event_data={
-                "incident_code": incident.incident_code,
-                "previous_status": previous_status,
-                "status": incident.status,
-                "cancellation_reason": payload.cancellation_reason,
-            },
-        )
-
-        self.db.commit()
-        self.db.refresh(incident)
-
-        return incident
-
     def _complete(self, incident: Incident) -> Incident:
         self._ensure_valid_transition(incident.status, "COMPLETED")
 
@@ -479,6 +526,310 @@ class IncidentService(BaseService):
         self.db.refresh(incident)
 
         return incident
+
+    def _cancel_incident_flow(
+        self,
+        *,
+        incident: Incident,
+        cancelled_by: str,
+        cancellation_reason: str | None = None,
+        cancellation_notes: str | None = None,
+    ) -> Incident:
+        if incident.status in {"COMPLETED", "CANCELLED", "UNATTENDED"}:
+            raise ConflictException("No se puede cancelar un incidente finalizado.")
+
+        self._ensure_valid_transition(incident.status, "CANCELLED")
+
+        previous_status = incident.status
+        now = datetime.now(timezone.utc)
+
+        incident.status = "CANCELLED"
+        incident.cancelled_at = now
+
+        impacted_tenant_ids = self._cancel_related_offers_and_candidates(
+            incident=incident,
+            now=now,
+        )
+        assignment = self._cancel_related_assignment_if_exists(
+            incident=incident,
+            now=now,
+        )
+
+        if assignment is not None:
+            detail = self.assignment_repository.get_detail_by_id(str(assignment.id))
+            if detail is not None:
+                _, _, _, provider_profile, _ = detail
+                impacted_tenant_ids.add(str(provider_profile.tenant_id))
+
+        self._notify_customer_cancellation(
+            incident=incident,
+            assignment=assignment,
+            impacted_tenant_ids=impacted_tenant_ids,
+            cancellation_reason=cancellation_reason,
+            cancellation_notes=cancellation_notes,
+        )
+        self._broadcast_customer_cancellation(
+            incident=incident,
+            assignment=assignment,
+        )
+
+        self.db.flush()
+
+        self.audit.updated(
+            incident,
+            IncidentAuditEvent.INCIDENT_CANCELLED,
+            resource_type="incident",
+            event_data={
+                "incident_code": incident.incident_code,
+                "previous_status": previous_status,
+                "status": incident.status,
+                "cancelled_by": cancelled_by,
+                "cancellation_reason": cancellation_reason,
+                "cancellation_notes": cancellation_notes,
+            },
+        )
+
+        self.db.commit()
+        self.db.refresh(incident)
+
+        return incident
+
+    def _cancel_related_offers_and_candidates(
+        self,
+        *,
+        incident: Incident,
+        now: datetime,
+    ) -> set[str]:
+        offers, _ = self.offer_repository.list_by_incident(str(incident.id))
+        impacted_tenant_ids: set[str] = set()
+
+        for offer, _, candidate, provider_profile in offers:
+            if offer.offer_status in {"PENDING", "ACCEPTED"}:
+                previous_status = offer.offer_status
+                offer.offer_status = "CANCELLED"
+                offer.responded_at = now
+                offer.response_message = "El cliente canceló la solicitud."
+                impacted_tenant_ids.add(str(provider_profile.tenant_id))
+
+                self.audit.updated(
+                    offer,
+                    IncidentOfferAuditEvent.INCIDENT_OFFER_CANCELLED,
+                    resource_type="incident_offer",
+                    tenant_id=str(provider_profile.tenant_id),
+                    event_data={
+                        "incident_id": str(incident.id),
+                        "incident_code": incident.incident_code,
+                        "offer_id": str(offer.id),
+                        "previous_status": previous_status,
+                        "offer_status": offer.offer_status,
+                        "cancelled_by": "CLIENT",
+                    },
+                )
+
+            if candidate is not None and candidate.candidate_status not in {
+                "DISCARDED",
+                "EXPIRED",
+            }:
+                previous_candidate_status = candidate.candidate_status
+                candidate.candidate_status = "DISCARDED"
+
+                self.audit.updated(
+                    candidate,
+                    IncidentCandidateProviderAuditEvent.INCIDENT_CANDIDATE_PROVIDER_STATUS_CHANGED,
+                    resource_type="incident_candidate_provider",
+                    tenant_id=str(provider_profile.tenant_id),
+                    event_data={
+                        "incident_id": str(incident.id),
+                        "incident_code": incident.incident_code,
+                        "provider_profile_id": str(provider_profile.id),
+                        "previous_status": previous_candidate_status,
+                        "candidate_status": candidate.candidate_status,
+                        "reason": "incident_cancelled_by_customer",
+                    },
+                )
+
+        return impacted_tenant_ids
+
+    def _cancel_related_assignment_if_exists(
+        self,
+        *,
+        incident: Incident,
+        now: datetime,
+    ) -> Assignment | None:
+        assignment = self.assignment_repository.get_active_by_incident(str(incident.id))
+
+        if assignment is None:
+            return None
+
+        detail = self.assignment_repository.get_detail_by_id(str(assignment.id))
+        if detail is None:
+            return None
+
+        assignment, incident_detail, offer, provider_profile, technician = detail
+
+        assignment.assignment_status = "CANCELLED"
+        assignment.cancelled_at = now
+
+        if offer.offer_status != "CANCELLED":
+            offer.offer_status = "CANCELLED"
+            offer.responded_at = now
+            offer.response_message = "La solicitud fue cancelada por el cliente."
+
+        tracking_event = AssignmentTrackingEvent(
+            assignment_id=assignment.id,
+            event_type="CANCELLED",
+            latitude=None,
+            longitude=None,
+            notes="La solicitud fue cancelada por el cliente.",
+            occurred_at=now,
+        )
+        self.db.add(tracking_event)
+
+        availability = self.technician_availability_repository.get_current_by_technician(
+            technician.id
+        )
+        if availability is not None:
+            previous_availability_status = availability.availability_status
+            availability.availability_status = "AVAILABLE"
+            self.audit.updated(
+                availability,
+                TechnicianAvailabilityAuditEvent.TECHNICIAN_AVAILABILITY_UPDATED,
+                resource_type="technician_availability",
+                tenant_id=str(provider_profile.tenant_id),
+                event_data={
+                    "technician_id": str(technician.id),
+                    "previous_status": previous_availability_status,
+                    "availability_status": availability.availability_status,
+                    "reason": "ASSIGNMENT_CANCELLED_BY_CUSTOMER",
+                },
+            )
+
+        self.db.flush()
+
+        self.audit.updated(
+            assignment,
+            AssignmentAuditEvent.ASSIGNMENT_CANCELLED,
+            resource_type="assignment",
+            tenant_id=str(provider_profile.tenant_id),
+            event_data={
+                "assignment_id": str(assignment.id),
+                "incident_id": str(incident_detail.id),
+                "offer_id": str(offer.id),
+                "assignment_status": assignment.assignment_status,
+                "incident_status": "CANCELLED",
+            },
+        )
+
+        self.audit.updated(
+            offer,
+            IncidentOfferAuditEvent.INCIDENT_OFFER_CANCELLED,
+            resource_type="incident_offer",
+            tenant_id=str(provider_profile.tenant_id),
+            event_data={
+                "incident_id": str(incident_detail.id),
+                "offer_id": str(offer.id),
+                "offer_status": offer.offer_status,
+                "cancelled_by": "CLIENT",
+            },
+        )
+
+        self.audit.created(
+            tracking_event,
+            AssignmentTrackingEventAuditEvent.ASSIGNMENT_TRACKING_EVENT_CREATED,
+            resource_type="assignment_tracking_event",
+            tenant_id=str(provider_profile.tenant_id),
+            event_data={
+                "assignment_id": str(assignment.id),
+                "event_type": tracking_event.event_type,
+                "notes": tracking_event.notes,
+            },
+        )
+
+        return assignment
+
+    def _notify_customer_cancellation(
+        self,
+        *,
+        incident: Incident,
+        assignment: Assignment | None,
+        impacted_tenant_ids: set[str],
+        cancellation_reason: str | None,
+        cancellation_notes: str | None,
+    ) -> None:
+        customer_detail = self.customer_repository.get_detail_by_customer_id(
+            incident.customer_id
+        )
+
+        customer_user = (
+            customer_detail[1] if customer_detail is not None else None
+        )
+
+        try:
+            if customer_user is not None:
+                self.business_notifications.send_incident_cancelled_by_customer(
+                    recipient_user_id=str(customer_user.id),
+                    tenant_id=None,
+                    incident_id=str(incident.id),
+                    assignment_id=str(assignment.id) if assignment is not None else None,
+                    audience="CLIENT",
+                    cancellation_reason=cancellation_reason,
+                    cancellation_notes=cancellation_notes,
+                )
+
+            for tenant_id in impacted_tenant_ids:
+                self.business_notifications.send_incident_cancelled_by_customer_to_tenant_owners(
+                    tenant_id=tenant_id,
+                    incident_id=str(incident.id),
+                    assignment_id=str(assignment.id) if assignment is not None else None,
+                    cancellation_reason=cancellation_reason,
+                    cancellation_notes=cancellation_notes,
+                )
+
+            if assignment is not None:
+                detail = self.assignment_repository.get_detail_by_id(str(assignment.id))
+                if detail is not None:
+                    _, _, _, provider_profile, technician = detail
+                    self.business_notifications.send_assignment_cancelled_for_technician_by_customer(
+                        recipient_user_id=str(technician.user_id),
+                        tenant_id=str(provider_profile.tenant_id),
+                        assignment_id=str(assignment.id),
+                        incident_id=str(incident.id),
+                    )
+        except Exception:
+            return
+
+    def _broadcast_customer_cancellation(
+        self,
+        *,
+        incident: Incident,
+        assignment: Assignment | None,
+    ) -> None:
+        if assignment is None:
+            return
+
+        message = assignment_status_changed_event(
+            assignment_id=str(assignment.id),
+            incident_id=str(incident.id),
+            assignment_status="CANCELLED",
+            incident_status="CANCELLED",
+            event_type="CANCELLED",
+        )
+
+        try:
+            loop = asyncio.get_running_loop()
+            loop.create_task(
+                realtime_tracking_manager.broadcast(
+                    assignment_id=str(assignment.id),
+                    payload=message,
+                )
+            )
+        except RuntimeError:
+            asyncio.run(
+                realtime_tracking_manager.broadcast(
+                    assignment_id=str(assignment.id),
+                    payload=message,
+                )
+            )
 
     def _get_current_customer_or_fail(self) -> Customer:
         if self.context.user_id is None:

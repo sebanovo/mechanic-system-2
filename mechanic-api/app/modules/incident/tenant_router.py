@@ -17,6 +17,8 @@ from app.modules.incident.schemas import (
     IncidentListData,
     IncidentResponse,
     IncidentsResponse,
+    IncidentPriority,
+    IncidentStatus,
 )
 from app.modules.incident.service import IncidentService
 
@@ -47,8 +49,8 @@ def list_current_tenant_incidents(
     service: IncidentService = Depends(_incident_service),
     pagination: PaginationParams = Depends(),
     service_catalog_id: str | None = Query(default=None),
-    status: str | None = Query(default=None),
-    priority: str | None = Query(default=None),
+    status: IncidentStatus | None = Query(default=None),
+    priority: IncidentPriority | None = Query(default=None),
     search: str | None = Query(default=None),
     reported_from: datetime | None = Query(default=None),
     reported_to: datetime | None = Query(default=None),

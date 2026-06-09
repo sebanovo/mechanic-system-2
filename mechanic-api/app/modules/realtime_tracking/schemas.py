@@ -18,8 +18,18 @@ RealtimeTrackingMessageType = Literal[
 class RealtimeLocationInput(BaseModel):
     type: Literal["LOCATION_UPDATED"] = "LOCATION_UPDATED"
 
-    latitude: Decimal = Field(ge=-90, le=90)
-    longitude: Decimal = Field(ge=-180, le=180)
+    latitude: Decimal = Field(
+        ge=-90,
+        le=90,
+        examples=[-16.5291234],
+        description="Latitud actual del técnico.",
+    )
+    longitude: Decimal = Field(
+        ge=-180,
+        le=180,
+        examples=[-68.1456789],
+        description="Longitud actual del técnico.",
+    )
 
     heading: Decimal | None = Field(default=None, ge=0, le=360)
     speed_kmh: Decimal | None = Field(default=None, ge=0)
@@ -28,8 +38,16 @@ class RealtimeLocationInput(BaseModel):
 class RealtimeTrackingOutput(BaseModel):
     type: RealtimeTrackingMessageType
     assignment_id: str
-    latitude: Decimal | None = None
-    longitude: Decimal | None = None
+    latitude: Decimal | None = Field(
+        default=None,
+        examples=[-16.5291234],
+        description="Latitud del evento en tiempo real.",
+    )
+    longitude: Decimal | None = Field(
+        default=None,
+        examples=[-68.1456789],
+        description="Longitud del evento en tiempo real.",
+    )
     heading: Decimal | None = None
     speed_kmh: Decimal | None = None
     occurred_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -38,16 +56,32 @@ class RealtimeTrackingOutput(BaseModel):
 
 class RealtimeTrackingOriginPublic(BaseModel):
     type: str
-    latitude: Decimal | None = None
-    longitude: Decimal | None = None
+    latitude: Decimal | None = Field(
+        default=None,
+        examples=[-16.5291234],
+        description="Latitud del punto de origen.",
+    )
+    longitude: Decimal | None = Field(
+        default=None,
+        examples=[-68.1456789],
+        description="Longitud del punto de origen.",
+    )
     address_text: str | None = None
     occurred_at: datetime | None = None
 
 
 class RealtimeTrackingDestinationPublic(BaseModel):
     type: str
-    latitude: Decimal | None = None
-    longitude: Decimal | None = None
+    latitude: Decimal | None = Field(
+        default=None,
+        examples=[-16.5345678],
+        description="Latitud del punto de destino.",
+    )
+    longitude: Decimal | None = Field(
+        default=None,
+        examples=[-68.1389012],
+        description="Longitud del punto de destino.",
+    )
     address_text: str | None = None
     occurred_at: datetime | None = None
 
@@ -109,15 +143,15 @@ class TrackingSessionResponse(BaseModel):
                     },
                     "origin": {
                         "type": "TECHNICIAN_CURRENT_LOCATION",
-                        "latitude": -16.5001,
-                        "longitude": -68.1193,
+                        "latitude": -16.5291234,
+                        "longitude": -68.1456789,
                         "address_text": None,
                         "occurred_at": "2026-06-07T23:00:00Z",
                     },
                     "destination": {
                         "type": "INCIDENT_LOCATION",
-                        "latitude": -16.5102,
-                        "longitude": -68.125,
+                        "latitude": -16.5345678,
+                        "longitude": -68.1389012,
                         "address_text": "Av. Busch, La Paz",
                         "occurred_at": None,
                     },

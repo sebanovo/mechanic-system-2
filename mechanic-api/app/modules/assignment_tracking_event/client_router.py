@@ -19,6 +19,7 @@ from app.modules.assignment_tracking_event.repository import (
 from app.modules.assignment_tracking_event.schemas import (
     AssignmentTrackingEventListData,
     AssignmentTrackingEventsResponse,
+    AssignmentTrackingEventType,
 )
 from app.modules.assignment_tracking_event.service import (
     AssignmentTrackingEventService,
@@ -71,7 +72,7 @@ def list_my_assignment_tracking_events(
     service: AssignmentTrackingEventService = Depends(_tracking_event_service),
     db: Session = Depends(get_db),
     pagination: PaginationParams = Depends(),
-    event_type: str | None = Query(default=None),
+    event_type: AssignmentTrackingEventType | None = Query(default=None),
 ) -> dict:
     _assert_assignment_belongs_to_current_customer(
         assignment_id=assignment_id,

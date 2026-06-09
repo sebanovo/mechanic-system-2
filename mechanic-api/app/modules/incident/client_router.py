@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Annotated
+from typing import Annotated, cast
 
 from fastapi import APIRouter, Depends, File, Form, Query, UploadFile
 from sqlalchemy.orm import Session
@@ -23,6 +23,8 @@ from app.modules.incident.schemas import (
     IncidentListData,
     IncidentResponse,
     IncidentsResponse,
+    IncidentPriority,
+    IncidentStatus,
     IncidentUpdateRequest,
 )
 from app.modules.incident.service import IncidentService
@@ -53,8 +55,8 @@ def list_my_incidents(
     identity: CurrentIdentity = Depends(require_user_types("CLIENT")),
     service: IncidentService = Depends(_incident_service),
     pagination: PaginationParams = Depends(),
-    status: str | None = Query(default=None),
-    priority: str | None = Query(default=None),
+    status: IncidentStatus | None = Query(default=None),
+    priority: IncidentPriority | None = Query(default=None),
     service_catalog_id: str | None = Query(default=None),
     search: str | None = Query(default=None),
     reported_from: datetime | None = Query(default=None),
@@ -122,8 +124,8 @@ def create_my_incident(
                 "multipart/form-data": {
                     "example": {
                         "vehicle_id": "uuid-del-vehiculo",
-                        "latitude": -16.5001,
-                        "longitude": -68.1193,
+                        "latitude": -16.5291234,
+                        "longitude": -68.1456789,
                         "description": "El auto se apagó en marcha y ahora no enciende.",
                         "priority": "MEDIUM",
                     }
@@ -144,14 +146,14 @@ async def create_my_incident_with_files(
         Decimal,
         Form(
             description="Latitud geográfica donde ocurrió el incidente.",
-            examples=[-16.5001],
+            examples=[-16.5291234],
         ),
     ],
     longitude: Annotated[
         Decimal,
         Form(
             description="Longitud geográfica donde ocurrió el incidente.",
-            examples=[-68.1193],
+            examples=[-68.1456789],
         ),
     ],
     description: Annotated[
@@ -162,7 +164,7 @@ async def create_my_incident_with_files(
         ),
     ] = None,
     priority: Annotated[
-        str | None,
+        IncidentPriority | None,
         Form(
             description="Prioridad opcional del incidente. Si no se envía, el backend usa MEDIUM.",
             examples=["MEDIUM"],
@@ -182,12 +184,14 @@ async def create_my_incident_with_files(
 
     media = await build_ai_media_inputs(files)
 
+    selected_priority = cast(IncidentPriority, priority or "MEDIUM")
+
     payload = IncidentCreateRequest(
         vehicle_id=vehicle_id,
         description=description,
         latitude=latitude,
         longitude=longitude,
-        priority=priority or "MEDIUM",
+        priority=selected_priority,
     )
 
     incident = service.create_for_current_customer(
@@ -244,7 +248,10 @@ def update_my_incident(
     "/{incident_id}/cancel",
     response_model=IncidentResponse,
     summary="Cancelar incidente",
-    description="Cancela un incidente del cliente con el motivo enviado en el request.",
+    description=(
+        "Cancela un incidente del cliente y propaga el cierre a ofertas, candidatos, "
+        "asignación, tracking, disponibilidad del técnico, notificaciones y WebSocket."
+    ),
 )
 def cancel_my_incident(
     incident_id: str,

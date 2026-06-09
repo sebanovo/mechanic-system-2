@@ -138,3 +138,62 @@ class IncidentDispatchRepository:
         )
 
         return self.db.execute(query).all()
+
+    def has_provider_services_for_catalog(
+        self,
+        *,
+        service_catalog_id: str | UUID,
+    ) -> bool:
+        service_catalog_uuid = _to_uuid(service_catalog_id, "service_catalog_id")
+
+        query = select(ProviderService.id).where(
+            ProviderService.service_catalog_id == service_catalog_uuid,
+            ProviderService.is_available.is_(True),
+        )
+
+        return self.db.scalar(query.limit(1)) is not None
+
+    def has_available_technicians_for_catalog(
+        self,
+        *,
+        service_catalog_id: str | UUID,
+    ) -> bool:
+        service_catalog_uuid = _to_uuid(service_catalog_id, "service_catalog_id")
+        now = datetime.now(timezone.utc)
+        availability_is_active_now = and_(
+            TechnicianAvailability.availability_status == "AVAILABLE",
+            or_(
+                TechnicianAvailability.available_from.is_(None),
+                TechnicianAvailability.available_from <= now,
+            ),
+            or_(
+                TechnicianAvailability.available_until.is_(None),
+                TechnicianAvailability.available_until >= now,
+            ),
+        )
+
+        query = (
+            select(Technician.id)
+            .join(
+                TechnicianService,
+                TechnicianService.technician_id == Technician.id,
+            )
+            .join(
+                ProviderService,
+                ProviderService.id == TechnicianService.provider_service_id,
+            )
+            .join(
+                TechnicianAvailability,
+                TechnicianAvailability.technician_id == Technician.id,
+            )
+            .where(
+                Technician.deleted_at.is_(None),
+                Technician.status == "ACTIVE",
+                TechnicianService.is_enabled.is_(True),
+                ProviderService.service_catalog_id == service_catalog_uuid,
+                ProviderService.is_available.is_(True),
+                availability_is_active_now,
+            )
+        )
+
+        return self.db.scalar(query.limit(1)) is not None

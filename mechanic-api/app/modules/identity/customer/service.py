@@ -60,6 +60,21 @@ class CustomerService(BaseService):
 
         return detail
 
+    def get_current_or_fail(self) -> Customer:
+        if self.context.actor_type != "CLIENT" or self.context.user_id is None:
+            raise NotFoundException("Cliente no encontrado.")
+
+        customer = self.repository.get_by_user_id(self.context.user_id)
+
+        if (
+            customer is None
+            or customer.status != "ACTIVE"
+            or customer.deleted_at is not None
+        ):
+            raise NotFoundException("Cliente no encontrado.")
+
+        return customer
+
     def create_for_user(self, user: User) -> Customer:
         return self._create_for_user_uncommitted(user)
 

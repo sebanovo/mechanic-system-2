@@ -10,7 +10,13 @@ from app.common.pagination import PaginationMeta
 from app.modules.identity.provider.schemas import ProviderProfilePublic
 from app.modules.incident.schemas import IncidentPublic
 
-CandidateProviderStatus = Literal["SUGGESTED", "SELECTED", "DISCARDED", "EXPIRED"]
+CandidateProviderStatus = Literal[
+    "REQUESTED",
+    "SUGGESTED",
+    "SELECTED",
+    "DISCARDED",
+    "EXPIRED",
+]
 
 
 class IncidentCandidateProviderCreateRequest(BaseModel):

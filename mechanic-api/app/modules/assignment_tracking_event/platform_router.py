@@ -21,6 +21,7 @@ from app.modules.assignment_tracking_event.schemas import (
     AssignmentTrackingEventListData,
     AssignmentTrackingEventResponse,
     AssignmentTrackingEventsResponse,
+    AssignmentTrackingEventType,
 )
 from app.modules.assignment_tracking_event.service import (
     AssignmentTrackingEventService,
@@ -54,7 +55,7 @@ def list_platform_assignment_tracking_events(
     service: AssignmentTrackingEventService = Depends(_tracking_event_service),
     pagination: PaginationParams = Depends(),
     assignment_id: str | None = Query(default=None),
-    event_type: str | None = Query(default=None),
+    event_type: AssignmentTrackingEventType | None = Query(default=None),
     occurred_from: datetime | None = Query(default=None),
     occurred_to: datetime | None = Query(default=None),
 ) -> dict:

@@ -25,6 +25,8 @@ def incident_public(incident: Incident) -> IncidentPublic:
         reported_at=incident.reported_at,
         cancelled_at=incident.cancelled_at,
         completed_at=incident.completed_at,
+        unattended_reason=incident.unattended_reason,
+        unattended_at=incident.unattended_at,
         created_at=incident.created_at,
         updated_at=incident.updated_at,
         deleted_at=incident.deleted_at,

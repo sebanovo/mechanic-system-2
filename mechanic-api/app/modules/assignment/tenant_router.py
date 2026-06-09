@@ -15,6 +15,7 @@ from app.modules.assignment.schemas import (
     AssignmentListData,
     AssignmentResponse,
     AssignmentsResponse,
+    AssignmentStatus,
     AssignmentStatusChangeRequest,
     AssignmentUpdateRequest,
 )
@@ -60,7 +61,7 @@ def list_current_tenant_assignments(
     provider_profile_service: ProviderProfileService = Depends(_provider_profile_service),
     service: AssignmentService = Depends(_assignment_service),
     pagination: PaginationParams = Depends(),
-    assignment_status: str | None = Query(default=None),
+    assignment_status: AssignmentStatus | None = Query(default=None),
 ) -> dict:
     if identity.user.user_type == "TECHNICIAN":
         items, total = service.list_by_current_technician(
@@ -199,9 +200,10 @@ def update_current_tenant_assignment(
     response_model=AssignmentResponse,
     summary="Actualizar estado operativo de asignación",
     description=(
-        "Permite al owner del taller modificar al tecnico asignado, avanzar el flujo de la "
-        "asignación. El owner usa este endpoint para registrar EN_ROUTE, ARRIVED, "
-        "IN_SERVICE, COMPLETED o CANCELLED."
+        "Permite al owner del taller cancelar una asignación activa. "
+        "En este endpoint el único valor aceptado es `CANCELLED`. "
+        "El avance operativo EN_ROUTE, ARRIVED, IN_SERVICE y COMPLETED lo registra "
+        "el técnico desde tracking-events."
     ),
 )
 def change_current_tenant_assignment_status(

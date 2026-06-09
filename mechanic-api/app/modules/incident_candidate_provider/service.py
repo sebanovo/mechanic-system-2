@@ -29,6 +29,7 @@ from app.modules.technician_service.repository import TechnicianServiceRepositor
 
 class IncidentCandidateProviderService(BaseService):
     ALLOWED_CANDIDATE_TRANSITIONS: dict[str, set[str]] = {
+        "REQUESTED": {"SELECTED", "DISCARDED", "EXPIRED"},
         "SUGGESTED": {"SELECTED", "DISCARDED", "EXPIRED"},
         "SELECTED": {"DISCARDED", "EXPIRED"},
         "DISCARDED": set(),
@@ -155,7 +156,7 @@ class IncidentCandidateProviderService(BaseService):
             capacity_score=payload.capacity_score,
             response_score=payload.response_score,
             match_score=payload.match_score,
-            candidate_status="SUGGESTED",
+            candidate_status="REQUESTED",
         )
 
         candidate = self.repository.add(candidate)

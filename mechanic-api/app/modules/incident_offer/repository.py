@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID
 
@@ -133,6 +134,90 @@ class IncidentOfferRepository:
             offer_status="PENDING",
             limit=limit,
             offset=offset,
+        )
+
+    def list_pending_due_by_incident(
+        self,
+        *,
+        incident_id: str | UUID,
+        now: datetime,
+    ) -> list[
+        tuple[
+            IncidentOffer,
+            IncidentCandidateProvider,
+            ProviderProfile,
+        ]
+    ]:
+        query = (
+            select(
+                IncidentOffer,
+                IncidentCandidateProvider,
+                ProviderProfile,
+            )
+            .join(
+                IncidentCandidateProvider,
+                IncidentCandidateProvider.id == IncidentOffer.candidate_provider_id,
+            )
+            .join(
+                ProviderProfile,
+                ProviderProfile.id == IncidentOffer.provider_profile_id,
+            )
+            .where(
+                IncidentOffer.incident_id == _to_uuid(incident_id, "incident_id"),
+                IncidentOffer.offer_status == "PENDING",
+                IncidentOffer.expires_at.is_not(None),
+                IncidentOffer.expires_at <= now,
+            )
+        )
+
+        rows = self.db.execute(query).all()
+        return [(row[0], row[1], row[2]) for row in rows]
+
+    def list_pending_due(
+        self,
+        *,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> tuple[
+        list[
+            tuple[
+                IncidentOffer,
+                Incident,
+                IncidentCandidateProvider,
+                ProviderProfile,
+            ]
+        ],
+        int,
+    ]:
+        now = datetime.now(timezone.utc)
+        query = (
+            select(
+                IncidentOffer,
+                Incident,
+                IncidentCandidateProvider,
+                ProviderProfile,
+            )
+            .join(Incident, Incident.id == IncidentOffer.incident_id)
+            .join(
+                IncidentCandidateProvider,
+                IncidentCandidateProvider.id == IncidentOffer.candidate_provider_id,
+            )
+            .join(
+                ProviderProfile,
+                ProviderProfile.id == IncidentOffer.provider_profile_id,
+            )
+            .where(
+                Incident.deleted_at.is_(None),
+                IncidentOffer.offer_status == "PENDING",
+                IncidentOffer.expires_at.is_not(None),
+                IncidentOffer.expires_at <= now,
+            )
+        )
+
+        return self._paginate(
+            query.order_by(IncidentOffer.expires_at.asc(), IncidentOffer.created_at.asc()),
+            limit,
+            offset,
         )
 
     def get_detail_by_id(

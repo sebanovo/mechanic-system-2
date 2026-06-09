@@ -1,8 +1,8 @@
 """initial migrations
 
-Revision ID: f3cf075c36b1
+Revision ID: 601f369c99dd
 Revises: 
-Create Date: 2026-06-07 04:08:50.087641
+Create Date: 2026-06-08 21:17:13.252031
 """
 
 import sqlalchemy as sa
@@ -11,7 +11,7 @@ from sqlalchemy.dialects import postgresql
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = 'f3cf075c36b1'
+revision = '601f369c99dd'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -312,6 +312,8 @@ def upgrade() -> None:
     sa.Column('longitude', sa.Numeric(precision=10, scale=7), nullable=False),
     sa.Column('address_text', sa.Text(), nullable=True),
     sa.Column('priority', sa.String(length=30), nullable=False),
+    sa.Column('unattended_reason', sa.String(length=100), nullable=True),
+    sa.Column('unattended_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('status', sa.String(length=50), nullable=False),
     sa.Column('reported_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('cancelled_at', sa.DateTime(timezone=True), nullable=True),
@@ -320,7 +322,7 @@ def upgrade() -> None:
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
-    sa.CheckConstraint("\n            status IN (\n                'REPORTED',\n                'ANALYZING',\n                'SEARCHING_PROVIDER',\n                'WAITING_PROVIDER_RESPONSE',\n                'PROVIDER_ACCEPTED',\n                'ASSIGNING_TECHNICIAN',\n                'TECHNICIAN_ASSIGNED',\n                'EN_ROUTE',\n                'ARRIVED',\n                'IN_SERVICE',\n                'COMPLETED',\n                'CANCELLED'\n            )\n            ", name=op.f('ck_incident_incident_status_valid')),
+    sa.CheckConstraint("\n            status IN (\n                'REPORTED',\n                'ANALYZING',\n                'SEARCHING_PROVIDER',\n                'WAITING_PROVIDER_RESPONSE',\n                'PROVIDER_ACCEPTED',\n                'ASSIGNING_TECHNICIAN',\n                'TECHNICIAN_ASSIGNED',\n                'EN_ROUTE',\n                'ARRIVED',\n                'IN_SERVICE',\n                'COMPLETED',\n                'CANCELLED',\n                'UNATTENDED'\n            )\n            ", name=op.f('ck_incident_incident_status_valid')),
     sa.CheckConstraint("priority IN ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL')", name=op.f('ck_incident_incident_priority_valid')),
     sa.CheckConstraint('latitude BETWEEN -90 AND 90 AND longitude BETWEEN -180 AND 180', name=op.f('ck_incident_incident_coordinates_valid')),
     sa.ForeignKeyConstraint(['customer_id'], ['customer.id'], name=op.f('fk_incident_customer_id_customer'), ondelete='RESTRICT'),
@@ -389,7 +391,7 @@ def upgrade() -> None:
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
-    sa.CheckConstraint("candidate_status IN ('SUGGESTED', 'SELECTED', 'DISCARDED', 'EXPIRED')", name=op.f('ck_incident_candidate_provider_incident_candidate_provider_status_valid')),
+    sa.CheckConstraint("candidate_status IN ('REQUESTED', 'SUGGESTED', 'SELECTED', 'DISCARDED', 'EXPIRED')", name=op.f('ck_incident_candidate_provider_incident_candidate_provider_status_valid')),
     sa.CheckConstraint('\n            (distance_km IS NULL OR distance_km >= 0)\n            AND (estimated_arrival_minutes IS NULL OR estimated_arrival_minutes >= 0)\n            AND (rating_score IS NULL OR rating_score >= 0)\n            AND (capacity_score IS NULL OR capacity_score >= 0)\n            AND (response_score IS NULL OR response_score >= 0)\n            AND (match_score IS NULL OR match_score >= 0)\n            ', name=op.f('ck_incident_candidate_provider_incident_candidate_provider_scores_valid')),
     sa.ForeignKeyConstraint(['incident_id'], ['incident.id'], name=op.f('fk_incident_candidate_provider_incident_id_incident'), ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['provider_profile_id'], ['provider_profile.id'], name=op.f('fk_incident_candidate_provider_provider_profile_id_provider_profile'), ondelete='CASCADE'),
