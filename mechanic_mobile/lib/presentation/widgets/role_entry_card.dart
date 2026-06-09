@@ -25,8 +25,8 @@ class RoleEntryCard extends StatelessWidget {
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(28),
-          color: Colors.white.withOpacity(0.08),
-          border: Border.all(color: Colors.white.withOpacity(0.12)),
+          color: Colors.white.withValues(alpha: 0.08),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
         ),
         child: Row(
           children: [
@@ -34,7 +34,7 @@ class RoleEntryCard extends StatelessWidget {
               width: 60,
               height: 60,
               decoration: BoxDecoration(
-                color: accent.withOpacity(0.18),
+                color: accent.withValues(alpha: 0.18),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Icon(icon, color: Colors.white, size: 28),
@@ -46,16 +46,16 @@ class RoleEntryCard extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: Colors.white,
-                        ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.titleLarge?.copyWith(color: Colors.white),
                   ),
                   const SizedBox(height: 6),
                   Text(
                     subtitle,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.white.withOpacity(0.82),
-                        ),
+                      color: Colors.white.withValues(alpha: 0.82),
+                    ),
                   ),
                 ],
               ),

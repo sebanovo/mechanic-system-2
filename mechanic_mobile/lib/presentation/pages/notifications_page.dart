@@ -39,7 +39,9 @@ class NotificationsPage extends StatelessWidget {
             IconButton(
               onPressed: vm.registering
                   ? null
-                  : () => context.read<NotificationsViewModel>().registerCurrentDevice(),
+                  : () => context
+                        .read<NotificationsViewModel>()
+                        .registerCurrentDevice(),
               icon: const Icon(Icons.phonelink_setup_rounded),
               tooltip: 'Registrar dispositivo',
             ),
@@ -55,8 +57,10 @@ class NotificationsPage extends StatelessWidget {
             onPressed: (vm.loading || vm.registering)
                 ? null
                 : () => showDevices
-                    ? context.read<NotificationsViewModel>().refresh()
-                    : context.read<NotificationsViewModel>().loadNotifications(),
+                      ? context.read<NotificationsViewModel>().refresh()
+                      : context
+                            .read<NotificationsViewModel>()
+                            .loadNotifications(),
             icon: const Icon(Icons.refresh_rounded),
           ),
         ],
@@ -113,25 +117,33 @@ class NotificationsPage extends StatelessWidget {
             Text(
               'Centro de notificaciones',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w900,
-                  ),
+                color: Colors.white,
+                fontWeight: FontWeight.w900,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               'Mensajes y dispositivos sincronizados con Firebase y el backend.',
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Colors.white.withOpacity(0.9),
-                  ),
+                color: Colors.white.withValues(alpha: 0.9),
+              ),
             ),
             const SizedBox(height: 14),
             Wrap(
               spacing: 10,
               runSpacing: 10,
               children: [
-                _chip(context, '${vm.notifications?.pagination.total ?? 0} mensajes', Icons.notifications_rounded),
+                _chip(
+                  context,
+                  '${vm.notifications?.pagination.total ?? 0} mensajes',
+                  Icons.notifications_rounded,
+                ),
                 if (showDevices)
-                  _chip(context, '${vm.devices?.pagination.total ?? 0} dispositivos', Icons.phonelink_setup_rounded),
+                  _chip(
+                    context,
+                    '${vm.devices?.pagination.total ?? 0} dispositivos',
+                    Icons.phonelink_setup_rounded,
+                  ),
               ],
             ),
           ],
@@ -140,7 +152,10 @@ class NotificationsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionSelector(BuildContext context, NotificationsViewModel vm) {
+  Widget _buildSectionSelector(
+    BuildContext context,
+    NotificationsViewModel vm,
+  ) {
     return Wrap(
       spacing: 10,
       runSpacing: 10,
@@ -149,19 +164,25 @@ class NotificationsPage extends StatelessWidget {
           selected: vm.sectionIndex == 0,
           label: const Text('Notificaciones'),
           avatar: const Icon(Icons.notifications_rounded, size: 18),
-          onSelected: (_) => context.read<NotificationsViewModel>().setSectionIndex(0),
+          onSelected: (_) =>
+              context.read<NotificationsViewModel>().setSectionIndex(0),
         ),
         FilterChip(
           selected: vm.sectionIndex == 1,
           label: const Text('Dispositivos'),
           avatar: const Icon(Icons.phonelink_setup_rounded, size: 18),
-          onSelected: showDevices ? (_) => context.read<NotificationsViewModel>().setSectionIndex(1) : null,
+          onSelected: showDevices
+              ? (_) => context.read<NotificationsViewModel>().setSectionIndex(1)
+              : null,
         ),
       ],
     );
   }
 
-  Widget _buildNotificationsSection(BuildContext context, NotificationsViewModel vm) {
+  Widget _buildNotificationsSection(
+    BuildContext context,
+    NotificationsViewModel vm,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -211,13 +232,15 @@ class NotificationsPage extends StatelessWidget {
                         Expanded(
                           child: Text(
                             notification['title']?.toString() ??
-                                notification['notification_title']?.toString() ??
+                                notification['notification_title']
+                                    ?.toString() ??
                                 'Notificación',
                             style: Theme.of(context).textTheme.titleLarge,
                           ),
                         ),
                         StatusBadge(
-                          label: notification['status']?.toString() ??
+                          label:
+                              notification['status']?.toString() ??
                               notification['notification_status']?.toString() ??
                               '-',
                         ),
@@ -245,7 +268,9 @@ class NotificationsPage extends StatelessWidget {
                             : () async {
                                 final id = notification['id']?.toString() ?? '';
                                 if (id.isEmpty) return;
-                                await context.read<NotificationsViewModel>().markRead(id);
+                                await context
+                                    .read<NotificationsViewModel>()
+                                    .markRead(id);
                               },
                         child: const Text('Marcar leída'),
                       ),
@@ -265,14 +290,16 @@ class NotificationsPage extends StatelessWidget {
       children: [
         SectionHeader(
           title: 'Dispositivos',
-          subtitle: 'Controla los equipos registrados para notificaciones push.',
+          subtitle:
+              'Controla los equipos registrados para notificaciones push.',
         ),
         const SizedBox(height: 10),
         ActionCard(
           title: 'Registrar dispositivo',
           subtitle: 'Obtiene token de Firebase y lo guarda en el backend.',
           icon: Icons.phonelink_setup_rounded,
-          onTap: () => context.read<NotificationsViewModel>().registerCurrentDevice(),
+          onTap: () =>
+              context.read<NotificationsViewModel>().registerCurrentDevice(),
         ),
         const SizedBox(height: 14),
         if (vm.loading && !vm.devicesLoaded)
@@ -322,7 +349,9 @@ class NotificationsPage extends StatelessWidget {
                             : () async {
                                 final id = device['id']?.toString() ?? '';
                                 if (id.isEmpty) return;
-                                await context.read<NotificationsViewModel>().revokeDevice(id);
+                                await context
+                                    .read<NotificationsViewModel>()
+                                    .revokeDevice(id);
                               },
                         icon: const Icon(Icons.delete_outline_rounded),
                         label: const Text('Revocar'),
@@ -341,9 +370,9 @@ class NotificationsPage extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.14),
+        color: Colors.white.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.white.withOpacity(0.16)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -353,9 +382,9 @@ class NotificationsPage extends StatelessWidget {
           Text(
             label,
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w800,
-                ),
+              color: Colors.white,
+              fontWeight: FontWeight.w800,
+            ),
           ),
         ],
       ),
@@ -369,9 +398,9 @@ Widget _successBanner(String message) {
     margin: const EdgeInsets.only(bottom: 12),
     padding: const EdgeInsets.all(14),
     decoration: BoxDecoration(
-      color: Colors.green.withOpacity(0.08),
+      color: Colors.green.withValues(alpha: 0.08),
       borderRadius: BorderRadius.circular(18),
-      border: Border.all(color: Colors.green.withOpacity(0.18)),
+      border: Border.all(color: Colors.green.withValues(alpha: 0.18)),
     ),
     child: Text(
       message,

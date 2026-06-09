@@ -33,10 +33,7 @@ class TenantOwnerHero extends StatelessWidget {
       child: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              SapphirePalette.sapphire700,
-              SapphirePalette.sapphire500,
-            ],
+            colors: [SapphirePalette.sapphire700, SapphirePalette.sapphire500],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -50,9 +47,9 @@ class TenantOwnerHero extends StatelessWidget {
               Text(
                 contextData?.user.fullName ?? 'Propietario de taller',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w900,
-                    ),
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                ),
               ),
               const SizedBox(height: 8),
               Text(
@@ -60,8 +57,8 @@ class TenantOwnerHero extends StatelessWidget {
                     ? 'Sin tenant actual seleccionado'
                     : tenant['commercial_name']?.toString() ?? 'Sin nombre',
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Colors.white.withOpacity(0.9),
-                    ),
+                  color: Colors.white.withValues(alpha: 0.9),
+                ),
               ),
               const SizedBox(height: 12),
               Wrap(
@@ -119,9 +116,9 @@ Widget _heroChip(BuildContext context, String label, IconData icon) {
   return Container(
     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
     decoration: BoxDecoration(
-      color: Colors.white.withOpacity(0.14),
+      color: Colors.white.withValues(alpha: 0.14),
       borderRadius: BorderRadius.circular(999),
-      border: Border.all(color: Colors.white.withOpacity(0.16)),
+      border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
     ),
     child: Row(
       mainAxisSize: MainAxisSize.min,
@@ -133,9 +130,9 @@ Widget _heroChip(BuildContext context, String label, IconData icon) {
             label,
             overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w800,
-                ),
+              color: Colors.white,
+              fontWeight: FontWeight.w800,
+            ),
           ),
         ),
       ],
@@ -167,9 +164,9 @@ Widget _heroAction(
                 label,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: SapphirePalette.sapphire900,
-                      fontWeight: FontWeight.w800,
-                    ),
+                  color: SapphirePalette.sapphire900,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
             ),
           ],

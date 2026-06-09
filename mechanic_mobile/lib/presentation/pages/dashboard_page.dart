@@ -77,9 +77,9 @@ class DashboardPage extends StatelessWidget {
               Text(
                 'Flujo recomendado',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: SapphirePalette.sapphire950,
-                      fontWeight: FontWeight.w800,
-                    ),
+                  color: SapphirePalette.sapphire950,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
               const SizedBox(height: 10),
               Text(
@@ -194,9 +194,9 @@ Widget _buildHeroPanel({
                   Text(
                     'Panel de auxilio',
                     style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          color: Colors.white.withOpacity(0.88),
-                          letterSpacing: 0.4,
-                        ),
+                      color: Colors.white.withValues(alpha: 0.88),
+                      letterSpacing: 0.4,
+                    ),
                   ),
                 ],
               ),
@@ -204,18 +204,18 @@ Widget _buildHeroPanel({
               Text(
                 'Todo lo importante en un solo lugar',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w900,
-                      height: 1.05,
-                    ),
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                  height: 1.05,
+                ),
               ),
               const SizedBox(height: 10),
               Text(
                 'Accede rápido a tu sección activa, revisa el estado de la operación y vuelve a los módulos clave sin perder el flujo.',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.white.withOpacity(0.9),
-                      height: 1.45,
-                    ),
+                  color: Colors.white.withValues(alpha: 0.9),
+                  height: 1.45,
+                ),
               ),
               const SizedBox(height: 18),
               Wrap(
@@ -272,9 +272,9 @@ Widget _heroChip({
   return Container(
     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
     decoration: BoxDecoration(
-      color: Colors.white.withOpacity(0.14),
+      color: Colors.white.withValues(alpha: 0.14),
       borderRadius: BorderRadius.circular(999),
-      border: Border.all(color: Colors.white.withOpacity(0.16)),
+      border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
     ),
     child: Row(
       mainAxisSize: MainAxisSize.min,
@@ -284,9 +284,9 @@ Widget _heroChip({
         Text(
           label,
           style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-              ),
+            color: Colors.white,
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ],
     ),
@@ -317,9 +317,9 @@ Widget _heroButton({
                 label,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: SapphirePalette.sapphire900,
-                      fontWeight: FontWeight.w800,
-                    ),
+                  color: SapphirePalette.sapphire900,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
             ),
           ],
@@ -348,12 +348,16 @@ Widget _compactAction({
               child: Text(
                 label,
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: SapphirePalette.sapphire900,
-                      fontWeight: FontWeight.w800,
-                    ),
+                  color: SapphirePalette.sapphire900,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
             ),
-            const Icon(Icons.arrow_forward_rounded, color: SapphirePalette.sapphire700, size: 18),
+            const Icon(
+              Icons.arrow_forward_rounded,
+              color: SapphirePalette.sapphire700,
+              size: 18,
+            ),
           ],
         ),
       ),
@@ -367,7 +371,7 @@ Widget _accentCircle({required double size, required double opacity}) {
     height: size,
     decoration: BoxDecoration(
       shape: BoxShape.circle,
-      color: Colors.white.withOpacity(opacity),
+      color: Colors.white.withValues(alpha: opacity),
     ),
   );
 }

@@ -5,7 +5,6 @@ import '../network/api_client.dart';
 import '../services/session_storage.dart';
 import '../../domain/repositories/app_repositories.dart';
 import '../../domain/repositories/auth_repository.dart';
-import '../../domain/repositories/tenant_repository.dart';
 import '../../domain/usecases/auth_usecases.dart';
 import '../../domain/usecases/app_usecases.dart';
 import '../../infrastructure/datasources/auth_remote_datasource.dart';
@@ -182,51 +181,63 @@ Future<void> configureDependencies() async {
   );
 
   sl.registerLazySingleton<AppShellViewModel>(() => AppShellViewModel());
-  sl.registerLazySingleton<AuthViewModel>(() => AuthViewModel(
-        login: sl<LoginUseCase>(),
-        registerClient: sl<RegisterClientUseCase>(),
-        registerTenant: sl<RegisterTenantUseCase>(),
-        selectTenant: sl<SelectTenantUseCase>(),
-        refreshAuth: sl<RefreshAuthUseCase>(),
-        logout: sl<LogoutUseCase>(),
-        meAuth: sl<MeAuthUseCase>(),
-        notificationsViewModel: sl<NotificationsViewModel>(),
-        sessionStorage: sl<SessionStorage>(),
-      ));
+  sl.registerLazySingleton<AuthViewModel>(
+    () => AuthViewModel(
+      login: sl<LoginUseCase>(),
+      registerClient: sl<RegisterClientUseCase>(),
+      registerTenant: sl<RegisterTenantUseCase>(),
+      selectTenant: sl<SelectTenantUseCase>(),
+      refreshAuth: sl<RefreshAuthUseCase>(),
+      logout: sl<LogoutUseCase>(),
+      meAuth: sl<MeAuthUseCase>(),
+      notificationsViewModel: sl<NotificationsViewModel>(),
+      sessionStorage: sl<SessionStorage>(),
+    ),
+  );
   sl.registerLazySingleton<TenantViewModel>(
     () => TenantViewModel(sl<TenantRepository>(), sl<AuthViewModel>()),
   );
-  sl.registerLazySingleton<ProfileViewModel>(() => ProfileViewModel(
-        getMyProfile: sl<GetMyProfileUseCase>(),
-        updateMyProfile: sl<UpdateMyProfileUseCase>(),
-        changePassword: sl<ChangePasswordUseCase>(),
-      ));
-  sl.registerLazySingleton<SessionsViewModel>(() => SessionsViewModel(
-        listMySessions: sl<ListMySessionsUseCase>(),
-        revokeSession: sl<RevokeSessionUseCase>(),
-      ));
-  sl.registerLazySingleton<VehiclesViewModel>(() => VehiclesViewModel(
-        listMyVehicles: sl<ListMyVehiclesUseCase>(),
-        createVehicle: sl<CreateVehicleUseCase>(),
-        getVehicle: sl<GetVehicleUseCase>(),
-        updateVehicle: sl<UpdateVehicleUseCase>(),
-        deleteVehicle: sl<DeleteVehicleUseCase>(),
-        changeVehicleStatus: sl<ChangeVehicleStatusUseCase>(),
-      ));
-  sl.registerLazySingleton<IncidentsViewModel>(() => IncidentsViewModel(
-        listMyIncidents: sl<ListMyIncidentsUseCase>(),
-        createIncident: sl<CreateIncidentUseCase>(),
-        getIncident: sl<GetIncidentUseCase>(),
-        updateIncident: sl<UpdateIncidentUseCase>(),
-        cancelIncident: sl<CancelIncidentUseCase>(),
-        runIncidentAiAnalysis: sl<RunIncidentAiAnalysisUseCase>(),
-      ));
+  sl.registerLazySingleton<ProfileViewModel>(
+    () => ProfileViewModel(
+      getMyProfile: sl<GetMyProfileUseCase>(),
+      updateMyProfile: sl<UpdateMyProfileUseCase>(),
+      changePassword: sl<ChangePasswordUseCase>(),
+    ),
+  );
+  sl.registerLazySingleton<SessionsViewModel>(
+    () => SessionsViewModel(
+      listMySessions: sl<ListMySessionsUseCase>(),
+      revokeSession: sl<RevokeSessionUseCase>(),
+    ),
+  );
+  sl.registerLazySingleton<VehiclesViewModel>(
+    () => VehiclesViewModel(
+      listMyVehicles: sl<ListMyVehiclesUseCase>(),
+      createVehicle: sl<CreateVehicleUseCase>(),
+      getVehicle: sl<GetVehicleUseCase>(),
+      updateVehicle: sl<UpdateVehicleUseCase>(),
+      deleteVehicle: sl<DeleteVehicleUseCase>(),
+      changeVehicleStatus: sl<ChangeVehicleStatusUseCase>(),
+    ),
+  );
+  sl.registerLazySingleton<IncidentsViewModel>(
+    () => IncidentsViewModel(
+      listMyIncidents: sl<ListMyIncidentsUseCase>(),
+      createIncident: sl<CreateIncidentUseCase>(),
+      getIncident: sl<GetIncidentUseCase>(),
+      updateIncident: sl<UpdateIncidentUseCase>(),
+      cancelIncident: sl<CancelIncidentUseCase>(),
+      runIncidentAiAnalysis: sl<RunIncidentAiAnalysisUseCase>(),
+    ),
+  );
   sl.registerLazySingleton<AssignmentsViewModel>(
     () => AssignmentsViewModel(
       listMyAssignments: sl<ListMyAssignmentsUseCase>(),
       getMyAssignment: sl<GetMyAssignmentUseCase>(),
-      listMyAssignmentTrackingEvents: sl<ListMyAssignmentTrackingEventsUseCase>(),
-      getMyAssignmentTrackingSession: sl<GetMyAssignmentTrackingSessionUseCase>(),
+      listMyAssignmentTrackingEvents:
+          sl<ListMyAssignmentTrackingEventsUseCase>(),
+      getMyAssignmentTrackingSession:
+          sl<GetMyAssignmentTrackingSessionUseCase>(),
     ),
   );
 }

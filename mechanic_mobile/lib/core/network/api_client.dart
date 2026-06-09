@@ -96,7 +96,7 @@ class ApiClient {
       throw _mapDioException(error);
     } catch (error) {
       if (error is AppFailure) {
-        throw error;
+        rethrow;
       }
       throw UnknownFailure(error.toString());
     }

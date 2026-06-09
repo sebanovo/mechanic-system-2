@@ -3,10 +3,7 @@ import 'package:flutter/material.dart';
 import '../../app/theme/app_theme.dart';
 
 class StatusBadge extends StatelessWidget {
-  const StatusBadge({
-    super.key,
-    required this.label,
-  });
+  const StatusBadge({super.key, required this.label});
 
   final String label;
 
@@ -14,8 +11,10 @@ class StatusBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final normalized = label.toLowerCase();
     final isCancelled = normalized.contains('cancel');
-    final isInactive = normalized.contains('inactive') || normalized.contains('inactivo');
-    final isSuccess = normalized.contains('active') ||
+    final isInactive =
+        normalized.contains('inactive') || normalized.contains('inactivo');
+    final isSuccess =
+        normalized.contains('active') ||
         normalized.contains('activo') ||
         normalized.contains('open') ||
         normalized.contains('abierto') ||
@@ -26,7 +25,8 @@ class StatusBadge extends StatelessWidget {
         normalized.contains('en ruta') ||
         normalized.contains('service') ||
         normalized.contains('servicio');
-    final isPending = normalized.contains('pending') ||
+    final isPending =
+        normalized.contains('pending') ||
         normalized.contains('reported') ||
         normalized.contains('reportado') ||
         normalized.contains('analyz') ||
@@ -40,17 +40,17 @@ class StatusBadge extends StatelessWidget {
     final color = isCancelled
         ? Colors.red
         : isInactive
-            ? Colors.grey
-            : isSuccess
-                ? Colors.green
-                : isPending
-                    ? Colors.orange
-                    : SapphirePalette.sapphire700;
+        ? Colors.grey
+        : isSuccess
+        ? Colors.green
+        : isPending
+        ? Colors.orange
+        : SapphirePalette.sapphire700;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
+        color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
