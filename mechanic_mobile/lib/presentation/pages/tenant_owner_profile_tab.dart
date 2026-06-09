@@ -130,7 +130,7 @@ class _TenantOwnerProfileTabState extends State<TenantOwnerProfileTab> {
               title: 'Notificaciones',
               subtitle: 'Mensajes, dispositivos y pushes del backend.',
               icon: Icons.notifications_rounded,
-              onTap: () => context.push('/notifications'),
+              onTap: () => context.push('/tenant-notifications'),
             ),
             const SizedBox(height: 18),
             SurfaceCard(

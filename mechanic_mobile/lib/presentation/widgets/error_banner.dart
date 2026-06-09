@@ -12,16 +12,13 @@ class ErrorBanner extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.red.withOpacity(0.08),
+        color: Colors.red.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.red.withOpacity(0.18)),
+        border: Border.all(color: Colors.red.withValues(alpha: 0.18)),
       ),
       child: Text(
         message,
-        style: const TextStyle(
-          color: Colors.red,
-          fontWeight: FontWeight.w600,
-        ),
+        style: const TextStyle(color: Colors.red, fontWeight: FontWeight.w600),
       ),
     );
   }

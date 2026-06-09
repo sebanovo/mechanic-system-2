@@ -34,12 +34,32 @@ class NotificationsViewModel extends ChangeNotifier {
 
   PagedResult<Map<String, dynamic>>? notifications;
   PagedResult<Map<String, dynamic>>? devices;
+  int sectionIndex = 0;
   bool loading = false;
   bool registering = false;
   bool loaded = false;
   bool devicesLoaded = false;
   String? error;
   String? message;
+
+  void setSectionIndex(int index) {
+    if (sectionIndex == index) return;
+    sectionIndex = index;
+    notifyListeners();
+  }
+
+  void reset() {
+    notifications = null;
+    devices = null;
+    sectionIndex = 0;
+    loading = false;
+    registering = false;
+    loaded = false;
+    devicesLoaded = false;
+    error = null;
+    message = null;
+    notifyListeners();
+  }
 
   Future<void> loadNotifications() async {
     loading = true;
@@ -114,29 +134,18 @@ class NotificationsViewModel extends ChangeNotifier {
     }
   }
 
-  Future<bool> registerCurrentDevice() async {
+  Future<bool> registerCurrentDevice({bool silent = false}) async {
     registering = true;
     error = null;
     notifyListeners();
     try {
-      await _notificationService.initialize();
-      final token = await _notificationService.getDeviceToken();
-      if (token == null || token.isEmpty) {
-        error =
-            'No se pudo obtener el token de Firebase. Verifica la configuración web y vuelve a intentar.';
-        return false;
+      final ok = await _ensureCurrentDeviceRegistered(silent: silent);
+      if (ok && !silent) {
+        message = 'Dispositivo registrado';
+      } else if (!ok && !silent && error == null) {
+        message = 'Este dispositivo ya estaba registrado';
       }
-      final info = await _deviceMetadata();
-      await _registerMyNotificationDevice({
-        'device_token': token,
-        'platform': info['platform'],
-        'device_name': info['device_name'],
-        'app_version': info['app_version'],
-        'os_version': info['os_version'],
-      });
-      await loadDevices();
-      message = 'Dispositivo registrado';
-      return true;
+      return ok;
     } catch (exception) {
       error = appFailureMessage(exception);
       return false;
@@ -209,5 +218,38 @@ class NotificationsViewModel extends ChangeNotifier {
     final normalized = value.trim();
     if (normalized.length <= maxLength) return normalized;
     return normalized.substring(0, maxLength);
+  }
+
+  Future<bool> _ensureCurrentDeviceRegistered({required bool silent}) async {
+    await _notificationService.initialize();
+    final token = await _notificationService.getDeviceToken();
+    if (token == null || token.isEmpty) {
+      if (!silent) {
+        error =
+            'No se pudo obtener el token de Firebase. Verifica la configuración web y vuelve a intentar.';
+      }
+      return false;
+    }
+
+    final existing = await _listMyNotificationDevices(page: 1, pageSize: 100);
+    final tokenAlreadyRegistered = existing.items.any((device) {
+      final deviceToken = device['device_token']?.toString();
+      final status = device['status']?.toString().toUpperCase();
+      return deviceToken == token && status != 'REVOKED' && status != 'EXPIRED';
+    });
+    if (tokenAlreadyRegistered) {
+      return false;
+    }
+
+    final info = await _deviceMetadata();
+    await _registerMyNotificationDevice({
+      'device_token': token,
+      'platform': info['platform'],
+      'device_name': info['device_name'],
+      'app_version': info['app_version'],
+      'os_version': info['os_version'],
+    });
+    await loadDevices();
+    return true;
   }
 }

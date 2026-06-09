@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import '../../app/theme/app_theme.dart';
 import '../../constants/api_enums.dart';
 import '../../domain/entities/auth_entities.dart';
 import '../viewmodels/auth_form_controller.dart';
@@ -24,9 +23,7 @@ class AuthPage extends StatelessWidget {
         builder: (context, form, _) {
           final vm = context.watch<AuthViewModel>();
           return Scaffold(
-            appBar: AppBar(
-              title: Text(_titleForRole(role)),
-            ),
+            appBar: AppBar(title: Text(_titleForRole(role))),
             body: ListView(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
               children: [
@@ -82,7 +79,8 @@ class AuthPage extends StatelessWidget {
                                     tenantKind: form.tenantKind,
                                     onTenantKindChanged: form.setTenantKind,
                                     isLoading: vm.submitting,
-                                    onSubmit: () => _submitRegister(context, form),
+                                    onSubmit: () =>
+                                        _submitRegister(context, form),
                                   ),
                                 ],
                               ),
@@ -101,19 +99,25 @@ class AuthPage extends StatelessWidget {
     );
   }
 
-  Future<void> _submitLogin(BuildContext context, AuthFormController form) async {
+  Future<void> _submitLogin(
+    BuildContext context,
+    AuthFormController form,
+  ) async {
     if (!form.loginKey.currentState!.validate()) return;
     final ok = await context.read<AuthViewModel>().login(
-          LoginInput(
-            email: form.loginEmail.text.trim(),
-            password: form.loginPassword.text,
-          ),
-        );
+      LoginInput(
+        email: form.loginEmail.text.trim(),
+        password: form.loginPassword.text,
+      ),
+    );
     if (!context.mounted || !ok) return;
     _goAfterAuth(context);
   }
 
-  Future<void> _submitRegister(BuildContext context, AuthFormController form) async {
+  Future<void> _submitRegister(
+    BuildContext context,
+    AuthFormController form,
+  ) async {
     if (!form.registerKey.currentState!.validate()) return;
     final vm = context.read<AuthViewModel>();
     final ok = role == AppEntryRole.client
@@ -159,8 +163,10 @@ class AuthPage extends StatelessWidget {
   String _subtitleForRole(AppEntryRole role) {
     return switch (role) {
       AppEntryRole.client => 'Accede a tus vehículos, incidentes y sesiones.',
-      AppEntryRole.workshop => 'Registra tu taller y gestiona tu acceso al sistema.',
-      AppEntryRole.mechanic => 'Accede como técnico independiente y administra tu cuenta.',
+      AppEntryRole.workshop =>
+        'Registra tu taller y gestiona tu acceso al sistema.',
+      AppEntryRole.mechanic =>
+        'Accede como técnico independiente y administra tu cuenta.',
     };
   }
 }

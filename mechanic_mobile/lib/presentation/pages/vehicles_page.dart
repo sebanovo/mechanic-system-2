@@ -5,7 +5,6 @@ import 'package:skeletonizer/skeletonizer.dart';
 
 import '../../constants/api_enums.dart';
 import '../../domain/entities/app_entities.dart';
-import '../utils/api_enum_labels.dart';
 import '../viewmodels/app_viewmodels.dart';
 import '../widgets/app_widgets.dart';
 
@@ -121,7 +120,7 @@ Future<void> showVehicleForm(
                   ),
                   const SizedBox(height: 10),
                   DropdownButtonFormField<VehicleType>(
-                    value: selectedVehicleType,
+                    initialValue: selectedVehicleType,
                     decoration: const InputDecoration(labelText: 'Tipo'),
                     items: vehicleTypeOptions
                         .map(
@@ -139,7 +138,7 @@ Future<void> showVehicleForm(
                   ),
                   const SizedBox(height: 10),
                   DropdownButtonFormField<VehicleStatus>(
-                    value: selectedVehicleStatus,
+                    initialValue: selectedVehicleStatus,
                     decoration: const InputDecoration(labelText: 'Estado'),
                     items: vehicleStatusOptions
                         .map(

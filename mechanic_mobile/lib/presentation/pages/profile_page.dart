@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import '../../app/theme/app_theme.dart';
 import '../../core/services/session_storage.dart';
 import '../../domain/entities/app_entities.dart';
-import '../../domain/entities/auth_entities.dart';
 import '../viewmodels/auth_viewmodel.dart';
 import '../viewmodels/app_viewmodels.dart';
 import '../widgets/app_widgets.dart';
@@ -107,7 +106,8 @@ class ProfilePage extends StatelessWidget {
         const SizedBox(height: 12),
         ActionCard(
           title: 'Sesiones activas',
-          subtitle: '${sessionsVm.sessions?.items.length ?? 0} sesiones registradas',
+          subtitle:
+              '${sessionsVm.sessions?.items.length ?? 0} sesiones registradas',
           icon: Icons.devices_rounded,
           onTap: () => context.push('/sessions'),
         ),
@@ -133,7 +133,9 @@ class ProfilePage extends StatelessWidget {
             icon: Icons.devices_rounded,
           )
         else
-          ...sessionsVm.sessions!.items.take(3).map(
+          ...sessionsVm.sessions!.items
+              .take(3)
+              .map(
                 (session) => Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: SurfaceCard(
@@ -145,9 +147,8 @@ class ProfilePage extends StatelessWidget {
                             Expanded(
                               child: Text(
                                 session.deviceName ?? 'Dispositivo',
-                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                      fontWeight: FontWeight.w700,
-                                    ),
+                                style: Theme.of(context).textTheme.titleMedium
+                                    ?.copyWith(fontWeight: FontWeight.w700),
                               ),
                             ),
                             StatusBadge(label: session.sessionStatus),
@@ -161,9 +162,14 @@ class ProfilePage extends StatelessWidget {
                         const SizedBox(height: 12),
                         OutlinedButton(
                           onPressed: () async {
-                            final ok = await context.read<SessionsViewModel>().revoke(session.id);
+                            final ok = await context
+                                .read<SessionsViewModel>()
+                                .revoke(session.id);
                             if (!context.mounted) return;
-                            _toast(context, ok ? 'Sesión revocada' : 'No se pudo revocar');
+                            _toast(
+                              context,
+                              ok ? 'Sesión revocada' : 'No se pudo revocar',
+                            );
                           },
                           child: const Text('Revocar'),
                         ),
@@ -187,7 +193,10 @@ class ProfilePage extends StatelessWidget {
   }
 }
 
-Future<void> _showProfileForm(BuildContext context, ClientEntity? current) async {
+Future<void> _showProfileForm(
+  BuildContext context,
+  ClientEntity? current,
+) async {
   final formKey = GlobalKey<FormState>();
   final firstName = TextEditingController(text: current?.firstName ?? '');
   final lastName = TextEditingController(text: current?.lastName ?? '');
@@ -206,13 +215,25 @@ Future<void> _showProfileForm(BuildContext context, ClientEntity? current) async
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextFormField(controller: firstName, decoration: const InputDecoration(labelText: 'Nombre')),
+                TextFormField(
+                  controller: firstName,
+                  decoration: const InputDecoration(labelText: 'Nombre'),
+                ),
                 const SizedBox(height: 10),
-                TextFormField(controller: lastName, decoration: const InputDecoration(labelText: 'Apellido')),
+                TextFormField(
+                  controller: lastName,
+                  decoration: const InputDecoration(labelText: 'Apellido'),
+                ),
                 const SizedBox(height: 10),
-                TextFormField(controller: phone, decoration: const InputDecoration(labelText: 'Teléfono')),
+                TextFormField(
+                  controller: phone,
+                  decoration: const InputDecoration(labelText: 'Teléfono'),
+                ),
                 const SizedBox(height: 10),
-                TextFormField(controller: avatar, decoration: const InputDecoration(labelText: 'Avatar URL')),
+                TextFormField(
+                  controller: avatar,
+                  decoration: const InputDecoration(labelText: 'Avatar URL'),
+                ),
               ],
             ),
           ),
@@ -225,12 +246,20 @@ Future<void> _showProfileForm(BuildContext context, ClientEntity? current) async
         ),
         ElevatedButton(
           onPressed: () async {
-            final updated = await context.read<ProfileViewModel>().updateProfile(
+            final updated = await context
+                .read<ProfileViewModel>()
+                .updateProfile(
                   ClientUpdateInput(
-                    firstName: firstName.text.trim().isEmpty ? null : firstName.text.trim(),
-                    lastName: lastName.text.trim().isEmpty ? null : lastName.text.trim(),
+                    firstName: firstName.text.trim().isEmpty
+                        ? null
+                        : firstName.text.trim(),
+                    lastName: lastName.text.trim().isEmpty
+                        ? null
+                        : lastName.text.trim(),
                     phone: phone.text.trim().isEmpty ? null : phone.text.trim(),
-                    avatarUrl: avatar.text.trim().isEmpty ? null : avatar.text.trim(),
+                    avatarUrl: avatar.text.trim().isEmpty
+                        ? null
+                        : avatar.text.trim(),
                   ),
                 );
             if (!dialogContext.mounted) return;
@@ -263,9 +292,21 @@ Future<void> _showPasswordDialog(BuildContext context) async {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextFormField(controller: currentPassword, decoration: const InputDecoration(labelText: 'Contraseña actual'), obscureText: true),
+              TextFormField(
+                controller: currentPassword,
+                decoration: const InputDecoration(
+                  labelText: 'Contraseña actual',
+                ),
+                obscureText: true,
+              ),
               const SizedBox(height: 10),
-              TextFormField(controller: newPassword, decoration: const InputDecoration(labelText: 'Nueva contraseña'), obscureText: true),
+              TextFormField(
+                controller: newPassword,
+                decoration: const InputDecoration(
+                  labelText: 'Nueva contraseña',
+                ),
+                obscureText: true,
+              ),
             ],
           ),
         ),
@@ -277,7 +318,9 @@ Future<void> _showPasswordDialog(BuildContext context) async {
         ),
         ElevatedButton(
           onPressed: () async {
-            final changed = await context.read<ProfileViewModel>().updatePassword(
+            final changed = await context
+                .read<ProfileViewModel>()
+                .updatePassword(
                   PasswordChangeInput(
                     currentPassword: currentPassword.text,
                     newPassword: newPassword.text,
@@ -300,7 +343,11 @@ Future<void> _showPasswordDialog(BuildContext context) async {
 String _initials(String value) {
   final parts = value.trim().split(RegExp(r'\s+'));
   if (parts.isEmpty) return 'CM';
-  if (parts.length == 1) return parts.first.isEmpty ? 'CM' : parts.first.substring(0, 1).toUpperCase();
+  if (parts.length == 1) {
+    return parts.first.isEmpty
+        ? 'CM'
+        : parts.first.substring(0, 1).toUpperCase();
+  }
   return ('${parts.first[0]}${parts[1][0]}').toUpperCase();
 }
 

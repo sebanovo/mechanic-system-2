@@ -12,7 +12,7 @@ class TenantHomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthViewModel>().contextData;
-    final userType = auth?.userType?.toUpperCase();
+    final userType = auth?.userType.toUpperCase();
 
     switch (userType) {
       case 'TENANT_OWNER':

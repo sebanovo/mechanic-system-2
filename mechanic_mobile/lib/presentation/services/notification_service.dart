@@ -37,7 +37,9 @@ class NotificationService {
         );
       }
       if (!kIsWeb) {
-        FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+        FirebaseMessaging.onBackgroundMessage(
+          firebaseMessagingBackgroundHandler,
+        );
       }
       await FirebaseMessaging.instance.requestPermission(
         alert: true,
@@ -157,11 +159,5 @@ class NotificationService {
     final text = value?.toString().trim();
     if (text == null || text.isEmpty || text == 'null') return null;
     return text;
-  }
-
-  String _limit(String value, int maxLength) {
-    final normalized = value.trim();
-    if (normalized.length <= maxLength) return normalized;
-    return normalized.substring(0, maxLength);
   }
 }

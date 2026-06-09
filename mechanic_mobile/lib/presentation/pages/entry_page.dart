@@ -38,24 +38,24 @@ class EntryPage extends StatelessWidget {
                 Text(
                   'Auxilio mecánico',
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        color: Colors.white,
-                        fontSize: 32,
-                      ),
+                    color: Colors.white,
+                    fontSize: 32,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Elige tu puerta de entrada para continuar con el flujo correcto.',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: Colors.white.withOpacity(0.84),
-                      ),
+                    color: Colors.white.withValues(alpha: 0.84),
+                  ),
                 ),
                 if (authVm.loading) ...[
                   const SizedBox(height: 10),
                   Text(
                     'Restaurando sesión...',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.white.withOpacity(0.75),
-                        ),
+                      color: Colors.white.withValues(alpha: 0.75),
+                    ),
                   ),
                 ],
                 if (authVm.error != null) ...[
@@ -76,7 +76,8 @@ class EntryPage extends StatelessWidget {
                       const SizedBox(height: 14),
                       RoleEntryCard(
                         title: 'Soy Taller',
-                        subtitle: 'Registra tu taller y administra tu presencia.',
+                        subtitle:
+                            'Registra tu taller y administra tu presencia.',
                         icon: Icons.handyman_rounded,
                         accent: SapphirePalette.sapphire700,
                         onTap: () => context.go('/auth/workshop'),
@@ -107,7 +108,8 @@ class EntryPage extends StatelessWidget {
                               const SizedBox(height: 12),
                               ElevatedButton(
                                 onPressed: () {
-                                  if (authVm.selectedRole == AppEntryRole.client) {
+                                  if (authVm.selectedRole ==
+                                      AppEntryRole.client) {
                                     context.go('/home');
                                   } else {
                                     context.go('/select-tenants');

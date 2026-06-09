@@ -68,24 +68,20 @@ class TenantOwnerOverviewTab extends StatelessWidget {
               subtitle: 'Entra directo al módulo que necesitas.',
             ),
             const SizedBox(height: 10),
-            Row(
+            Column(
               children: [
-                Expanded(
-                  child: ActionCard(
-                    title: 'Operaciones',
-                    subtitle: 'Técnicos, incidentes y asignaciones.',
-                    icon: Icons.handyman_rounded,
-                    onTap: onOperationsTap,
-                  ),
+                ActionCard(
+                  title: 'Operaciones',
+                  subtitle: 'Técnicos, incidentes y asignaciones.',
+                  icon: Icons.handyman_rounded,
+                  onTap: onOperationsTap,
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ActionCard(
-                    title: 'Catálogo',
-                    subtitle: 'Servicios, ofertas y auditoría.',
-                    icon: Icons.inventory_2_rounded,
-                    onTap: onCatalogTap,
-                  ),
+                const SizedBox(height: 12),
+                ActionCard(
+                  title: 'Catálogo',
+                  subtitle: 'Servicios, ofertas y auditoría.',
+                  icon: Icons.inventory_2_rounded,
+                  onTap: onCatalogTap,
                 ),
               ],
             ),
@@ -117,11 +113,26 @@ class TenantOwnerOverviewTab extends StatelessWidget {
                   const SizedBox(height: 8),
                   _infoLine('Tipo', tenantRecordSecondaryLabel(tenant)),
                   const SizedBox(height: 8),
-                  _infoLine('Perfil legal', profile.isEmpty ? 'Sin datos' : (profile['legal_name']?.toString() ?? 'Sin datos')),
+                  _infoLine(
+                    'Perfil legal',
+                    profile.isEmpty
+                        ? 'Sin datos'
+                        : (profile['legal_name']?.toString() ?? 'Sin datos'),
+                  ),
                   const SizedBox(height: 8),
-                  _infoLine('Configuración', settings.isEmpty ? 'Sin datos' : '${settings['default_currency'] ?? '-'} • ${settings['default_language'] ?? '-'}'),
+                  _infoLine(
+                    'Configuración',
+                    settings.isEmpty
+                        ? 'Sin datos'
+                        : '${settings['default_currency'] ?? '-'} • ${settings['default_language'] ?? '-'}',
+                  ),
                   const SizedBox(height: 8),
-                  _infoLine('Proveedor', provider.isEmpty ? 'Sin perfil' : tenantRecordStatusLabel(provider)),
+                  _infoLine(
+                    'Proveedor',
+                    provider.isEmpty
+                        ? 'Sin perfil'
+                        : tenantRecordStatusLabel(provider),
+                  ),
                 ],
               ),
             ),
@@ -138,13 +149,12 @@ Widget _infoLine(String label, String? value) {
     children: [
       SizedBox(
         width: 120,
-        child: Text(
-          label,
-          style: const TextStyle(fontWeight: FontWeight.w800),
-        ),
+        child: Text(label, style: const TextStyle(fontWeight: FontWeight.w800)),
       ),
       Expanded(
-        child: Text((value == null || value.trim().isEmpty) ? 'Sin datos' : value),
+        child: Text(
+          (value == null || value.trim().isEmpty) ? 'Sin datos' : value,
+        ),
       ),
     ],
   );

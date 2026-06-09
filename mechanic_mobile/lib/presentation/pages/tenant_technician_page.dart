@@ -51,19 +51,22 @@ class TenantTechnicianPage extends StatelessWidget {
             _section(
               context,
               title: 'Servicios del técnico',
-              subtitle: '${vm.technicianServices.pagination.total} vínculos técnicos.',
+              subtitle:
+                  '${vm.technicianServices.pagination.total} vínculos técnicos.',
               items: vm.technicianServices.items,
             ),
             _section(
               context,
               title: 'Incidentes',
-              subtitle: '${vm.incidents.pagination.total} incidentes relacionados.',
+              subtitle:
+                  '${vm.incidents.pagination.total} incidentes relacionados.',
               items: vm.incidents.items,
             ),
             _section(
               context,
               title: 'Asignaciones',
-              subtitle: '${vm.assignments.pagination.total} asignaciones activas.',
+              subtitle:
+                  '${vm.assignments.pagination.total} asignaciones activas.',
               items: vm.assignments.items,
             ),
             _section(
@@ -85,16 +88,17 @@ class TenantTechnicianPage extends StatelessWidget {
   }
 }
 
-Widget _hero(BuildContext context, AuthContextEntity? auth, TenantViewModel vm) {
+Widget _hero(
+  BuildContext context,
+  AuthContextEntity? auth,
+  TenantViewModel vm,
+) {
   return SurfaceCard(
     padding: const EdgeInsets.all(0),
     child: Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            SapphirePalette.sapphire800,
-            SapphirePalette.sapphire500,
-          ],
+          colors: [SapphirePalette.sapphire800, SapphirePalette.sapphire500],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -108,24 +112,34 @@ Widget _hero(BuildContext context, AuthContextEntity? auth, TenantViewModel vm) 
             Text(
               auth?.user.fullName ?? 'Técnico',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w900,
-                  ),
+                color: Colors.white,
+                fontWeight: FontWeight.w900,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               auth?.currentTenant?.commercialName ?? 'Sin tenant activo',
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Colors.white.withOpacity(0.9),
-                  ),
+                color: Colors.white.withValues(alpha: 0.9),
+              ),
             ),
             const SizedBox(height: 12),
             Wrap(
               spacing: 10,
               runSpacing: 10,
               children: [
-                _chip(context, tenantUserTypeLabelFromApi(auth?.userType), Icons.build_rounded),
-                _chip(context, tenantRecordStatusLabel(auth?.currentTenant?.raw ?? const <String, dynamic>{}), Icons.bolt_rounded),
+                _chip(
+                  context,
+                  tenantUserTypeLabelFromApi(auth?.userType),
+                  Icons.build_rounded,
+                ),
+                _chip(
+                  context,
+                  tenantRecordStatusLabel(
+                    auth?.currentTenant?.raw ?? const <String, dynamic>{},
+                  ),
+                  Icons.bolt_rounded,
+                ),
               ],
             ),
             const SizedBox(height: 14),
@@ -145,7 +159,7 @@ Widget _hero(BuildContext context, AuthContextEntity? auth, TenantViewModel vm) 
                     context,
                     label: 'Sesiones',
                     icon: Icons.devices_other_rounded,
-                    onTap: () => context.push('/sessions'),
+                    onTap: () => context.push('/tenant-sessions'),
                   ),
                 ),
               ],
@@ -161,9 +175,9 @@ Widget _chip(BuildContext context, String label, IconData icon) {
   return Container(
     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
     decoration: BoxDecoration(
-      color: Colors.white.withOpacity(0.14),
+      color: Colors.white.withValues(alpha: 0.14),
       borderRadius: BorderRadius.circular(999),
-      border: Border.all(color: Colors.white.withOpacity(0.16)),
+      border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
     ),
     child: Row(
       mainAxisSize: MainAxisSize.min,
@@ -173,9 +187,9 @@ Widget _chip(BuildContext context, String label, IconData icon) {
         Text(
           label,
           style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.w800,
-              ),
+            color: Colors.white,
+            fontWeight: FontWeight.w800,
+          ),
         ),
       ],
     ),
@@ -204,9 +218,9 @@ Widget _action(
             Text(
               label,
               style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: SapphirePalette.sapphire900,
-                    fontWeight: FontWeight.w800,
-                  ),
+                color: SapphirePalette.sapphire900,
+                fontWeight: FontWeight.w800,
+              ),
             ),
           ],
         ),
@@ -236,24 +250,26 @@ Widget _section(
           ),
         )
       else
-        ...items.take(3).map(
-          (item) => Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: SurfaceCard(
-              child: ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(tenantRecordPrimaryLabel(item)),
-                subtitle: Text(tenantRecordSecondaryLabel(item)),
-                trailing: StatusBadge(label: tenantRecordStatusLabel(item)),
-                onTap: () => showTenantRecordDetails(
-                  context,
-                  title: title,
-                  record: item,
+        ...items
+            .take(3)
+            .map(
+              (item) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: SurfaceCard(
+                  child: ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(tenantRecordPrimaryLabel(item)),
+                    subtitle: Text(tenantRecordSecondaryLabel(item)),
+                    trailing: StatusBadge(label: tenantRecordStatusLabel(item)),
+                    onTap: () => showTenantRecordDetails(
+                      context,
+                      title: title,
+                      record: item,
+                    ),
+                  ),
                 ),
               ),
             ),
-          ),
-        ),
     ],
   );
 }

@@ -1,7 +1,9 @@
+import 'package:geolocator/geolocator.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import 'package:speech_to_text/speech_to_text.dart';
 
 import '../../constants/api_enums.dart';
 import '../../domain/entities/app_entities.dart';
@@ -84,146 +86,279 @@ Future<void> showIncidentForm(
   IncidentEntity? existing,
 }) async {
   final formKey = GlobalKey<FormState>();
+  final vehiclesVm = context.read<VehiclesViewModel>();
+  if (!vehiclesVm.loaded && !vehiclesVm.loading) {
+    await vehiclesVm.loadVehicles();
+  }
   final vehicleController = TextEditingController(
     text: existing?.vehicleId ?? '',
   );
-  final titleController = TextEditingController(text: existing?.title ?? '');
   final descriptionController = TextEditingController(
     text: existing?.description ?? '',
   );
-  final addressController = TextEditingController(
-    text: existing?.addressText ?? '',
-  );
   final latController = TextEditingController(
-    text: existing?.latitude.toString() ?? '',
+    text: existing == null ? '' : existing.latitude.toString(),
   );
   final lngController = TextEditingController(
-    text: existing?.longitude.toString() ?? '',
-  );
-  final serviceCatalogController = TextEditingController(
-    text: existing?.serviceCatalogId ?? '',
+    text: existing == null ? '' : existing.longitude.toString(),
   );
   var selectedPriority =
       _incidentPriorityFromApi(existing?.priority) ?? IncidentPriority.medium;
+  final speech = SpeechToText();
+  var isListening = false;
+  var speechReady = false;
+  String? formError;
 
   final saved = await showDialog<bool>(
     context: context,
-    builder: (dialogContext) => AlertDialog(
-      title: Text(existing == null ? 'Nuevo incidente' : 'Editar incidente'),
-      content: SizedBox(
-        width: 500,
-        child: SingleChildScrollView(
-          child: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(
-                  controller: vehicleController,
-                  decoration: const InputDecoration(labelText: 'Vehicle ID'),
-                  validator: (value) => value == null || value.trim().isEmpty
-                      ? 'Requerido'
-                      : null,
-                ),
-                const SizedBox(height: 10),
-                TextFormField(
-                  controller: titleController,
-                  decoration: const InputDecoration(labelText: 'Título'),
-                  validator: (value) => value == null || value.trim().isEmpty
-                      ? 'Requerido'
-                      : null,
-                ),
-                const SizedBox(height: 10),
-                DropdownButtonFormField<IncidentPriority>(
-                  value: selectedPriority,
-                  decoration: const InputDecoration(labelText: 'Prioridad'),
-                  items: incidentPriorityOptions
-                      .map(
-                        (item) => DropdownMenuItem<IncidentPriority>(
-                          value: item,
-                          child: Text(item.label),
+    builder: (dialogContext) => StatefulBuilder(
+      builder: (sheetContext, setState) {
+        final vehicles = vehiclesVm.vehicles?.items ?? const <VehicleEntity>[];
+        VehicleEntity? selectedVehicle;
+        for (final vehicle in vehicles) {
+          if (vehicle.id == vehicleController.text) {
+            selectedVehicle = vehicle;
+            break;
+          }
+        }
+        return AlertDialog(
+          title: Text(
+            existing == null ? 'Nuevo incidente' : 'Editar incidente',
+          ),
+          content: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 640),
+            child: SingleChildScrollView(
+              child: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (formError != null) ...[
+                      ErrorBanner(message: formError!),
+                      const SizedBox(height: 12),
+                    ],
+                    _vehiclePickerCard(
+                      context,
+                      helper: 'Selecciona el vehículo afectado.',
+                      value: selectedVehicle == null
+                          ? 'Selecciona un vehículo'
+                          : _vehicleSelectionLabel(selectedVehicle),
+                      detail: selectedVehicle == null
+                          ? 'Elige el vehículo afectado por el incidente.'
+                          : _vehicleSelectionDetail(selectedVehicle),
+                      icon: Icons.directions_car_rounded,
+                      onTap: () async {
+                        final chosen = await _pickVehicle(
+                          context,
+                          vehicles: vehicles,
+                        );
+                        if (!sheetContext.mounted || chosen == null) return;
+                        vehicleController.text = chosen.id;
+                        setState(() {});
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    DropdownButtonFormField<IncidentPriority>(
+                      initialValue: selectedPriority,
+                      decoration: const InputDecoration(
+                        labelText: 'Prioridad',
+                        helperText: 'Marca la severidad del incidente.',
+                      ),
+                      items: incidentPriorityOptions
+                          .map(
+                            (item) => DropdownMenuItem<IncidentPriority>(
+                              value: item,
+                              child: Text(item.label),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          selectedPriority = value;
+                          setState(() {});
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    TextFormField(
+                      controller: descriptionController,
+                      decoration: InputDecoration(
+                        labelText: 'Descripción',
+                        helperText: 'Describe brevemente qué ocurrió.',
+                        suffixIcon: IconButton(
+                          tooltip: isListening
+                              ? 'Detener dictado'
+                              : 'Dictar descripción',
+                          icon: Icon(
+                            isListening
+                                ? Icons.mic_off_rounded
+                                : Icons.mic_rounded,
+                            color: isListening ? Colors.red : null,
+                          ),
+                          onPressed: () async {
+                            if (!speechReady) {
+                              speechReady = await speech.initialize(
+                                onStatus: (status) {
+                                  if (!sheetContext.mounted) return;
+                                  if (status == 'done' ||
+                                      status == 'notListening') {
+                                    setState(() => isListening = false);
+                                  }
+                                },
+                                onError: (_) {
+                                  if (!sheetContext.mounted) return;
+                                  setState(() => isListening = false);
+                                },
+                              );
+                            }
+                            if (!speechReady) {
+                              formError = 'No se pudo activar el micrófono.';
+                              setState(() {});
+                              return;
+                            }
+                            if (isListening) {
+                              await speech.stop();
+                              setState(() => isListening = false);
+                              return;
+                            }
+                            await speech.listen(
+                              listenOptions: SpeechListenOptions(
+                                listenMode: ListenMode.confirmation,
+                              ),
+                              onResult: (result) {
+                                if (!sheetContext.mounted) return;
+                                descriptionController.text =
+                                    result.recognizedWords;
+                                descriptionController.selection =
+                                    TextSelection.collapsed(
+                                      offset: descriptionController.text.length,
+                                    );
+                                setState(() {});
+                              },
+                            );
+                            setState(() => isListening = true);
+                          },
                         ),
-                      )
-                      .toList(),
-                  onChanged: (value) {
-                    if (value != null) selectedPriority = value;
-                  },
+                      ),
+                      maxLines: 4,
+                      validator: (value) =>
+                          value == null || value.trim().isEmpty
+                          ? 'Describe el incidente'
+                          : null,
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: latController,
+                            decoration: const InputDecoration(
+                              labelText: 'Latitud',
+                              helperText:
+                                  'Se completa manualmente o con ubicación actual.',
+                            ),
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                              signed: true,
+                            ),
+                            validator: (value) =>
+                                _validateCoordinate(value, -90, 90),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: TextFormField(
+                            controller: lngController,
+                            decoration: const InputDecoration(
+                              labelText: 'Longitud',
+                              helperText:
+                                  'Se completa manualmente o con ubicación actual.',
+                            ),
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                              signed: true,
+                            ),
+                            validator: (value) =>
+                                _validateCoordinate(value, -180, 180),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton.filledTonal(
+                          tooltip: 'Usar ubicación actual',
+                          onPressed: () async {
+                            try {
+                              final position = await _resolveCurrentPosition();
+                              if (!sheetContext.mounted) return;
+                              latController.text = position.latitude.toString();
+                              lngController.text = position.longitude
+                                  .toString();
+                              setState(() {});
+                            } catch (exception) {
+                              formError = exception.toString().replaceFirst(
+                                'Exception: ',
+                                '',
+                              );
+                              setState(() {});
+                            }
+                          },
+                          icon: const Icon(Icons.my_location_rounded),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'El backend normaliza la información y puede disparar análisis IA después de guardar.',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 10),
-                TextFormField(
-                  controller: descriptionController,
-                  decoration: const InputDecoration(labelText: 'Descripción'),
-                  maxLines: 3,
-                ),
-                const SizedBox(height: 10),
-                TextFormField(
-                  controller: addressController,
-                  decoration: const InputDecoration(labelText: 'Dirección'),
-                ),
-                const SizedBox(height: 10),
-                TextFormField(
-                  controller: latController,
-                  decoration: const InputDecoration(labelText: 'Latitud'),
-                  keyboardType: TextInputType.number,
-                ),
-                const SizedBox(height: 10),
-                TextFormField(
-                  controller: lngController,
-                  decoration: const InputDecoration(labelText: 'Longitud'),
-                  keyboardType: TextInputType.number,
-                ),
-                const SizedBox(height: 10),
-                TextFormField(
-                  controller: serviceCatalogController,
-                  decoration: const InputDecoration(
-                    labelText: 'Service Catalog ID',
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(dialogContext).pop(false),
-          child: const Text('Cancelar'),
-        ),
-        ElevatedButton(
-          onPressed: () async {
-            if (!formKey.currentState!.validate()) return;
-            final input = IncidentUpsertInput(
-              vehicleId: vehicleController.text.trim(),
-              title: titleController.text.trim(),
-              priority: selectedPriority.apiValue,
-              description: descriptionController.text.trim().isEmpty
-                  ? null
-                  : descriptionController.text.trim(),
-              addressText: addressController.text.trim().isEmpty
-                  ? null
-                  : addressController.text.trim(),
-              latitude:
-                  double.tryParse(latController.text.trim())
-                      as double, // forzar double
-              longitude:
-                  double.tryParse(lngController.text.trim())
-                      as double, // forzar double
-              serviceCatalogId: serviceCatalogController.text.trim().isEmpty
-                  ? null
-                  : serviceCatalogController.text.trim(),
-            );
-            final savedOk = existing == null
-                ? await context.read<IncidentsViewModel>().create(input)
-                : await context.read<IncidentsViewModel>().update(
-                    existing.id,
-                    input,
-                  );
-            if (!dialogContext.mounted) return;
-            Navigator.of(dialogContext).pop(savedOk);
-          },
-          child: const Text('Guardar'),
-        ),
-      ],
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (!formKey.currentState!.validate()) return;
+                if (vehicleController.text.trim().isEmpty) {
+                  formError = 'Selecciona un vehículo';
+                  setState(() {});
+                  return;
+                }
+                final latitude = double.tryParse(latController.text.trim());
+                final longitude = double.tryParse(lngController.text.trim());
+                if (latitude == null || longitude == null) {
+                  formError = 'Latitud y longitud deben ser números válidos.';
+                  setState(() {});
+                  return;
+                }
+                final input = IncidentUpsertInput(
+                  vehicleId: vehicleController.text.trim(),
+                  priority: selectedPriority.apiValue,
+                  description: descriptionController.text.trim().isEmpty
+                      ? null
+                      : descriptionController.text.trim(),
+                  latitude: latitude,
+                  longitude: longitude,
+                );
+                final savedOk = existing == null
+                    ? await context.read<IncidentsViewModel>().create(input)
+                    : await context.read<IncidentsViewModel>().update(
+                        existing.id,
+                        input,
+                      );
+                if (!dialogContext.mounted) return;
+                Navigator.of(dialogContext).pop(savedOk);
+              },
+              child: const Text('Guardar'),
+            ),
+          ],
+        );
+      },
     ),
   );
 
@@ -233,6 +368,43 @@ Future<void> showIncidentForm(
       existing == null ? 'Incidente creado' : 'Incidente actualizado',
     );
   }
+}
+
+Future<VehicleEntity?> _pickVehicle(
+  BuildContext context, {
+  required List<VehicleEntity> vehicles,
+}) {
+  return showModalBottomSheet<VehicleEntity>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (sheetContext) {
+      return Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
+        ),
+        child: _VehiclePickerSheet(vehicles: vehicles),
+      );
+    },
+  );
+}
+
+String _vehicleSelectionLabel(VehicleEntity vehicle) {
+  final parts = <String>[
+    vehicle.plateNumber,
+    if ((vehicle.brand ?? '').trim().isNotEmpty) vehicle.brand!.trim(),
+    if ((vehicle.model ?? '').trim().isNotEmpty) vehicle.model!.trim(),
+  ];
+  return parts.where((part) => part.trim().isNotEmpty).join(' • ');
+}
+
+String _vehicleSelectionDetail(VehicleEntity vehicle) {
+  final parts = <String>[
+    if (vehicle.vehicleType.trim().isNotEmpty) vehicle.vehicleType.trim(),
+    if (vehicle.year != null) vehicle.year.toString(),
+    if ((vehicle.color ?? '').trim().isNotEmpty) vehicle.color!.trim(),
+  ];
+  return parts.where((part) => part.trim().isNotEmpty).join(' • ');
 }
 
 Future<void> confirmCancelIncident(
@@ -269,6 +441,210 @@ Future<void> confirmCancelIncident(
       );
     }
   }
+}
+
+Widget _vehicleOptionLabel(VehicleEntity vehicle) {
+  final parts = <String>[
+    vehicle.plateNumber,
+    if ((vehicle.brand ?? '').trim().isNotEmpty) vehicle.brand!.trim(),
+    if ((vehicle.model ?? '').trim().isNotEmpty) vehicle.model!.trim(),
+    if (vehicle.year != null) vehicle.year.toString(),
+    if ((vehicle.vehicleType).trim().isNotEmpty) vehicle.vehicleType,
+  ];
+  final subtitle = parts.where((part) => part.trim().isNotEmpty).join(' • ');
+  return SizedBox(
+    width: double.infinity,
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(vehicle.plateNumber, maxLines: 1, overflow: TextOverflow.ellipsis),
+        Text(
+          subtitle,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(fontSize: 12),
+        ),
+      ],
+    ),
+  );
+}
+
+Widget _vehiclePickerCard(
+  BuildContext context, {
+  required String value,
+  required String detail,
+  required String helper,
+  required IconData icon,
+  required VoidCallback onTap,
+}) {
+  return Material(
+    color: Colors.transparent,
+    child: InkWell(
+      borderRadius: BorderRadius.circular(22),
+      onTap: onTap,
+      child: SurfaceCard(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, color: const Color(0xFF166AE9)),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Vehículo',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              value,
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+            const SizedBox(height: 4),
+            Text(helper, style: Theme.of(context).textTheme.bodySmall),
+            const SizedBox(height: 6),
+            Text(
+              detail,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Colors.blueGrey,
+                  ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+class _VehiclePickerSheet extends StatelessWidget {
+  const _VehiclePickerSheet({required this.vehicles});
+
+  final List<VehicleEntity> vehicles;
+
+  @override
+  Widget build(BuildContext context) {
+    return _SheetScaffold(
+      title: 'Seleccionar vehículo',
+      children: vehicles.isEmpty
+          ? const [
+              EmptyStatePanel(
+                title: 'Sin vehículos',
+                subtitle: 'Primero registra un vehículo en tu perfil.',
+                icon: Icons.directions_car_rounded,
+              ),
+            ]
+          : vehicles
+              .map(
+                (vehicle) => Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(20),
+                    onTap: () => Navigator.of(context).pop(vehicle),
+                    child: SurfaceCard(
+                      padding: const EdgeInsets.all(14),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _vehicleSelectionLabel(vehicle),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            _vehicleSelectionDetail(vehicle),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              )
+              .toList(),
+    );
+  }
+}
+
+class _SheetScaffold extends StatelessWidget {
+  const _SheetScaffold({
+    required this.title,
+    required this.children,
+  });
+
+  final String title;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      child: ListView(
+        shrinkWrap: true,
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
+        children: [
+          Center(
+            child: Container(
+              width: 42,
+              height: 5,
+              decoration: BoxDecoration(
+                color: const Color(0xFFD6E2F7),
+                borderRadius: BorderRadius.circular(100),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(title, style: Theme.of(context).textTheme.headlineSmall),
+          const SizedBox(height: 14),
+          ...children,
+        ],
+      ),
+    );
+  }
+}
+
+String? _validateCoordinate(String? value, num min, num max) {
+  final parsed = double.tryParse((value ?? '').trim());
+  if (parsed == null) return 'Ingresa un número válido';
+  if (parsed < min || parsed > max) return 'Fuera de rango';
+  return null;
+}
+
+Future<Position> _resolveCurrentPosition() async {
+  final enabled = await Geolocator.isLocationServiceEnabled();
+  if (!enabled) {
+    throw Exception('Activa la ubicación para usar coordenadas actuales.');
+  }
+  var permission = await Geolocator.checkPermission();
+  if (permission == LocationPermission.denied) {
+    permission = await Geolocator.requestPermission();
+  }
+  if (permission == LocationPermission.denied) {
+    throw Exception('Permiso de ubicación denegado.');
+  }
+  if (permission == LocationPermission.deniedForever) {
+    throw Exception('El permiso de ubicación está bloqueado en el sistema.');
+  }
+  return Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
 }
 
 IncidentPriority? _incidentPriorityFromApi(String? value) {

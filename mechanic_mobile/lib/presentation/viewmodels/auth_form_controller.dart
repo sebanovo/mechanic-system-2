@@ -1,11 +1,10 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../constants/api_enums.dart';
 import '../../domain/entities/auth_entities.dart';
 
 class AuthFormController extends ChangeNotifier {
-  AuthFormController({required AppEntryRole role}) : role = role {
+  AuthFormController({required this.role}) {
     tenantKind = switch (role) {
       AppEntryRole.client => TenantKind.workshop,
       AppEntryRole.workshop => TenantKind.workshop,
