@@ -55,6 +55,40 @@ class DashboardRepository:
 
         return float(value or 0)
 
+    def get_owner_average_arrival_time(
+        self,
+        provider_profile_id: str | UUID,
+        date_from: datetime,
+        date_to: datetime,
+    ) -> float:
+        value = self.db.scalar(
+            select(
+                func.avg(
+                    func.extract(
+                        "epoch",
+                        Assignment.arrived_at - Assignment.assigned_at,
+                    )
+                    / 60.0
+                )
+            )
+            .select_from(Assignment)
+            .where(
+                Assignment.provider_profile_id == _to_uuid(
+                    provider_profile_id,
+                    "provider_profile_id",
+                ),
+                Assignment.assigned_at.is_not(None),
+                Assignment.arrived_at.is_not(None),
+                Assignment.arrived_at >= date_from,
+                Assignment.arrived_at <= date_to,
+                Assignment.assignment_status.in_(
+                    ["ARRIVED", "IN_SERVICE", "COMPLETED", "CANCELLED"]
+                ),
+            )
+        )
+
+        return round(float(value or 0), 2)
+
     def get_average_resolution_time(
         self,
         provider_profile_id: str | UUID,
@@ -166,19 +200,35 @@ class DashboardRepository:
         date_from: datetime,
         date_to: datetime,
     ) -> dict[str, Any]:
+        tenant_uuid = _to_uuid(tenant_id, "tenant_id")
         rows = self.db.execute(
-            self._tenant_related_cancelled_incidents_query(
-                tenant_id=_to_uuid(tenant_id, "tenant_id"),
-                date_from=date_from,
-                date_to=date_to,
+            select(
+                Incident.cancelled_by_user_type,
+                func.count(Incident.id).label("total"),
             )
+            .where(
+                Incident.deleted_at.is_(None),
+                Incident.status == "CANCELLED",
+                Incident.cancelled_at.is_not(None),
+                Incident.cancelled_at >= date_from,
+                Incident.cancelled_at <= date_to,
+                self._provider_related_incident_filter(tenant_uuid),
+            )
+            .group_by(Incident.cancelled_by_user_type)
         ).all()
 
         by_actor = {"CLIENT": 0, "TENANT_OWNER": 0, "TECHNICIAN": 0}
         total = 0
 
+        actor_map = {
+            "CLIENT": "client",
+            "TENANT_OWNER": "owner",
+            "OWNER": "owner",
+            "TECHNICIAN": "technician",
+        }
+
         for actor_type, count in rows:
-            actor = (actor_type or "").upper()
+            actor = actor_map.get(str(actor_type or "").strip().upper())
             value = int(count or 0)
             total += value
             if actor in by_actor:
@@ -192,6 +242,81 @@ class DashboardRepository:
                 "technician": by_actor["TECHNICIAN"],
             },
         }
+
+    def get_owner_cancelled_cases_by_actor(
+        self,
+        *,
+        provider_profile_id: str | UUID,
+        date_from: datetime,
+        date_to: datetime,
+    ) -> dict[str, Any]:
+        provider_uuid = _to_uuid(provider_profile_id, "provider_profile_id")
+
+        rows = self.db.execute(
+            select(
+                Incident.cancelled_by_user_type,
+                func.count(Incident.id).label("total"),
+            )
+            .where(
+                Incident.deleted_at.is_(None),
+                Incident.status == "CANCELLED",
+                Incident.cancelled_at.is_not(None),
+                Incident.cancelled_at >= date_from,
+                Incident.cancelled_at <= date_to,
+                self._provider_related_incident_filter(provider_uuid),
+            )
+            .group_by(Incident.cancelled_by_user_type)
+        ).all()
+
+        by_actor = {"CLIENT": 0, "TENANT_OWNER": 0, "TECHNICIAN": 0}
+        actor_map = {
+            "CLIENT": "client",
+            "TENANT_OWNER": "owner",
+            "OWNER": "owner",
+            "TECHNICIAN": "technician",
+        }
+        total = 0
+
+        for actor_type, count in rows:
+            actor = actor_map.get(str(actor_type or "").strip().upper())
+            value = int(count or 0)
+            total += value
+            if actor in by_actor:
+                by_actor[actor] += value
+
+        return {
+            "total": total,
+            "by_actor": {
+                "client": by_actor["CLIENT"],
+                "owner": by_actor["TENANT_OWNER"],
+                "technician": by_actor["TECHNICIAN"],
+            },
+        }
+
+    def _provider_related_incident_filter(
+        self,
+        provider_profile_id: UUID,
+    ):
+        return or_(
+            exists(
+                select(IncidentCandidateProvider.id).where(
+                    IncidentCandidateProvider.incident_id == Incident.id,
+                    IncidentCandidateProvider.provider_profile_id == provider_profile_id,
+                )
+            ),
+            exists(
+                select(IncidentOffer.id).where(
+                    IncidentOffer.incident_id == Incident.id,
+                    IncidentOffer.provider_profile_id == provider_profile_id,
+                )
+            ),
+            exists(
+                select(Assignment.id).where(
+                    Assignment.incident_id == Incident.id,
+                    Assignment.provider_profile_id == provider_profile_id,
+                )
+            ),
+        )
 
     def _tenant_related_cancelled_incidents_query(
         self,
@@ -251,22 +376,7 @@ class DashboardRepository:
             )
             .subquery()
         )
-        return (
-            select(
-                AuditEvent.actor_type,
-                func.count(AuditEvent.id).label("total"),
-            )
-            .select_from(AuditEvent)
-            .join(related_incidents, related_incidents.c.incident_id == AuditEvent.resource_id)
-            .where(
-                AuditEvent.scope == "TENANT",
-                AuditEvent.resource_type == "incident",
-                AuditEvent.event_type == "INCIDENT_CANCELLED",
-                AuditEvent.created_at >= date_from,
-                AuditEvent.created_at <= date_to,
-            )
-            .group_by(AuditEvent.actor_type)
-        )
+        return select(related_incidents.c.incident_id).select_from(related_incidents)
 
     def get_top_incident_types(
         self,
@@ -388,7 +498,135 @@ class DashboardRepository:
             for row in rows
         ]
 
+    def _completed_assignment_rows_for_customer(
+        self,
+        *,
+        customer_id: str | UUID,
+        date_from: datetime,
+        date_to: datetime,
+    ) -> list[tuple[str | None, str | None, float | None, int | None]]:
+        customer_uuid = _to_uuid(customer_id, "customer_id")
+
+        completed_assignments = (
+            self._completed_assignments_with_resolution_minutes_query(
+                assignment_filter=Assignment.incident_id.in_(
+                    select(Incident.id).where(
+                        Incident.customer_id == customer_uuid,
+                        Incident.deleted_at.is_(None),
+                    )
+                ),
+                date_from=date_from,
+                date_to=date_to,
+            ).subquery()
+        )
+
+        max_duration_minutes = func.coalesce(
+            ServiceCatalog.max_duration_minutes,
+            ServiceCatalog.min_duration_minutes,
+        )
+
+        query = (
+            select(
+                Tenant.commercial_name,
+                ServiceCatalog.service_name,
+                completed_assignments.c.resolution_minutes,
+                max_duration_minutes.label("max_duration_minutes"),
+            )
+            .select_from(completed_assignments)
+            .join(Incident, Incident.id == completed_assignments.c.incident_id)
+            .join(
+                ProviderProfile,
+                ProviderProfile.id == completed_assignments.c.provider_profile_id,
+            )
+            .join(Tenant, Tenant.id == ProviderProfile.tenant_id)
+            .join(
+                ServiceCatalog,
+                ServiceCatalog.id == Incident.service_catalog_id,
+                isouter=True,
+            )
+            .where(Incident.deleted_at.is_(None), Incident.customer_id == customer_uuid)
+        )
+
+        rows = self.db.execute(query).all()
+        return [
+            (
+                row[0],
+                row[1],
+                float(row[2]) if row[2] is not None else None,
+                int(row[3]) if row[3] is not None else None,
+            )
+            for row in rows
+        ]
+
+    def get_client_top_workshops(
+        self,
+        customer_id: str | UUID,
+        date_from: datetime,
+        date_to: datetime,
+        limit: int,
+    ) -> list[dict[str, Any]]:
+        rows = self._completed_assignment_rows_for_customer(
+            customer_id=customer_id,
+            date_from=date_from,
+            date_to=date_to,
+        )
+
+        stats: dict[str, dict[str, int]] = defaultdict(
+            lambda: {"completed_services": 0, "within": 0}
+        )
+
+        for provider_name, _, duration_minutes, max_duration_minutes in rows:
+            name = provider_name or "Sin taller"
+            stats[name]["completed_services"] += 1
+            if (
+                max_duration_minutes is not None
+                and duration_minutes is not None
+                and duration_minutes <= max_duration_minutes
+            ):
+                stats[name]["within"] += 1
+
+        workshops: list[dict[str, Any]] = []
+        for name, values in stats.items():
+            completed_services = values["completed_services"]
+            if completed_services <= 0:
+                continue
+            efficiency = (
+                values["within"] / completed_services * 100.0
+                if completed_services
+                else 0.0
+            )
+            workshops.append(
+                {
+                    "name": name,
+                    "completed_services": completed_services,
+                    "efficiency": round(efficiency, 1),
+                }
+            )
+
+        workshops.sort(
+            key=lambda item: (
+                item["efficiency"],
+                item["completed_services"],
+            ),
+            reverse=True,
+        )
+        return workshops[:limit]
+
     def get_top_workshops(
+        self,
+        customer_id: str | UUID,
+        date_from: datetime,
+        date_to: datetime,
+        limit: int,
+    ) -> list[dict[str, Any]]:
+        return self.get_client_top_workshops(
+            customer_id=customer_id,
+            date_from=date_from,
+            date_to=date_to,
+            limit=limit,
+        )
+
+    def get_top_workshops_global(
         self,
         date_from: datetime,
         date_to: datetime,

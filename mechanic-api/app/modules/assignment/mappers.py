@@ -22,6 +22,7 @@ def assignment_public(assignment: Assignment) -> AssignmentPublic:
         assignment_status=assignment.assignment_status,  # type: ignore[arg-type]
         notes=assignment.notes,
         assigned_at=assignment.assigned_at,
+        en_route_at=assignment.en_route_at,
         started_at=assignment.started_at,
         arrived_at=assignment.arrived_at,
         completed_at=assignment.completed_at,

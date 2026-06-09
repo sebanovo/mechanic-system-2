@@ -5,6 +5,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
 
+from app.common.contracts import ApiResponse
 from app.common.pagination import PaginationMeta
 from app.modules.identity.technician.schemas import TechnicianPublic
 from app.modules.provider_service.schemas import ProviderServiceDetailPublic
@@ -58,13 +59,9 @@ class TechnicianServiceListData(BaseModel):
     pagination: PaginationMeta
 
 
-class TechnicianServiceResponse(BaseModel):
-    success: bool = True
-    message: str
-    data: TechnicianServiceDetailPublic
+class TechnicianServiceResponse(ApiResponse[TechnicianServiceDetailPublic]):
+    pass
 
 
-class TechnicianServicesResponse(BaseModel):
-    success: bool = True
-    message: str
-    data: TechnicianServiceListData
+class TechnicianServicesResponse(ApiResponse[TechnicianServiceListData]):
+    pass

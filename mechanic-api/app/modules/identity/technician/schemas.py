@@ -5,6 +5,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
+from app.common.contracts import ApiResponse
 from app.common.pagination import PaginationMeta
 from app.modules.identity.user.schemas import UserPublic
 
@@ -92,10 +93,8 @@ class TechnicianListData(BaseModel):
     pagination: PaginationMeta
 
 
-class TechnicianResponse(BaseModel):
-    success: bool = True
-    message: str
-    data: TechnicianDetailPublic
+class TechnicianResponse(ApiResponse[TechnicianDetailPublic]):
+    pass
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -108,7 +107,5 @@ class TechnicianResponse(BaseModel):
     )
 
 
-class TechniciansResponse(BaseModel):
-    success: bool = True
-    message: str
-    data: TechnicianListData
+class TechniciansResponse(ApiResponse[TechnicianListData]):
+    pass

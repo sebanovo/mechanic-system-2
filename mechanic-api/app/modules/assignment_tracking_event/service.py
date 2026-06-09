@@ -25,6 +25,7 @@ from app.modules.assignment_tracking_event.repository import (
 from app.modules.assignment_tracking_event.schemas import (
     AssignmentTrackingEventCreateRequest,
 )
+from app.modules.incident.utils import mark_incident_cancelled
 from app.modules.identity.customer.repository import CustomerRepository
 from app.modules.identity.membership.repository import TenantMembershipRepository
 from app.modules.identity.technician_availability.repository import (
@@ -273,7 +274,7 @@ class AssignmentTrackingEventService(BaseService):
 
         if event_type == "EN_ROUTE":
             assignment_target_status = "EN_ROUTE"
-            assignment.started_at = now
+            assignment.en_route_at = now
             incident_target_status = "EN_ROUTE"
             should_update_assignment = True
             should_update_incident = True
@@ -287,6 +288,7 @@ class AssignmentTrackingEventService(BaseService):
 
         elif event_type == "SERVICE_STARTED":
             assignment_target_status = "IN_SERVICE"
+            assignment.started_at = now
             incident_target_status = "IN_SERVICE"
             should_update_assignment = True
             should_update_incident = True
@@ -305,8 +307,13 @@ class AssignmentTrackingEventService(BaseService):
         elif event_type == "CANCELLED":
             assignment_target_status = "CANCELLED"
             assignment.cancelled_at = now
-            incident_target_status = "CANCELLED"
-            incident.cancelled_at = now
+            mark_incident_cancelled(
+                incident,
+                actor_type="TECHNICIAN",
+                actor_user_id=self.context.user_id,
+                reason="La atención fue cancelada por el técnico.",
+            )
+            incident_target_status = None
             if offer is not None:
                 offer.offer_status = "CANCELLED"
                 offer.responded_at = now

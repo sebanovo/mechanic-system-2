@@ -116,6 +116,22 @@ class Incident(BaseModel):
         nullable=True,
     )
 
+    cancelled_by_user_type: Mapped[str | None] = mapped_column(
+        String(30),
+        nullable=True,
+    )
+
+    cancelled_by_user_id: Mapped[UUID | None] = mapped_column(
+        PGUUID(as_uuid=True),
+        ForeignKey("user.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
+    cancellation_reason: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+    )
+
     completed_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,

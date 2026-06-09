@@ -5,6 +5,7 @@ from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from app.common.contracts import ApiResponse
 from app.common.pagination import PaginationMeta
 from app.modules.service_catalog.schemas import ServiceCatalogPublic
 
@@ -78,13 +79,9 @@ class ProviderServiceListData(BaseModel):
     pagination: PaginationMeta
 
 
-class ProviderServiceResponse(BaseModel):
-    success: bool = True
-    message: str
-    data: ProviderServiceDetailPublic
+class ProviderServiceResponse(ApiResponse[ProviderServiceDetailPublic]):
+    pass
 
 
-class ProviderServicesResponse(BaseModel):
-    success: bool = True
-    message: str
-    data: ProviderServiceListData
+class ProviderServicesResponse(ApiResponse[ProviderServiceListData]):
+    pass

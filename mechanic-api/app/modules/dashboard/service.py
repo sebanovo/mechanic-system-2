@@ -58,18 +58,10 @@ class DashboardService(BaseService):
         date_to = date_to or datetime.now(timezone.utc)
         date_from = date_from or date_to - timedelta(days=30)
 
-        cancelled_cases_raw = self.repository.get_cancelled_cases_by_actor(
-            tenant_id=tenant_id,
+        cancelled_cases = self.repository.get_owner_cancelled_cases_by_actor(
+            provider_profile_id=provider_profile_id,
             date_from=date_from,
             date_to=date_to,
-        )
-        cancelled_cases = CancelledCasesKpi(
-            total=int(cancelled_cases_raw["total"]),
-            by_actor=CancelledCasesByActor(
-                client=int(cancelled_cases_raw["by_actor"]["client"]),
-                owner=int(cancelled_cases_raw["by_actor"]["owner"]),
-                technician=int(cancelled_cases_raw["by_actor"]["technician"]),
-            ),
         )
 
         top_incident_types = [
@@ -110,7 +102,7 @@ class DashboardService(BaseService):
         )
 
         kpis = OwnerDashboardKpis(
-            average_arrival_time_minutes=self.repository.get_average_arrival_time(
+            average_arrival_time_minutes=self.repository.get_owner_average_arrival_time(
                 provider_profile_id,
                 date_from,
                 date_to,
@@ -310,7 +302,8 @@ class DashboardService(BaseService):
                 name=item["name"],
                 efficiency=float(item["efficiency"]),
             )
-            for item in self.repository.get_top_workshops(
+            for item in self.repository.get_client_top_workshops(
+                customer_id=customer_id,
                 date_from=date_from,
                 date_to=date_to,
                 limit=3,
@@ -372,7 +365,8 @@ class DashboardService(BaseService):
                 name=item["name"],
                 efficiency=float(item["efficiency"]),
             )
-            for item in self.repository.get_top_workshops(
+            for item in self.repository.get_client_top_workshops(
+                customer_id=customer_id,
                 date_from=date_from,
                 date_to=date_to,
                 limit=5,

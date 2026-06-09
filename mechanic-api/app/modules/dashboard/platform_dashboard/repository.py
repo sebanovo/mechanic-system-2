@@ -15,6 +15,18 @@ from app.modules.dashboard.repository import DashboardRepository
 
 
 class PlatformDashboardRepository(DashboardRepository):
+    def get_top_workshops(
+        self,
+        date_from: datetime,
+        date_to: datetime,
+        limit: int,
+    ) -> list[dict[str, Any]]:
+        return self.get_top_workshops_global(
+            date_from=date_from,
+            date_to=date_to,
+            limit=limit,
+        )
+
     def get_total_incidents(
         self,
         date_from: datetime,

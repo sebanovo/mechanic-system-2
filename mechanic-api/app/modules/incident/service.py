@@ -49,6 +49,7 @@ from app.modules.incident.schemas import (
     IncidentStatusChangeRequest,
     IncidentUpdateRequest,
 )
+from app.modules.incident.utils import mark_incident_cancelled
 from app.modules.incident_ai_analysis.repository import IncidentAiAnalysisRepository
 from app.modules.incident_ai_analysis.service import IncidentAiAnalysisService
 from app.modules.incident_offer.repository import IncidentOfferRepository
@@ -226,6 +227,13 @@ class IncidentService(BaseService):
         ai_media: list[AIMediaInput] | None = None,
     ) -> Incident:
         customer = self._get_current_customer_or_fail()
+        active_incident = self.repository.get_active_by_customer(str(customer.id))
+
+        if active_incident is not None:
+            raise ConflictException(
+                "Ya tienes un incidente activo. Debes finalizarlo o cancelarlo antes de crear otro."
+            )
+
         vehicle = self.vehicle_repository.get_by_id(payload.vehicle_id)
 
         if vehicle is None or vehicle.deleted_at is not None:
@@ -543,8 +551,12 @@ class IncidentService(BaseService):
         previous_status = incident.status
         now = datetime.now(timezone.utc)
 
-        incident.status = "CANCELLED"
-        incident.cancelled_at = now
+        mark_incident_cancelled(
+            incident,
+            actor_type=cancelled_by,
+            actor_user_id=self.context.user_id,
+            reason=cancellation_reason,
+        )
 
         impacted_tenant_ids = self._cancel_related_offers_and_candidates(
             incident=incident,

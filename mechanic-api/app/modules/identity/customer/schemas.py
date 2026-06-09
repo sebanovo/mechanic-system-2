@@ -5,6 +5,7 @@ from typing import Literal
 
 from pydantic import BaseModel
 
+from app.common.contracts import ApiResponse
 from app.common.pagination import PaginationMeta
 from app.modules.identity.user.schemas import UserPublic
 
@@ -35,13 +36,9 @@ class CustomerListData(BaseModel):
     pagination: PaginationMeta
 
 
-class CustomerResponse(BaseModel):
-    success: bool = True
-    message: str
-    data: CustomerDetailPublic
+class CustomerResponse(ApiResponse[CustomerDetailPublic]):
+    pass
 
 
-class CustomersResponse(BaseModel):
-    success: bool = True
-    message: str
-    data: CustomerListData
+class CustomersResponse(ApiResponse[CustomerListData]):
+    pass

@@ -6,6 +6,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.common.contracts import ApiResponse
 from app.common.pagination import PaginationMeta
 
 IncidentPriority = Literal["LOW", "MEDIUM", "HIGH", "CRITICAL"]
@@ -132,13 +133,9 @@ class IncidentListData(BaseModel):
     pagination: PaginationMeta
 
 
-class IncidentResponse(BaseModel):
-    success: bool = True
-    message: str
-    data: IncidentPublic
+class IncidentResponse(ApiResponse[IncidentPublic]):
+    pass
 
 
-class IncidentsResponse(BaseModel):
-    success: bool = True
-    message: str
-    data: IncidentListData
+class IncidentsResponse(ApiResponse[IncidentListData]):
+    pass

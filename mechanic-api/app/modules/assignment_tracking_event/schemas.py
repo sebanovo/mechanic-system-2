@@ -6,6 +6,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.common.contracts import ApiResponse
 from app.common.pagination import PaginationMeta
 from app.modules.assignment.schemas import AssignmentPublic
 
@@ -128,13 +129,9 @@ class AssignmentTrackingEventListData(BaseModel):
     pagination: PaginationMeta
 
 
-class AssignmentTrackingEventResponse(BaseModel):
-    success: bool = True
-    message: str
-    data: AssignmentTrackingEventDetailPublic
+class AssignmentTrackingEventResponse(ApiResponse[AssignmentTrackingEventDetailPublic]):
+    pass
 
 
-class AssignmentTrackingEventsResponse(BaseModel):
-    success: bool = True
-    message: str
-    data: AssignmentTrackingEventListData
+class AssignmentTrackingEventsResponse(ApiResponse[AssignmentTrackingEventListData]):
+    pass
