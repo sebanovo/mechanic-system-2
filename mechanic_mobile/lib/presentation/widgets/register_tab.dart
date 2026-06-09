@@ -76,7 +76,7 @@ class RegisterTab extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<TenantKind>(
-              value: tenantKind,
+              initialValue: tenantKind,
               decoration: const InputDecoration(labelText: 'Tipo de tenant'),
               items: tenantKindOptions
                   .map(

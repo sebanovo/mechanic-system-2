@@ -343,10 +343,11 @@ Future<void> _showPasswordDialog(BuildContext context) async {
 String _initials(String value) {
   final parts = value.trim().split(RegExp(r'\s+'));
   if (parts.isEmpty) return 'CM';
-  if (parts.length == 1)
+  if (parts.length == 1) {
     return parts.first.isEmpty
         ? 'CM'
         : parts.first.substring(0, 1).toUpperCase();
+  }
   return ('${parts.first[0]}${parts[1][0]}').toUpperCase();
 }
 

@@ -14,7 +14,9 @@ void showCreateTechnicianSheet(BuildContext context, TenantViewModel vm) {
     backgroundColor: Colors.transparent,
     builder: (sheetContext) {
       return Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(sheetContext).viewInsets.bottom),
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
+        ),
         child: Container(
           decoration: const BoxDecoration(
             color: Colors.white,
@@ -35,15 +37,31 @@ void showCreateTechnicianSheet(BuildContext context, TenantViewModel vm) {
                 ),
               ),
               const SizedBox(height: 16),
-              Text('Nuevo técnico', style: Theme.of(context).textTheme.headlineSmall),
+              Text(
+                'Nuevo técnico',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
               const SizedBox(height: 14),
-              TextField(controller: email, decoration: const InputDecoration(labelText: 'Email')),
+              TextField(
+                controller: email,
+                decoration: const InputDecoration(labelText: 'Email'),
+              ),
               const SizedBox(height: 12),
-              TextField(controller: password, obscureText: true, decoration: const InputDecoration(labelText: 'Contraseña')),
+              TextField(
+                controller: password,
+                obscureText: true,
+                decoration: const InputDecoration(labelText: 'Contraseña'),
+              ),
               const SizedBox(height: 12),
-              TextField(controller: firstName, decoration: const InputDecoration(labelText: 'Nombre')),
+              TextField(
+                controller: firstName,
+                decoration: const InputDecoration(labelText: 'Nombre'),
+              ),
               const SizedBox(height: 12),
-              TextField(controller: lastName, decoration: const InputDecoration(labelText: 'Apellido')),
+              TextField(
+                controller: lastName,
+                decoration: const InputDecoration(labelText: 'Apellido'),
+              ),
               const SizedBox(height: 18),
               ElevatedButton(
                 onPressed: vm.submitting
@@ -81,7 +99,9 @@ void showCreateProviderServiceSheet(BuildContext context, TenantViewModel vm) {
     backgroundColor: Colors.transparent,
     builder: (sheetContext) {
       return Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(sheetContext).viewInsets.bottom),
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
+        ),
         child: Container(
           decoration: const BoxDecoration(
             color: Colors.white,
@@ -102,15 +122,21 @@ void showCreateProviderServiceSheet(BuildContext context, TenantViewModel vm) {
                 ),
               ),
               const SizedBox(height: 16),
-              Text('Nuevo servicio', style: Theme.of(context).textTheme.headlineSmall),
+              Text(
+                'Nuevo servicio',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
               const SizedBox(height: 14),
               DropdownButtonFormField<String>(
-                value: selectedServiceCatalogId.isEmpty ? null : selectedServiceCatalogId,
+                initialValue: selectedServiceCatalogId.isEmpty
+                    ? null
+                    : selectedServiceCatalogId,
                 isExpanded: true,
                 menuMaxHeight: 360,
                 decoration: const InputDecoration(
                   labelText: 'Servicio de catálogo',
-                  helperText: 'Elige el servicio base desde el catálogo del sistema.',
+                  helperText:
+                      'Elige el servicio base desde el catálogo del sistema.',
                 ),
                 selectedItemBuilder: (context) => vm.serviceCatalog.items
                     .map(
@@ -144,16 +170,19 @@ void showCreateProviderServiceSheet(BuildContext context, TenantViewModel vm) {
                                       '-',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                        fontWeight: FontWeight.w700,
-                                      ),
+                                  style: Theme.of(context).textTheme.titleSmall
+                                      ?.copyWith(fontWeight: FontWeight.w700),
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
                                   [
-                                    item['service_code']?.toString() ?? item['code']?.toString() ?? '-',
+                                    item['service_code']?.toString() ??
+                                        item['code']?.toString() ??
+                                        '-',
                                     item['category']?.toString() ?? '-',
-                                    if ((item['description']?.toString() ?? '').trim().isNotEmpty)
+                                    if ((item['description']?.toString() ?? '')
+                                        .trim()
+                                        .isNotEmpty)
                                       item['description'].toString(),
                                   ].join(' • '),
                                   maxLines: 2,
@@ -165,7 +194,8 @@ void showCreateProviderServiceSheet(BuildContext context, TenantViewModel vm) {
                                   _serviceCatalogPricing(item),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  style: Theme.of(context).textTheme.bodySmall
+                                      ?.copyWith(
                                         color: Colors.blueGrey,
                                         fontWeight: FontWeight.w600,
                                       ),
@@ -182,9 +212,15 @@ void showCreateProviderServiceSheet(BuildContext context, TenantViewModel vm) {
                 },
               ),
               const SizedBox(height: 12),
-              TextField(controller: minPrice, decoration: const InputDecoration(labelText: 'Precio mínimo')),
+              TextField(
+                controller: minPrice,
+                decoration: const InputDecoration(labelText: 'Precio mínimo'),
+              ),
               const SizedBox(height: 12),
-              TextField(controller: maxPrice, decoration: const InputDecoration(labelText: 'Precio máximo')),
+              TextField(
+                controller: maxPrice,
+                decoration: const InputDecoration(labelText: 'Precio máximo'),
+              ),
               const SizedBox(height: 18),
               ElevatedButton(
                 onPressed: vm.submitting
@@ -193,8 +229,10 @@ void showCreateProviderServiceSheet(BuildContext context, TenantViewModel vm) {
                         if (selectedServiceCatalogId.isEmpty) return;
                         final ok = await vm.createProviderService({
                           'service_catalog_id': selectedServiceCatalogId,
-                          if (minPrice.text.trim().isNotEmpty) 'custom_min_price': minPrice.text.trim(),
-                          if (maxPrice.text.trim().isNotEmpty) 'custom_max_price': maxPrice.text.trim(),
+                          if (minPrice.text.trim().isNotEmpty)
+                            'custom_min_price': minPrice.text.trim(),
+                          if (maxPrice.text.trim().isNotEmpty)
+                            'custom_max_price': maxPrice.text.trim(),
                         });
                         if (!context.mounted) return;
                         if (ok) Navigator.of(sheetContext).pop();
@@ -209,7 +247,10 @@ void showCreateProviderServiceSheet(BuildContext context, TenantViewModel vm) {
   );
 }
 
-void showCreateTechnicianServiceSheet(BuildContext context, TenantViewModel vm) {
+void showCreateTechnicianServiceSheet(
+  BuildContext context,
+  TenantViewModel vm,
+) {
   var selectedTechnicianId = vm.technicians.items.isNotEmpty
       ? vm.technicians.items.first['id']?.toString() ?? ''
       : '';
@@ -224,7 +265,9 @@ void showCreateTechnicianServiceSheet(BuildContext context, TenantViewModel vm) 
     backgroundColor: Colors.transparent,
     builder: (sheetContext) {
       return Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(sheetContext).viewInsets.bottom),
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
+        ),
         child: Container(
           decoration: const BoxDecoration(
             color: Colors.white,
@@ -245,10 +288,15 @@ void showCreateTechnicianServiceSheet(BuildContext context, TenantViewModel vm) 
                 ),
               ),
               const SizedBox(height: 16),
-              Text('Nuevo servicio técnico', style: Theme.of(context).textTheme.headlineSmall),
+              Text(
+                'Nuevo servicio técnico',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
               const SizedBox(height: 14),
               DropdownButtonFormField<String>(
-                value: selectedTechnicianId.isEmpty ? null : selectedTechnicianId,
+                initialValue: selectedTechnicianId.isEmpty
+                    ? null
+                    : selectedTechnicianId,
                 isExpanded: true,
                 menuMaxHeight: 320,
                 decoration: const InputDecoration(
@@ -287,13 +335,13 @@ void showCreateTechnicianServiceSheet(BuildContext context, TenantViewModel vm) 
                                     '-',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                      fontWeight: FontWeight.w700,
-                                    ),
+                                style: Theme.of(context).textTheme.titleSmall
+                                    ?.copyWith(fontWeight: FontWeight.w700),
                               ),
                               Text(
                                 [
-                                  item['availability_status']?.toString() ?? '-',
+                                  item['availability_status']?.toString() ??
+                                      '-',
                                   item['status']?.toString() ?? '-',
                                 ].join(' • '),
                                 maxLines: 1,
@@ -312,12 +360,15 @@ void showCreateTechnicianServiceSheet(BuildContext context, TenantViewModel vm) 
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                value: selectedProviderServiceId.isEmpty ? null : selectedProviderServiceId,
+                initialValue: selectedProviderServiceId.isEmpty
+                    ? null
+                    : selectedProviderServiceId,
                 isExpanded: true,
                 menuMaxHeight: 320,
                 decoration: const InputDecoration(
                   labelText: 'Servicio de proveedor',
-                  helperText: 'El servicio debe venir del catálogo del proveedor.',
+                  helperText:
+                      'El servicio debe venir del catálogo del proveedor.',
                 ),
                 selectedItemBuilder: (context) => vm.providerServices.items
                     .map(
@@ -325,10 +376,16 @@ void showCreateTechnicianServiceSheet(BuildContext context, TenantViewModel vm) 
                         alignment: Alignment.centerLeft,
                         child: Text(
                           [
-                            item['service_name']?.toString() ?? item['name']?.toString() ?? '-',
-                            if ((item['custom_min_price']?.toString() ?? '').trim().isNotEmpty)
+                            item['service_name']?.toString() ??
+                                item['name']?.toString() ??
+                                '-',
+                            if ((item['custom_min_price']?.toString() ?? '')
+                                .trim()
+                                .isNotEmpty)
                               'Bs ${item['custom_min_price']}',
-                            if ((item['custom_max_price']?.toString() ?? '').trim().isNotEmpty)
+                            if ((item['custom_max_price']?.toString() ?? '')
+                                .trim()
+                                .isNotEmpty)
                               'Bs ${item['custom_max_price']}',
                           ].join(' • '),
                           maxLines: 1,
@@ -354,16 +411,21 @@ void showCreateTechnicianServiceSheet(BuildContext context, TenantViewModel vm) 
                                     '-',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                      fontWeight: FontWeight.w700,
-                                    ),
+                                style: Theme.of(context).textTheme.titleSmall
+                                    ?.copyWith(fontWeight: FontWeight.w700),
                               ),
                               Text(
                                 [
                                   item['service_catalog_id']?.toString() ?? '-',
-                                  if ((item['custom_min_price']?.toString() ?? '').trim().isNotEmpty)
+                                  if ((item['custom_min_price']?.toString() ??
+                                          '')
+                                      .trim()
+                                      .isNotEmpty)
                                     'Min Bs ${item['custom_min_price']}',
-                                  if ((item['custom_max_price']?.toString() ?? '').trim().isNotEmpty)
+                                  if ((item['custom_max_price']?.toString() ??
+                                          '')
+                                      .trim()
+                                      .isNotEmpty)
                                     'Max Bs ${item['custom_max_price']}',
                                 ].join(' • '),
                                 maxLines: 2,
@@ -390,11 +452,14 @@ void showCreateTechnicianServiceSheet(BuildContext context, TenantViewModel vm) 
                 onPressed: vm.submitting
                     ? null
                     : () async {
-                        if (selectedTechnicianId.isEmpty || selectedProviderServiceId.isEmpty) return;
+                        if (selectedTechnicianId.isEmpty ||
+                            selectedProviderServiceId.isEmpty)
+                          return;
                         final ok = await vm.createTechnicianService({
                           'technician_id': selectedTechnicianId,
                           'provider_service_id': selectedProviderServiceId,
-                          if (skillLevel.text.trim().isNotEmpty) 'skill_level': skillLevel.text.trim(),
+                          if (skillLevel.text.trim().isNotEmpty)
+                            'skill_level': skillLevel.text.trim(),
                         });
                         if (!context.mounted) return;
                         if (ok) Navigator.of(sheetContext).pop();
@@ -423,7 +488,8 @@ void showTechnicianManagementSheet(
   var status = (technician['status']?.toString().isNotEmpty ?? false)
       ? technician['status'].toString()
       : 'ACTIVE';
-  var availabilityStatus = (record['availability_status']?.toString().isNotEmpty ?? false)
+  var availabilityStatus =
+      (record['availability_status']?.toString().isNotEmpty ?? false)
       ? record['availability_status'].toString()
       : 'AVAILABLE';
   final availableFrom = TextEditingController(
@@ -443,13 +509,21 @@ void showTechnicianManagementSheet(
           return _SheetScaffold(
             title: 'Gestión de técnico',
             children: [
-              _sheetSummary('Nombre', '${user['first_name'] ?? ''} ${user['last_name'] ?? ''}'.trim()),
+              _sheetSummary(
+                'Nombre',
+                '${user['first_name'] ?? ''} ${user['last_name'] ?? ''}'.trim(),
+              ),
               _sheetSummary('Email', user['email']?.toString() ?? '-'),
-              _sheetSummary('Código', technician['technician_code']?.toString() ?? '-'),
+              _sheetSummary(
+                'Código',
+                technician['technician_code']?.toString() ?? '-',
+              ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                value: status,
-                decoration: const InputDecoration(labelText: 'Estado del técnico'),
+                initialValue: status,
+                decoration: const InputDecoration(
+                  labelText: 'Estado del técnico',
+                ),
                 items: const [
                   DropdownMenuItem(value: 'ACTIVE', child: Text('Activo')),
                   DropdownMenuItem(value: 'INACTIVE', child: Text('Inactivo')),
@@ -462,12 +536,18 @@ void showTechnicianManagementSheet(
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                value: availabilityStatus,
+                initialValue: availabilityStatus,
                 decoration: const InputDecoration(labelText: 'Disponibilidad'),
                 items: const [
-                  DropdownMenuItem(value: 'AVAILABLE', child: Text('Disponible')),
+                  DropdownMenuItem(
+                    value: 'AVAILABLE',
+                    child: Text('Disponible'),
+                  ),
                   DropdownMenuItem(value: 'BUSY', child: Text('Ocupado')),
-                  DropdownMenuItem(value: 'OFFLINE', child: Text('Desconectado')),
+                  DropdownMenuItem(
+                    value: 'OFFLINE',
+                    child: Text('Desconectado'),
+                  ),
                   DropdownMenuItem(value: 'ON_BREAK', child: Text('En pausa')),
                 ],
                 onChanged: (value) {
@@ -476,8 +556,16 @@ void showTechnicianManagementSheet(
                 },
               ),
               const SizedBox(height: 12),
-              _sheetField(availableFrom, 'Disponible desde (ISO 8601)', obscureText: false),
-              _sheetField(availableUntil, 'Disponible hasta (ISO 8601)', obscureText: false),
+              _sheetField(
+                availableFrom,
+                'Disponible desde (ISO 8601)',
+                obscureText: false,
+              ),
+              _sheetField(
+                availableUntil,
+                'Disponible hasta (ISO 8601)',
+                obscureText: false,
+              ),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: vm.submitting
@@ -485,17 +573,26 @@ void showTechnicianManagementSheet(
                     : () async {
                         final technicianId = technician['id']?.toString() ?? '';
                         final okStatus = technicianId.isNotEmpty
-                            ? await vm.updateTechnicianStatus(technicianId, status)
+                            ? await vm.updateTechnicianStatus(
+                                technicianId,
+                                status,
+                              )
                             : false;
                         final okAvailability = technicianId.isNotEmpty
-                            ? await vm.updateTechnicianAvailability(technicianId, {
-                                'availability_status': availabilityStatus,
-                                'available_from': _parseNullableDateTime(availableFrom.text),
-                                'available_until': _parseNullableDateTime(availableUntil.text),
-                              })
+                            ? await vm
+                                  .updateTechnicianAvailability(technicianId, {
+                                    'availability_status': availabilityStatus,
+                                    'available_from': _parseNullableDateTime(
+                                      availableFrom.text,
+                                    ),
+                                    'available_until': _parseNullableDateTime(
+                                      availableUntil.text,
+                                    ),
+                                  })
                             : false;
                         if (!sheetContext.mounted) return;
-                        if (okStatus && okAvailability) Navigator.of(sheetContext).pop();
+                        if (okStatus && okAvailability)
+                          Navigator.of(sheetContext).pop();
                       },
                 child: const Text('Guardar técnico'),
               ),
@@ -532,17 +629,26 @@ void showMemberManagementSheet(
           return _SheetScaffold(
             title: 'Gestión de miembro',
             children: [
-              _sheetSummary('Nombre', '${user['first_name'] ?? ''} ${user['last_name'] ?? ''}'.trim()),
+              _sheetSummary(
+                'Nombre',
+                '${user['first_name'] ?? ''} ${user['last_name'] ?? ''}'.trim(),
+              ),
               _sheetSummary('Email', user['email']?.toString() ?? '-'),
-              _sheetSummary('Tenant', membership['tenant_id']?.toString() ?? '-'),
+              _sheetSummary(
+                'Tenant',
+                membership['tenant_id']?.toString() ?? '-',
+              ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                value: status,
+                initialValue: status,
                 decoration: const InputDecoration(labelText: 'Estado'),
                 items: const [
                   DropdownMenuItem(value: 'ACTIVE', child: Text('Activo')),
                   DropdownMenuItem(value: 'INACTIVE', child: Text('Inactivo')),
-                  DropdownMenuItem(value: 'SUSPENDED', child: Text('Suspendido')),
+                  DropdownMenuItem(
+                    value: 'SUSPENDED',
+                    child: Text('Suspendido'),
+                  ),
                 ],
                 onChanged: (value) {
                   if (value == null) return;
@@ -556,7 +662,9 @@ void showMemberManagementSheet(
                     : () async {
                         final membershipId = membership['id']?.toString() ?? '';
                         final ok = membershipId.isNotEmpty
-                            ? await vm.changeCurrentMemberStatus(membershipId, {'status': status})
+                            ? await vm.changeCurrentMemberStatus(membershipId, {
+                                'status': status,
+                              })
                             : false;
                         if (!sheetContext.mounted) return;
                         if (ok) Navigator.of(sheetContext).pop();
@@ -587,17 +695,35 @@ void showMemberManagementSheet(
 
 void showEditTenantProfileSheet(BuildContext context, TenantViewModel vm) {
   final current = vm.currentProfile ?? const <String, dynamic>{};
-  final legalName = TextEditingController(text: current['legal_name']?.toString() ?? '');
-  final taxIdentifier = TextEditingController(text: current['tax_identifier']?.toString() ?? '');
-  final businessEmail = TextEditingController(text: current['business_email']?.toString() ?? '');
-  final businessPhone = TextEditingController(text: current['business_phone']?.toString() ?? '');
-  final websiteUrl = TextEditingController(text: current['website_url']?.toString() ?? '');
-  final addressLine = TextEditingController(text: current['address_line']?.toString() ?? '');
+  final legalName = TextEditingController(
+    text: current['legal_name']?.toString() ?? '',
+  );
+  final taxIdentifier = TextEditingController(
+    text: current['tax_identifier']?.toString() ?? '',
+  );
+  final businessEmail = TextEditingController(
+    text: current['business_email']?.toString() ?? '',
+  );
+  final businessPhone = TextEditingController(
+    text: current['business_phone']?.toString() ?? '',
+  );
+  final websiteUrl = TextEditingController(
+    text: current['website_url']?.toString() ?? '',
+  );
+  final addressLine = TextEditingController(
+    text: current['address_line']?.toString() ?? '',
+  );
   final city = TextEditingController(text: current['city']?.toString() ?? '');
   final state = TextEditingController(text: current['state']?.toString() ?? '');
-  final country = TextEditingController(text: current['country']?.toString() ?? '');
-  final latitude = TextEditingController(text: current['latitude']?.toString() ?? '');
-  final longitude = TextEditingController(text: current['longitude']?.toString() ?? '');
+  final country = TextEditingController(
+    text: current['country']?.toString() ?? '',
+  );
+  final latitude = TextEditingController(
+    text: current['latitude']?.toString() ?? '',
+  );
+  final longitude = TextEditingController(
+    text: current['longitude']?.toString() ?? '',
+  );
 
   showModalBottomSheet<void>(
     context: context,
@@ -649,9 +775,15 @@ void showEditTenantProfileSheet(BuildContext context, TenantViewModel vm) {
 
 void showEditTenantSettingsSheet(BuildContext context, TenantViewModel vm) {
   final current = vm.currentSettings ?? const <String, dynamic>{};
-  final defaultCurrency = TextEditingController(text: current['default_currency']?.toString() ?? '');
-  final defaultTimezone = TextEditingController(text: current['default_timezone']?.toString() ?? '');
-  final defaultLanguage = TextEditingController(text: current['default_language']?.toString() ?? '');
+  final defaultCurrency = TextEditingController(
+    text: current['default_currency']?.toString() ?? '',
+  );
+  final defaultTimezone = TextEditingController(
+    text: current['default_timezone']?.toString() ?? '',
+  );
+  final defaultLanguage = TextEditingController(
+    text: current['default_language']?.toString() ?? '',
+  );
 
   showModalBottomSheet<void>(
     context: context,
@@ -688,7 +820,8 @@ void showEditTenantSettingsSheet(BuildContext context, TenantViewModel vm) {
 void showEditProviderProfileSheet(BuildContext context, TenantViewModel vm) {
   final current = vm.currentProviderProfile ?? const <String, dynamic>{};
   var acceptsEmergency = current['accepts_emergency_requests'] == true;
-  var operationalStatus = (current['operational_status']?.toString().isNotEmpty ?? false)
+  var operationalStatus =
+      (current['operational_status']?.toString().isNotEmpty ?? false)
       ? current['operational_status'].toString()
       : 'ACTIVE';
 
@@ -710,12 +843,17 @@ void showEditProviderProfileSheet(BuildContext context, TenantViewModel vm) {
               ),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
-                value: operationalStatus,
-                decoration: const InputDecoration(labelText: 'Estado operativo'),
+                initialValue: operationalStatus,
+                decoration: const InputDecoration(
+                  labelText: 'Estado operativo',
+                ),
                 items: const [
                   DropdownMenuItem(value: 'ACTIVE', child: Text('Activo')),
                   DropdownMenuItem(value: 'INACTIVE', child: Text('Inactivo')),
-                  DropdownMenuItem(value: 'SUSPENDED', child: Text('Suspendido')),
+                  DropdownMenuItem(
+                    value: 'SUSPENDED',
+                    child: Text('Suspendido'),
+                  ),
                 ],
                 onChanged: (value) {
                   if (value == null) return;
@@ -824,14 +962,14 @@ String? _parseNullableDateTime(String value) {
 }
 
 String _serviceCatalogSummary(Map<String, dynamic> item) {
-  final name = item['service_name']?.toString() ??
+  final name =
+      item['service_name']?.toString() ??
       item['name']?.toString() ??
       item['code']?.toString() ??
       item['id']?.toString() ??
       '-';
-  final code = item['service_code']?.toString() ??
-      item['code']?.toString() ??
-      '-';
+  final code =
+      item['service_code']?.toString() ?? item['code']?.toString() ?? '-';
   final category = item['category']?.toString() ?? '-';
   return '$name • $code • $category';
 }
@@ -842,12 +980,20 @@ String _serviceCatalogPricing(Map<String, dynamic> item) {
   final minDuration = item['min_duration_minutes']?.toString();
   final maxDuration = item['max_duration_minutes']?.toString();
   final pricePart = [
-    if (minPrice != null && minPrice != 'null' && minPrice.trim().isNotEmpty) 'Bs $minPrice',
-    if (maxPrice != null && maxPrice != 'null' && maxPrice.trim().isNotEmpty) 'Bs $maxPrice',
+    if (minPrice != null && minPrice != 'null' && minPrice.trim().isNotEmpty)
+      'Bs $minPrice',
+    if (maxPrice != null && maxPrice != 'null' && maxPrice.trim().isNotEmpty)
+      'Bs $maxPrice',
   ].join(' - ');
   final durationPart = [
-    if (minDuration != null && minDuration != 'null' && minDuration.trim().isNotEmpty) minDuration,
-    if (maxDuration != null && maxDuration != 'null' && maxDuration.trim().isNotEmpty) maxDuration,
+    if (minDuration != null &&
+        minDuration != 'null' &&
+        minDuration.trim().isNotEmpty)
+      minDuration,
+    if (maxDuration != null &&
+        maxDuration != 'null' &&
+        maxDuration.trim().isNotEmpty)
+      maxDuration,
   ].join(' - ');
   return [
     if (pricePart.isNotEmpty) pricePart,
@@ -856,10 +1002,7 @@ String _serviceCatalogPricing(Map<String, dynamic> item) {
 }
 
 class _SheetScaffold extends StatelessWidget {
-  const _SheetScaffold({
-    required this.title,
-    required this.children,
-  });
+  const _SheetScaffold({required this.title, required this.children});
 
   final String title;
   final List<Widget> children;
@@ -867,7 +1010,9 @@ class _SheetScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       child: Container(
         decoration: const BoxDecoration(
           color: Colors.white,

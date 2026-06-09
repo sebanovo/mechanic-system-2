@@ -7,7 +7,6 @@ import 'package:speech_to_text/speech_to_text.dart';
 
 import '../../constants/api_enums.dart';
 import '../../domain/entities/app_entities.dart';
-import '../../domain/entities/vehicle_entity.dart';
 import '../viewmodels/app_viewmodels.dart';
 import '../widgets/app_widgets.dart';
 
@@ -91,7 +90,9 @@ Future<void> showIncidentForm(
   if (!vehiclesVm.loaded && !vehiclesVm.loading) {
     await vehiclesVm.loadVehicles();
   }
-  final vehicleController = TextEditingController(text: existing?.vehicleId ?? '');
+  final vehicleController = TextEditingController(
+    text: existing?.vehicleId ?? '',
+  );
   final descriptionController = TextEditingController(
     text: existing?.description ?? '',
   );
@@ -114,12 +115,15 @@ Future<void> showIncidentForm(
       builder: (sheetContext, setState) {
         final vehicles = vehiclesVm.vehicles?.items ?? const <VehicleEntity>[];
         final vehicleIds = vehicles.map((vehicle) => vehicle.id).toSet();
-        final selectedVehicleId = vehicleController.text.isEmpty ||
+        final selectedVehicleId =
+            vehicleController.text.isEmpty ||
                 !vehicleIds.contains(vehicleController.text)
             ? null
             : vehicleController.text;
         return AlertDialog(
-          title: Text(existing == null ? 'Nuevo incidente' : 'Editar incidente'),
+          title: Text(
+            existing == null ? 'Nuevo incidente' : 'Editar incidente',
+          ),
           content: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 640),
             child: SingleChildScrollView(
@@ -134,7 +138,7 @@ Future<void> showIncidentForm(
                       const SizedBox(height: 12),
                     ],
                     DropdownButtonFormField<String>(
-                      value: selectedVehicleId,
+                      initialValue: selectedVehicleId,
                       isExpanded: true,
                       menuMaxHeight: 320,
                       decoration: const InputDecoration(
@@ -153,13 +157,14 @@ Future<void> showIncidentForm(
                         vehicleController.text = value ?? '';
                         setState(() {});
                       },
-                      validator: (value) => value == null || value.trim().isEmpty
+                      validator: (value) =>
+                          value == null || value.trim().isEmpty
                           ? 'Selecciona un vehículo'
                           : null,
                     ),
                     const SizedBox(height: 10),
                     DropdownButtonFormField<IncidentPriority>(
-                      value: selectedPriority,
+                      initialValue: selectedPriority,
                       decoration: const InputDecoration(
                         labelText: 'Prioridad',
                         helperText: 'Marca la severidad del incidente.',
@@ -186,9 +191,13 @@ Future<void> showIncidentForm(
                         labelText: 'Descripción',
                         helperText: 'Describe brevemente qué ocurrió.',
                         suffixIcon: IconButton(
-                          tooltip: isListening ? 'Detener dictado' : 'Dictar descripción',
+                          tooltip: isListening
+                              ? 'Detener dictado'
+                              : 'Dictar descripción',
                           icon: Icon(
-                            isListening ? Icons.mic_off_rounded : Icons.mic_rounded,
+                            isListening
+                                ? Icons.mic_off_rounded
+                                : Icons.mic_rounded,
                             color: isListening ? Colors.red : null,
                           ),
                           onPressed: () async {
@@ -196,7 +205,8 @@ Future<void> showIncidentForm(
                               speechReady = await speech.initialize(
                                 onStatus: (status) {
                                   if (!sheetContext.mounted) return;
-                                  if (status == 'done' || status == 'notListening') {
+                                  if (status == 'done' ||
+                                      status == 'notListening') {
                                     setState(() => isListening = false);
                                   }
                                 },
@@ -217,13 +227,17 @@ Future<void> showIncidentForm(
                               return;
                             }
                             await speech.listen(
-                              listenMode: ListenMode.confirmation,
+                              listenOptions: SpeechListenOptions(
+                                listenMode: ListenMode.confirmation,
+                              ),
                               onResult: (result) {
                                 if (!sheetContext.mounted) return;
-                                descriptionController.text = result.recognizedWords;
-                                descriptionController.selection = TextSelection.collapsed(
-                                  offset: descriptionController.text.length,
-                                );
+                                descriptionController.text =
+                                    result.recognizedWords;
+                                descriptionController.selection =
+                                    TextSelection.collapsed(
+                                      offset: descriptionController.text.length,
+                                    );
                                 setState(() {});
                               },
                             );
@@ -232,7 +246,8 @@ Future<void> showIncidentForm(
                         ),
                       ),
                       maxLines: 4,
-                      validator: (value) => value == null || value.trim().isEmpty
+                      validator: (value) =>
+                          value == null || value.trim().isEmpty
                           ? 'Describe el incidente'
                           : null,
                     ),
@@ -244,10 +259,15 @@ Future<void> showIncidentForm(
                             controller: latController,
                             decoration: const InputDecoration(
                               labelText: 'Latitud',
-                              helperText: 'Se completa manualmente o con ubicación actual.',
+                              helperText:
+                                  'Se completa manualmente o con ubicación actual.',
                             ),
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
-                            validator: (value) => _validateCoordinate(value, -90, 90),
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                              signed: true,
+                            ),
+                            validator: (value) =>
+                                _validateCoordinate(value, -90, 90),
                           ),
                         ),
                         const SizedBox(width: 10),
@@ -256,10 +276,15 @@ Future<void> showIncidentForm(
                             controller: lngController,
                             decoration: const InputDecoration(
                               labelText: 'Longitud',
-                              helperText: 'Se completa manualmente o con ubicación actual.',
+                              helperText:
+                                  'Se completa manualmente o con ubicación actual.',
                             ),
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
-                            validator: (value) => _validateCoordinate(value, -180, 180),
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                              signed: true,
+                            ),
+                            validator: (value) =>
+                                _validateCoordinate(value, -180, 180),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -270,10 +295,14 @@ Future<void> showIncidentForm(
                               final position = await _resolveCurrentPosition();
                               if (!sheetContext.mounted) return;
                               latController.text = position.latitude.toString();
-                              lngController.text = position.longitude.toString();
+                              lngController.text = position.longitude
+                                  .toString();
                               setState(() {});
                             } catch (exception) {
-                              formError = exception.toString().replaceFirst('Exception: ', '');
+                              formError = exception.toString().replaceFirst(
+                                'Exception: ',
+                                '',
+                              );
                               setState(() {});
                             }
                           },
@@ -391,11 +420,7 @@ Widget _vehicleOptionLabel(VehicleEntity vehicle) {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          vehicle.plateNumber,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
+        Text(vehicle.plateNumber, maxLines: 1, overflow: TextOverflow.ellipsis),
         Text(
           subtitle,
           maxLines: 2,
@@ -429,9 +454,7 @@ Future<Position> _resolveCurrentPosition() async {
   if (permission == LocationPermission.deniedForever) {
     throw Exception('El permiso de ubicación está bloqueado en el sistema.');
   }
-  return Geolocator.getCurrentPosition(
-    desiredAccuracy: LocationAccuracy.high,
-  );
+  return Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
 }
 
 IncidentPriority? _incidentPriorityFromApi(String? value) {
