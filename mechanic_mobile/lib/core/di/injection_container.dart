@@ -148,6 +148,17 @@ Future<void> configureDependencies() async {
   sl.registerLazySingleton<RevokeMyNotificationDeviceUseCase>(
     () => RevokeMyNotificationDeviceUseCase(sl<NotificationRepository>()),
   );
+  sl.registerLazySingleton<NotificationsViewModel>(
+    () => NotificationsViewModel(
+      listMyNotifications: sl<ListMyNotificationsUseCase>(),
+      markMyNotificationAsRead: sl<MarkMyNotificationAsReadUseCase>(),
+      markAllMyNotificationsAsRead: sl<MarkAllMyNotificationsAsReadUseCase>(),
+      listMyNotificationDevices: sl<ListMyNotificationDevicesUseCase>(),
+      registerMyNotificationDevice: sl<RegisterMyNotificationDeviceUseCase>(),
+      revokeMyNotificationDevice: sl<RevokeMyNotificationDeviceUseCase>(),
+      notificationService: sl<NotificationService>(),
+    ),
+  );
   sl.registerLazySingleton<LoginUseCase>(
     () => LoginUseCase(sl<AuthRepository>()),
   );
@@ -179,6 +190,7 @@ Future<void> configureDependencies() async {
         refreshAuth: sl<RefreshAuthUseCase>(),
         logout: sl<LogoutUseCase>(),
         meAuth: sl<MeAuthUseCase>(),
+        notificationsViewModel: sl<NotificationsViewModel>(),
         sessionStorage: sl<SessionStorage>(),
       ));
   sl.registerLazySingleton<TenantViewModel>(
@@ -215,17 +227,6 @@ Future<void> configureDependencies() async {
       getMyAssignment: sl<GetMyAssignmentUseCase>(),
       listMyAssignmentTrackingEvents: sl<ListMyAssignmentTrackingEventsUseCase>(),
       getMyAssignmentTrackingSession: sl<GetMyAssignmentTrackingSessionUseCase>(),
-    ),
-  );
-  sl.registerLazySingleton<NotificationsViewModel>(
-    () => NotificationsViewModel(
-      listMyNotifications: sl<ListMyNotificationsUseCase>(),
-      markMyNotificationAsRead: sl<MarkMyNotificationAsReadUseCase>(),
-      markAllMyNotificationsAsRead: sl<MarkAllMyNotificationsAsReadUseCase>(),
-      listMyNotificationDevices: sl<ListMyNotificationDevicesUseCase>(),
-      registerMyNotificationDevice: sl<RegisterMyNotificationDeviceUseCase>(),
-      revokeMyNotificationDevice: sl<RevokeMyNotificationDeviceUseCase>(),
-      notificationService: sl<NotificationService>(),
     ),
   );
 }

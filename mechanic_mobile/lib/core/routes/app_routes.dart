@@ -35,7 +35,15 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/notifications',
-      builder: (context, state) => const NotificationsPage(),
+      builder: (context, state) =>
+          const NotificationsPage(title: 'Mis notificaciones', showDevices: true),
+    ),
+    GoRoute(
+      path: '/tenant-notifications',
+      builder: (context, state) => const NotificationsPage(
+        title: 'Notificaciones del taller',
+        showDevices: true,
+      ),
     ),
     GoRoute(
       path: '/sessions',

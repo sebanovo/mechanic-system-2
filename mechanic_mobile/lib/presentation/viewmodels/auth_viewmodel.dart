@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 import '../../core/services/session_storage.dart';
 import '../../core/error/failures.dart';
 import '../../domain/entities/auth_entities.dart';
 import '../../domain/usecases/auth_usecases.dart';
+import 'notifications_viewmodel.dart';
 
 class AuthViewModel extends ChangeNotifier {
   AuthViewModel({
@@ -14,6 +17,7 @@ class AuthViewModel extends ChangeNotifier {
     required RefreshAuthUseCase refreshAuth,
     required LogoutUseCase logout,
     required MeAuthUseCase meAuth,
+    required NotificationsViewModel notificationsViewModel,
     required SessionStorage sessionStorage,
   })  : _login = login,
         _registerClient = registerClient,
@@ -22,6 +26,7 @@ class AuthViewModel extends ChangeNotifier {
         _refreshAuth = refreshAuth,
         _logout = logout,
         _meAuth = meAuth,
+        _notificationsViewModel = notificationsViewModel,
         _sessionStorage = sessionStorage;
 
   final LoginUseCase _login;
@@ -31,6 +36,7 @@ class AuthViewModel extends ChangeNotifier {
   final RefreshAuthUseCase _refreshAuth;
   final LogoutUseCase _logout;
   final MeAuthUseCase _meAuth;
+  final NotificationsViewModel _notificationsViewModel;
   final SessionStorage _sessionStorage;
 
   AuthContextEntity? contextData;
@@ -67,6 +73,7 @@ class AuthViewModel extends ChangeNotifier {
         }
       }
       selectedRole = _roleFromUserType(contextData?.userType);
+      unawaited(_maybeRegisterDevice());
     } catch (exception) {
       error = _errorMessage(exception);
     } finally {
@@ -83,6 +90,8 @@ class AuthViewModel extends ChangeNotifier {
     try {
       contextData = await _login(input);
       selectedRole = _roleFromUserType(contextData?.userType);
+      _notificationsViewModel.reset();
+      unawaited(_maybeRegisterDevice());
       message = 'Sesión iniciada';
       return true;
     } catch (exception) {
@@ -102,6 +111,8 @@ class AuthViewModel extends ChangeNotifier {
     try {
       contextData = await _registerClient(input);
       selectedRole = AppEntryRole.client;
+      _notificationsViewModel.reset();
+      unawaited(_maybeRegisterDevice());
       message = 'Cliente registrado';
       return true;
     } catch (exception) {
@@ -121,6 +132,8 @@ class AuthViewModel extends ChangeNotifier {
     try {
       contextData = await _registerTenant(input);
       selectedRole = _roleFromTenantKind(input.tenantKind);
+      _notificationsViewModel.reset();
+      unawaited(_maybeRegisterDevice());
       message = 'Taller o mecánico registrado';
       return true;
     } catch (exception) {
@@ -141,6 +154,8 @@ class AuthViewModel extends ChangeNotifier {
       contextData = await _selectTenant(SelectTenantInput(tenantId: tenantId));
       selectedRole = _roleFromUserType(contextData?.userType);
       await _sessionStorage.setAuthMeta(tenantId: tenantId);
+      _notificationsViewModel.reset();
+      unawaited(_maybeRegisterDevice(force: true));
       message = 'Tenant seleccionado';
       return true;
     } catch (exception) {
@@ -160,6 +175,7 @@ class AuthViewModel extends ChangeNotifier {
     try {
       contextData = await _refreshAuth();
       selectedRole = _roleFromUserType(contextData?.userType);
+      unawaited(_maybeRegisterDevice());
     } catch (exception) {
       error = _errorMessage(exception);
     } finally {
@@ -185,7 +201,24 @@ class AuthViewModel extends ChangeNotifier {
     }
     contextData = null;
     selectedRole = AppEntryRole.client;
+    _notificationsViewModel.reset();
     notifyListeners();
+  }
+
+  Future<void> _maybeRegisterDevice({bool force = false}) async {
+    final context = contextData;
+    if (context == null) return;
+    final normalizedUserType = context.userType.toUpperCase();
+    final needsTenantSelection = context.requiresTenantSelection &&
+        (context.tenantId == null || context.tenantId!.isEmpty);
+    if (!force && normalizedUserType != 'CLIENT' && needsTenantSelection) {
+      return;
+    }
+    try {
+      await _notificationsViewModel.registerCurrentDevice(silent: true);
+    } catch (_) {
+      // Ignore device registration failures during auth flow.
+    }
   }
 }
 

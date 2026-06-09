@@ -106,18 +106,73 @@ void showCreateProviderServiceSheet(BuildContext context, TenantViewModel vm) {
               const SizedBox(height: 14),
               DropdownButtonFormField<String>(
                 value: selectedServiceCatalogId.isEmpty ? null : selectedServiceCatalogId,
-                decoration: const InputDecoration(labelText: 'Servicio de catálogo'),
+                isExpanded: true,
+                menuMaxHeight: 360,
+                decoration: const InputDecoration(
+                  labelText: 'Servicio de catálogo',
+                  helperText: 'Elige el servicio base desde el catálogo del sistema.',
+                ),
+                selectedItemBuilder: (context) => vm.serviceCatalog.items
+                    .map(
+                      (item) => Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          _serviceCatalogSummary(item),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    )
+                    .toList(),
                 items: vm.serviceCatalog.items
                     .map(
                       (item) => DropdownMenuItem<String>(
                         value: item['id']?.toString(),
-                        child: Text(
-                          item['name']?.toString() ??
-                              item['title']?.toString() ??
-                              item['code']?.toString() ??
-                              item['id']?.toString() ??
-                              '-',
-                          overflow: TextOverflow.ellipsis,
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 6),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  item['service_name']?.toString() ??
+                                      item['name']?.toString() ??
+                                      item['code']?.toString() ??
+                                      item['id']?.toString() ??
+                                      '-',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  [
+                                    item['service_code']?.toString() ?? item['code']?.toString() ?? '-',
+                                    item['category']?.toString() ?? '-',
+                                    if ((item['description']?.toString() ?? '').trim().isNotEmpty)
+                                      item['description'].toString(),
+                                  ].join(' • '),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  _serviceCatalogPricing(item),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                        color: Colors.blueGrey,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
                     )
@@ -194,17 +249,59 @@ void showCreateTechnicianServiceSheet(BuildContext context, TenantViewModel vm) 
               const SizedBox(height: 14),
               DropdownButtonFormField<String>(
                 value: selectedTechnicianId.isEmpty ? null : selectedTechnicianId,
-                decoration: const InputDecoration(labelText: 'Técnico'),
+                isExpanded: true,
+                menuMaxHeight: 320,
+                decoration: const InputDecoration(
+                  labelText: 'Técnico',
+                  helperText: 'Selecciona el técnico asignado al servicio.',
+                ),
+                selectedItemBuilder: (context) => vm.technicians.items
+                    .map(
+                      (item) => Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          [
+                            item['technician_code']?.toString() ?? '-',
+                            item['full_name']?.toString() ?? '-',
+                          ].join(' • '),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    )
+                    .toList(),
                 items: vm.technicians.items
                     .map(
                       (item) => DropdownMenuItem<String>(
                         value: item['id']?.toString(),
-                        child: Text(
-                          item['technician_code']?.toString() ??
-                              item['full_name']?.toString() ??
-                              item['id']?.toString() ??
-                              '-',
-                          overflow: TextOverflow.ellipsis,
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                item['technician_code']?.toString() ??
+                                    item['full_name']?.toString() ??
+                                    item['id']?.toString() ??
+                                    '-',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                              ),
+                              Text(
+                                [
+                                  item['availability_status']?.toString() ?? '-',
+                                  item['status']?.toString() ?? '-',
+                                ].join(' • '),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     )
@@ -216,17 +313,65 @@ void showCreateTechnicianServiceSheet(BuildContext context, TenantViewModel vm) 
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 value: selectedProviderServiceId.isEmpty ? null : selectedProviderServiceId,
-                decoration: const InputDecoration(labelText: 'Servicio de proveedor'),
+                isExpanded: true,
+                menuMaxHeight: 320,
+                decoration: const InputDecoration(
+                  labelText: 'Servicio de proveedor',
+                  helperText: 'El servicio debe venir del catálogo del proveedor.',
+                ),
+                selectedItemBuilder: (context) => vm.providerServices.items
+                    .map(
+                      (item) => Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          [
+                            item['service_name']?.toString() ?? item['name']?.toString() ?? '-',
+                            if ((item['custom_min_price']?.toString() ?? '').trim().isNotEmpty)
+                              'Bs ${item['custom_min_price']}',
+                            if ((item['custom_max_price']?.toString() ?? '').trim().isNotEmpty)
+                              'Bs ${item['custom_max_price']}',
+                          ].join(' • '),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    )
+                    .toList(),
                 items: vm.providerServices.items
                     .map(
                       (item) => DropdownMenuItem<String>(
                         value: item['id']?.toString(),
-                        child: Text(
-                          item['service_name']?.toString() ??
-                              item['name']?.toString() ??
-                              item['id']?.toString() ??
-                              '-',
-                          overflow: TextOverflow.ellipsis,
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                item['service_name']?.toString() ??
+                                    item['name']?.toString() ??
+                                    item['id']?.toString() ??
+                                    '-',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                              ),
+                              Text(
+                                [
+                                  item['service_catalog_id']?.toString() ?? '-',
+                                  if ((item['custom_min_price']?.toString() ?? '').trim().isNotEmpty)
+                                    'Min Bs ${item['custom_min_price']}',
+                                  if ((item['custom_max_price']?.toString() ?? '').trim().isNotEmpty)
+                                    'Max Bs ${item['custom_max_price']}',
+                                ].join(' • '),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     )
@@ -676,6 +821,38 @@ String? _parseNullableDateTime(String value) {
   final trimmed = value.trim();
   if (trimmed.isEmpty) return null;
   return trimmed;
+}
+
+String _serviceCatalogSummary(Map<String, dynamic> item) {
+  final name = item['service_name']?.toString() ??
+      item['name']?.toString() ??
+      item['code']?.toString() ??
+      item['id']?.toString() ??
+      '-';
+  final code = item['service_code']?.toString() ??
+      item['code']?.toString() ??
+      '-';
+  final category = item['category']?.toString() ?? '-';
+  return '$name • $code • $category';
+}
+
+String _serviceCatalogPricing(Map<String, dynamic> item) {
+  final minPrice = item['min_price']?.toString();
+  final maxPrice = item['max_price']?.toString();
+  final minDuration = item['min_duration_minutes']?.toString();
+  final maxDuration = item['max_duration_minutes']?.toString();
+  final pricePart = [
+    if (minPrice != null && minPrice != 'null' && minPrice.trim().isNotEmpty) 'Bs $minPrice',
+    if (maxPrice != null && maxPrice != 'null' && maxPrice.trim().isNotEmpty) 'Bs $maxPrice',
+  ].join(' - ');
+  final durationPart = [
+    if (minDuration != null && minDuration != 'null' && minDuration.trim().isNotEmpty) minDuration,
+    if (maxDuration != null && maxDuration != 'null' && maxDuration.trim().isNotEmpty) maxDuration,
+  ].join(' - ');
+  return [
+    if (pricePart.isNotEmpty) pricePart,
+    if (durationPart.isNotEmpty) 'Duración: $durationPart min',
+  ].join(' • ');
 }
 
 class _SheetScaffold extends StatelessWidget {

@@ -145,7 +145,7 @@ Widget _hero(BuildContext context, AuthContextEntity? auth, TenantViewModel vm) 
                     context,
                     label: 'Sesiones',
                     icon: Icons.devices_other_rounded,
-                    onTap: () => context.push('/sessions'),
+                    onTap: () => context.push('/tenant-sessions'),
                   ),
                 ),
               ],
