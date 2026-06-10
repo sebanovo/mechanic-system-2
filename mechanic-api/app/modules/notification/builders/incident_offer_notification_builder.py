@@ -20,7 +20,7 @@ class IncidentOfferNotificationContent:
     title: str
     body: str
     persisted_data: dict[str, Any]
-    push_data: dict[str, str]
+    push_data: dict[str, Any]
 
 
 @dataclass(frozen=True)
@@ -28,7 +28,7 @@ class ClientOfferAcceptedNotificationContent:
     title: str
     body: str
     persisted_data: dict[str, Any]
-    push_data: dict[str, str]
+    push_data: dict[str, Any]
 
 
 @dataclass(frozen=True)
@@ -144,14 +144,12 @@ def build_incident_offer_notification(
 def build_client_offer_accepted_notification(
     payload: ClientOfferAcceptedNotificationInput,
 ) -> ClientOfferAcceptedNotificationContent:
-    service_label = _safe(payload.service_name, "Servicio no especificado")
-    vehicle_label = _safe(payload.vehicle_label, "Vehículo no especificado")
     priority_label = _priority_label(payload.incident_priority)
-    estimated_price_label = _price_range_label(
+    estimated_price_label: str | None = _price_range_label(
         payload.estimated_min_price,
         payload.estimated_max_price,
     )
-    estimated_duration_label = _duration_range_label(
+    estimated_duration_label: str | None = _duration_range_label(
         payload.estimated_min_duration_minutes,
         payload.estimated_max_duration_minutes,
     )
@@ -293,7 +291,7 @@ def _build_persisted_data(
 
 def _build_push_data(
     payload: IncidentOfferNotificationInput,
-) -> dict[str, str]:
+) -> dict[str, Any]:
     return {
         "type": payload.notification_type,
         "action_context": "INCIDENT_OFFER",
@@ -323,6 +321,38 @@ def _priority_label(priority: str | None) -> str:
     }
 
     return labels.get(normalized or "", "No especificada")
+
+
+def _price_range_label(
+    min_price: Decimal | None,
+    max_price: Decimal | None,
+) -> str | None:
+    if min_price is None and max_price is None:
+        return None
+
+    if min_price is not None and max_price is not None:
+        return f"{_decimal_to_string(min_price)} - {_decimal_to_string(max_price)}"
+
+    if min_price is not None:
+        return f"desde {_decimal_to_string(min_price)}"
+
+    return f"hasta {_decimal_to_string(max_price)}"
+
+
+def _duration_range_label(
+    min_minutes: int | None,
+    max_minutes: int | None,
+) -> str | None:
+    if min_minutes is None and max_minutes is None:
+        return None
+
+    if min_minutes is not None and max_minutes is not None:
+        return f"{min_minutes} - {max_minutes} min"
+
+    if min_minutes is not None:
+        return f"desde {min_minutes} min"
+
+    return f"hasta {max_minutes} min"
 
 
 def _distance_label(distance_km: Decimal | None) -> str | None:

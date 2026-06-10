@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timezone
 
 from app.common.exceptions import ConflictException, NotFoundException
@@ -34,6 +35,8 @@ from app.modules.incident_offer.repository import IncidentOfferRepository
 from app.modules.incident.utils import mark_incident_cancelled
 from app.modules.notification.business_notifications import BusinessNotificationService
 from app.modules.technician_service.repository import TechnicianServiceRepository
+
+logger = logging.getLogger(__name__)
 
 FINAL_ASSIGNMENT_STATUSES = {"COMPLETED", "CANCELLED"}
 
@@ -466,6 +469,14 @@ class AssignmentService(BaseService):
         customer_user_id = (
             str(customer_detail[1].id) if customer_detail is not None else None
         )
+        logger.info(
+            "Assignment created notification requested. assignment_id=%s incident_id=%s customer_user_id=%s technician_user_id=%s tenant_id=%s",
+            assignment_id,
+            incident.id,
+            customer_user_id,
+            technician.user_id,
+            tenant_id,
+        )
         try:
             self.business_notifications.send_assignment_created(
                 customer_user_id=customer_user_id,
@@ -474,7 +485,17 @@ class AssignmentService(BaseService):
                 assignment_id=assignment_id,
                 incident_id=str(incident.id),
             )
+            logger.info(
+                "Assignment created notification dispatched. assignment_id=%s incident_id=%s",
+                assignment_id,
+                incident.id,
+            )
         except Exception:
+            logger.exception(
+                "Assignment created notification failed. assignment_id=%s incident_id=%s",
+                assignment_id,
+                incident.id,
+            )
             return
 
     def _change_status(

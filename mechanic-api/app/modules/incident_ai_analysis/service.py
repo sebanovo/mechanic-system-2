@@ -172,8 +172,21 @@ class IncidentAiAnalysisService(BaseService):
         incident = self._get_incident_or_fail(incident_id)
         normalized_version = self._normalize_text(analysis_version) or "v1"
 
+        logger.info(
+            "Incident AI analysis started. incident_id=%s analysis_version=%s has_media=%s",
+            incident.id,
+            normalized_version,
+            bool(analysis_input.media) if analysis_input is not None else False,
+        )
+
         services = self._list_active_service_catalogs()
         service_options = service_catalog_list_to_ai_options(services)
+
+        logger.info(
+            "Incident AI catalog loaded. incident_id=%s active_services=%s",
+            incident.id,
+            len(service_options),
+        )
 
         prompt = build_incident_analysis_prompt(
             incident=incident,
@@ -192,7 +205,22 @@ class IncidentAiAnalysisService(BaseService):
             ),
         )
 
+        logger.info(
+            "Incident AI responded. incident_id=%s provider=%s model=%s",
+            incident.id,
+            ai_result.provider,
+            ai_result.model,
+        )
+
         parsed_result = IncidentAIAnalysisResult.model_validate(ai_result.content)
+
+        logger.info(
+            "Incident AI parsed. incident_id=%s probable_service_code=%s priority=%s confidence=%s",
+            incident.id,
+            parsed_result.probable_service_code,
+            parsed_result.priority,
+            parsed_result.confidence,
+        )
 
         service_catalog = self._resolve_service_catalog(parsed_result)
         probable_service_code = parsed_result.probable_service_code
@@ -203,9 +231,24 @@ class IncidentAiAnalysisService(BaseService):
         else:
             incident.service_catalog_id = service_catalog.id
 
+        logger.info(
+            "Incident AI catalog resolved. incident_id=%s service_catalog_id=%s probable_service_code=%s",
+            incident.id,
+            str(incident.service_catalog_id) if incident.service_catalog_id is not None else None,
+            probable_service_code,
+        )
+
         self._apply_ai_fields_to_incident(
             incident=incident,
             result=parsed_result,
+        )
+
+        logger.info(
+            "Incident AI applied to incident. incident_id=%s title=%s priority=%s address_set=%s",
+            incident.id,
+            incident.title,
+            incident.priority,
+            bool(self._normalize_text(incident.address_text)),
         )
 
         payload = IncidentAiAnalysisCreateRequest(
@@ -242,6 +285,14 @@ class IncidentAiAnalysisService(BaseService):
 
         analysis = self.repository.add(analysis)
         self.db.flush()
+
+        logger.info(
+            "Incident AI analysis persisted. incident_id=%s analysis_id=%s service_code=%s confidence=%s",
+            incident.id,
+            analysis.id,
+            analysis.probable_service_code,
+            analysis.confidence_score,
+        )
 
         self.audit.created(
             analysis,
@@ -284,6 +335,12 @@ class IncidentAiAnalysisService(BaseService):
         self._run_dispatch_safely(
             incident_id=str(incident.id),
             analysis_id=str(analysis.id),
+        )
+
+        logger.info(
+            "Incident AI analysis finished. incident_id=%s analysis_id=%s",
+            incident.id,
+            analysis.id,
         )
 
         if commit:

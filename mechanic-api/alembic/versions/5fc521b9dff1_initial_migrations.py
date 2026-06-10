@@ -1,8 +1,8 @@
 """initial migrations
 
-Revision ID: 296c0d13136d
+Revision ID: 5fc521b9dff1
 Revises: 
-Create Date: 2026-06-09 04:49:39.069071
+Create Date: 2026-06-10 03:03:21.813135
 """
 
 import sqlalchemy as sa
@@ -11,7 +11,7 @@ from sqlalchemy.dialects import postgresql
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = '296c0d13136d'
+revision = '5fc521b9dff1'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -317,6 +317,9 @@ def upgrade() -> None:
     sa.Column('status', sa.String(length=50), nullable=False),
     sa.Column('reported_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('cancelled_at', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('cancelled_by_user_type', sa.String(length=30), nullable=True),
+    sa.Column('cancelled_by_user_id', sa.UUID(), nullable=True),
+    sa.Column('cancellation_reason', sa.Text(), nullable=True),
     sa.Column('completed_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('deleted_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('id', sa.UUID(), nullable=False),
@@ -325,6 +328,7 @@ def upgrade() -> None:
     sa.CheckConstraint("\n            status IN (\n                'REPORTED',\n                'ANALYZING',\n                'SEARCHING_PROVIDER',\n                'WAITING_PROVIDER_RESPONSE',\n                'PROVIDER_ACCEPTED',\n                'ASSIGNING_TECHNICIAN',\n                'TECHNICIAN_ASSIGNED',\n                'EN_ROUTE',\n                'ARRIVED',\n                'IN_SERVICE',\n                'COMPLETED',\n                'CANCELLED',\n                'UNATTENDED'\n            )\n            ", name=op.f('ck_incident_incident_status_valid')),
     sa.CheckConstraint("priority IN ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL')", name=op.f('ck_incident_incident_priority_valid')),
     sa.CheckConstraint('latitude BETWEEN -90 AND 90 AND longitude BETWEEN -180 AND 180', name=op.f('ck_incident_incident_coordinates_valid')),
+    sa.ForeignKeyConstraint(['cancelled_by_user_id'], ['app_user.id'], name=op.f('fk_incident_cancelled_by_user_id_app_user'), ondelete='SET NULL'),
     sa.ForeignKeyConstraint(['customer_id'], ['customer.id'], name=op.f('fk_incident_customer_id_customer'), ondelete='RESTRICT'),
     sa.ForeignKeyConstraint(['service_catalog_id'], ['service_catalog.id'], name=op.f('fk_incident_service_catalog_id_service_catalog'), ondelete='SET NULL'),
     sa.ForeignKeyConstraint(['vehicle_id'], ['vehicle.id'], name=op.f('fk_incident_vehicle_id_vehicle'), ondelete='RESTRICT'),

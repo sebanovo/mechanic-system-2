@@ -14,6 +14,7 @@ from app.common.exceptions import (
 )
 from app.common.uuid import to_uuid
 from app.core.ai.media import AIMediaInput
+from app.core.ai.exceptions import AIResponseError
 from app.core.audit.constants import (
     AssignmentAuditEvent,
     AssignmentTrackingEventAuditEvent,
@@ -227,6 +228,12 @@ class IncidentService(BaseService):
         ai_media: list[AIMediaInput] | None = None,
     ) -> Incident:
         customer = self._get_current_customer_or_fail()
+        logger.info(
+            "Incident create requested. customer_id=%s vehicle_id=%s has_media=%s",
+            customer.id,
+            payload.vehicle_id,
+            bool(ai_media),
+        )
         active_incident = self.repository.get_active_by_customer(str(customer.id))
 
         if active_incident is not None:
@@ -258,6 +265,13 @@ class IncidentService(BaseService):
         )
 
         incident = self.repository.add(incident)
+        logger.info(
+            "Incident persisted. incident_id=%s incident_code=%s status=%s priority=%s",
+            incident.id,
+            incident.incident_code,
+            incident.status,
+            incident.priority,
+        )
 
         self.audit.created(
             incident,
@@ -275,6 +289,11 @@ class IncidentService(BaseService):
 
         self.db.commit()
         self.db.refresh(incident)
+        logger.info(
+            "Incident committed. incident_id=%s incident_code=%s",
+            incident.id,
+            incident.incident_code,
+        )
 
         self._run_incident_ai_analysis_if_enabled(
             incident,
@@ -903,7 +922,17 @@ class IncidentService(BaseService):
         media: list[AIMediaInput] | None = None,
     ) -> None:
         if not settings.ai_enabled:
+            logger.info(
+                "Incident AI analysis skipped. incident_id=%s reason=AI_DISABLED",
+                incident.id,
+            )
             return
+
+        logger.info(
+            "Incident AI analysis triggered. incident_id=%s media_count=%s",
+            incident.id,
+            len(media or []),
+        )
 
         try:
             analysis_service = IncidentAiAnalysisService(
@@ -914,10 +943,11 @@ class IncidentService(BaseService):
                 incident_id=str(incident.id),
                 analysis_input=self._build_analysis_input(incident, media),
             )
-        except Exception:
-            logger.exception(
-                "No se pudo generar el análisis IA del incidente %s",
+        except Exception as exc:
+            logger.warning(
+                "No se pudo generar el análisis IA del incidente %s: %s",
                 incident.id,
+                exc,
             )
 
     def _build_analysis_input(
