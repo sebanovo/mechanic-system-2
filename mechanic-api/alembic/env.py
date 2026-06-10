@@ -12,6 +12,7 @@ from app.modules.assignment_tracking_event import (
     models as assignment_tracking_event_models,  # noqa: F401
 )
 from app.modules.audit import models as audit_models  # noqa: F401
+from app.modules.dynamic_report import models as dynamic_report_models  # noqa: F401
 from app.modules.identity.customer import models as customer_models  # noqa: F401
 from app.modules.identity.membership import models as membership_models  # noqa: F401
 from app.modules.identity.provider import models as provider_models  # noqa: F401

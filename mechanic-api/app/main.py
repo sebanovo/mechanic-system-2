@@ -87,6 +87,9 @@ from app.modules.dashboard.technician_router import (
 from app.modules.dashboard.platform_dashboard.router import (
     router as dashboard_platform_router,
 )
+from app.modules.dynamic_report.router import (
+    router as dynamic_report_router,
+)
 from app.modules.incident.client_router import router as incident_client_router
 from app.modules.incident.platform_router import router as incident_platform_router
 from app.modules.incident.tenant_router import router as incident_tenant_router
@@ -372,6 +375,10 @@ def create_application() -> FastAPI:
     application.include_router(platform_summary_router, prefix=settings.api_v1_prefix)
     application.include_router(
         dashboard_platform_router,
+        prefix=settings.api_v1_prefix,
+    )
+    application.include_router(
+        dynamic_report_router,
         prefix=settings.api_v1_prefix,
     )
     application.include_router(

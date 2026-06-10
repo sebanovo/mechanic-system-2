@@ -22,6 +22,7 @@ OPENAPI_TAGS = [
     {"name": "Tenants", "description": "Contexto y administración de tenant."},
     {"name": "Platform", "description": "Superadministración de plataforma."},
     {"name": "Audit", "description": "Consulta de eventos de auditoría."},
+    {"name": "Dynamic Reports", "description": "Reportes dinámicos impulsados por IA."},
 ]
 
 
