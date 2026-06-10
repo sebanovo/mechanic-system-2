@@ -275,6 +275,14 @@ class AssignmentTrackingEventAuditEvent:
         ASSIGNMENT_TRACKING_EVENT_CREATED,
     )
 
+
+class DynamicReportAuditEvent:
+    REPORT_EXECUTED = "DYNAMIC_REPORT_EXECUTED"
+
+    ALL = (
+        REPORT_EXECUTED,
+    )
+
 AUDIT_EVENT_INCIDENT_CANDIDATE_PROVIDER_CREATED = (
     IncidentCandidateProviderAuditEvent.INCIDENT_CANDIDATE_PROVIDER_CREATED
 )
@@ -303,6 +311,8 @@ AUDIT_EVENT_INCIDENT_OFFER_EXPIRED = IncidentOfferAuditEvent.INCIDENT_OFFER_EXPI
 AUDIT_EVENT_INCIDENT_OFFER_STATUS_CHANGED = (
     IncidentOfferAuditEvent.INCIDENT_OFFER_STATUS_CHANGED
 )
+
+AUDIT_EVENT_DYNAMIC_REPORT_EXECUTED = DynamicReportAuditEvent.REPORT_EXECUTED
 
 AUDIT_ACTOR_SYSTEM = AuditActorType.SYSTEM
 AUDIT_ACTOR_SUPERADMIN = AuditActorType.SUPERADMIN
@@ -393,4 +403,5 @@ AUDIT_EVENT_TYPES = (
     *IncidentOfferAuditEvent.ALL,
     *AssignmentAuditEvent.ALL,
     *AssignmentTrackingEventAuditEvent.ALL,
+    *DynamicReportAuditEvent.ALL,
 )

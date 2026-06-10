@@ -236,14 +236,38 @@ class IncidentOfferService(BaseService):
         incident: Incident,
         offer: IncidentOffer,
     ) -> None:
+        logger.info(
+            "Offer received notification started. incident_id=%s offer_id=%s provider_profile_id=%s tenant_id=%s",
+            incident.id,
+            offer.id,
+            provider_profile_id,
+            tenant_id,
+        )
+
         try:
-            self.business_notifications.send_offer_received(
+            notification = self.business_notifications.send_offer_received(
                 provider_owner_user_id=None,
                 tenant_id=tenant_id,
                 incident_id=str(incident.id),
                 offer_id=str(offer.id),
             )
+
+            logger.info(
+                "Offer received notification dispatched. incident_id=%s offer_id=%s notification_id=%s provider_profile_id=%s tenant_id=%s",
+                incident.id,
+                offer.id,
+                getattr(notification, "id", None),
+                provider_profile_id,
+                tenant_id,
+            )
         except Exception:
+            logger.exception(
+                "Offer received notification failed. incident_id=%s offer_id=%s provider_profile_id=%s tenant_id=%s",
+                incident.id,
+                offer.id,
+                provider_profile_id,
+                tenant_id,
+            )
             return
 
     def accept_owned(
@@ -412,22 +436,69 @@ class IncidentOfferService(BaseService):
         provider_profile_id: str,
         tenant_id: str | None,
     ) -> None:
+        logger.info(
+            "Offer accepted notification started. incident_id=%s offer_id=%s customer_id=%s provider_profile_id=%s tenant_id=%s",
+            incident.id,
+            offer.id,
+            incident.customer_id,
+            provider_profile_id,
+            tenant_id,
+        )
+
         detail = self.customer_repository.get_detail_by_customer_id(incident.customer_id)
 
         if detail is None:
+            logger.warning(
+                "Offer accepted notification skipped: customer detail not found. incident_id=%s offer_id=%s customer_id=%s provider_profile_id=%s tenant_id=%s",
+                incident.id,
+                offer.id,
+                incident.customer_id,
+                provider_profile_id,
+                tenant_id,
+            )
             return
 
         _, customer_user = detail
 
+        if customer_user is None:
+            logger.warning(
+                "Offer accepted notification skipped: customer user not found. incident_id=%s offer_id=%s customer_id=%s provider_profile_id=%s tenant_id=%s",
+                incident.id,
+                offer.id,
+                incident.customer_id,
+                provider_profile_id,
+                tenant_id,
+            )
+            return
+
         try:
-            self.business_notifications.send_offer_accepted(
+            notification = self.business_notifications.send_offer_accepted(
                 recipient_user_id=str(customer_user.id),
                 tenant_id=tenant_id,
                 incident_id=str(incident.id),
                 offer_id=str(offer.id),
                 provider_profile_id=provider_profile_id,
             )
+
+            logger.info(
+                "Offer accepted notification dispatched. incident_id=%s offer_id=%s notification_id=%s recipient_user_id=%s provider_profile_id=%s tenant_id=%s",
+                incident.id,
+                offer.id,
+                getattr(notification, "id", None),
+                customer_user.id,
+                provider_profile_id,
+                tenant_id,
+            )
         except Exception:
+            logger.exception(
+                "Offer accepted notification failed. incident_id=%s offer_id=%s recipient_user_id=%s customer_id=%s provider_profile_id=%s tenant_id=%s",
+                incident.id,
+                offer.id,
+                customer_user.id,
+                incident.customer_id,
+                provider_profile_id,
+                tenant_id,
+            )
             return
 
     def _reject(

@@ -70,7 +70,15 @@ class BusinessNotificationService:
         tenant_id: str | None,
         incident_id: str,
         offer_id: str,
-    ) -> None:
+    ):
+        logger.info(
+            "Business notification offer received prepared. incident_id=%s offer_id=%s tenant_id=%s provider_owner_user_id=%s",
+            incident_id,
+            offer_id,
+            tenant_id,
+            provider_owner_user_id,
+        )
+
         owner = provider_owner_user_id
 
         if owner is None and tenant_id is not None:
@@ -78,9 +86,15 @@ class BusinessNotificationService:
                 tenant_id=tenant_id,
             )
         if owner is None:
+            logger.warning(
+                "Business notification offer received skipped. incident_id=%s offer_id=%s tenant_id=%s reason=no_recipient",
+                incident_id,
+                offer_id,
+                tenant_id,
+            )
             return
 
-        self._send(
+        notification = self._send(
             recipient_user_id=owner,
             tenant_id=tenant_id,
             notification_type=NotificationType.OFFER_RECEIVED,
@@ -100,6 +114,17 @@ class BusinessNotificationService:
             },
         )
 
+        logger.info(
+            "Business notification offer received sent. incident_id=%s offer_id=%s notification_id=%s recipient_user_id=%s tenant_id=%s",
+            incident_id,
+            offer_id,
+            getattr(notification, "id", None),
+            owner,
+            tenant_id,
+        )
+
+        return notification
+
     def send_offer_accepted(
         self,
         *,
@@ -108,11 +133,26 @@ class BusinessNotificationService:
         incident_id: str,
         offer_id: str,
         provider_profile_id: str,
-    ) -> None:
+    ):
+        logger.info(
+            "Business notification offer accepted requested. incident_id=%s offer_id=%s recipient_user_id=%s provider_profile_id=%s tenant_id=%s",
+            incident_id,
+            offer_id,
+            recipient_user_id,
+            provider_profile_id,
+            tenant_id,
+        )
+
         incident = self.incident_repository.get_by_id(incident_id)
         offer = self.incident_offer_repository.get_by_id(offer_id)
 
         if incident is None:
+            logger.warning(
+                "Business notification offer accepted skipped: incident not found. incident_id=%s offer_id=%s recipient_user_id=%s",
+                incident_id,
+                offer_id,
+                recipient_user_id,
+            )
             return
 
         service_catalog = None
@@ -142,15 +182,6 @@ class BusinessNotificationService:
         provider_tenant = self.tenant_repository.get_by_id(provider_profile.tenant_id)
         provider_name = (
             provider_tenant.commercial_name if provider_tenant is not None else None
-        )
-
-        logger.info(
-            "Business notification offer accepted prepared. incident_id=%s offer_id=%s recipient_user_id=%s provider_name=%s customer_user_id=%s",
-            incident_id,
-            offer_id,
-            recipient_user_id,
-            provider_name,
-            customer_user.id,
         )
 
         content = build_client_offer_accepted_notification(
@@ -230,7 +261,16 @@ class BusinessNotificationService:
             )
         )
 
-        self._send(
+        logger.info(
+            "Business notification offer accepted prepared. incident_id=%s offer_id=%s recipient_user_id=%s provider_name=%s customer_user_id=%s",
+            incident_id,
+            offer_id,
+            recipient_user_id,
+            provider_name,
+            customer_user.id,
+        )
+
+        notification = self._send(
             recipient_user_id=recipient_user_id,
             tenant_id=tenant_id,
             notification_type=NotificationType.OFFER_ACCEPTED,
@@ -248,12 +288,15 @@ class BusinessNotificationService:
             },
         )
         logger.info(
-            "Business notification offer accepted sent request completed. incident_id=%s offer_id=%s recipient_user_id=%s provider_name=%s",
+            "Business notification offer accepted sent request completed. incident_id=%s offer_id=%s notification_id=%s recipient_user_id=%s provider_name=%s",
             incident_id,
             offer_id,
+            getattr(notification, "id", None),
             recipient_user_id,
             provider_name,
         )
+
+        return notification
 
     def send_assignment_created(
         self,
@@ -1108,7 +1151,7 @@ class BusinessNotificationService:
         body: str,
         data: dict[str, Any],
         push_data: dict[str, str] | None = None,
-    ) -> None:
+    ):
         logger.info(
             "Business notification send requested. recipient_user_id=%s tenant_id=%s notification_type=%s has_push_data=%s",
             recipient_user_id,
@@ -1116,7 +1159,7 @@ class BusinessNotificationService:
             notification_type,
             push_data is not None,
         )
-        self.notification_service.send(
+        notification = self.notification_service.send(
             NotificationSendRequest(
                 recipient_user_id=recipient_user_id,
                 tenant_id=tenant_id,
@@ -1133,6 +1176,8 @@ class BusinessNotificationService:
             tenant_id,
             notification_type,
         )
+
+        return notification
 
     def _get_tenant_owner_user_id(self, tenant_id: str) -> str | None:
         memberships, _ = self.membership_repository.list_by_tenant_with_users(

@@ -2,6 +2,7 @@ from app.core.audit.constants import (
     AuditActorType,
     AuthAuditEvent,
     ClientAuditEvent,
+    DynamicReportAuditEvent,
     ProviderAuditEvent,
     ProviderServiceAuditEvent,
     ServiceCatalogAuditEvent,
@@ -24,4 +25,5 @@ __all__ = [
     "AuthAuditEvent",
     "ServiceCatalogAuditEvent",
     "ProviderServiceAuditEvent",
+    "DynamicReportAuditEvent",
 ]
