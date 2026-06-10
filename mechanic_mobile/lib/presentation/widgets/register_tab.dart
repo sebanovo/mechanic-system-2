@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mechanic_mobile/domain/entities/auth_entities.dart';
 
 import '../../constants/api_enums.dart';
+import 'app_widgets.dart';
 
 class RegisterTab extends StatelessWidget {
   const RegisterTab({
@@ -45,10 +46,9 @@ class RegisterTab extends StatelessWidget {
                 value == null || value.trim().isEmpty ? 'Requerido' : null,
           ),
           const SizedBox(height: 12),
-          TextFormField(
+          PasswordTextField(
             controller: password,
-            decoration: const InputDecoration(labelText: 'Contraseña'),
-            obscureText: true,
+            label: 'Contraseña',
             validator: (value) =>
                 value == null || value.isEmpty ? 'Requerido' : null,
           ),

@@ -24,59 +24,76 @@ class IncidentsPage extends StatelessWidget {
       });
     }
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-      children: [
-        SectionHeader(
-          title: 'Incidentes',
-          subtitle: 'Crea, revisa y cancela reportes de auxilio.',
-          actionLabel: 'Nuevo',
-          onAction: () => showIncidentForm(context),
-        ),
-        const SizedBox(height: 12),
-        if (vm.error != null)
-          ErrorBanner(message: vm.error!)
-        else if (vm.loading)
-          Skeletonizer(
-            enabled: true,
-            child: Column(
-              children: List.generate(
-                4,
-                (index) => Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: SurfaceCard(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
-                        Text('Grúa solicitada'),
-                        SizedBox(height: 10),
-                        Text('Estado pendiente'),
-                      ],
+    return RefreshIndicator(
+      onRefresh: () => context.read<IncidentsViewModel>().loadIncidents(),
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+        children: [
+          SectionHeader(
+            title: 'Incidentes',
+            subtitle: 'Crea, revisa y cancela reportes de auxilio.',
+            actionLabel: 'Nuevo',
+            onAction: () => showIncidentForm(context),
+          ),
+          const SizedBox(height: 12),
+          Align(
+            alignment: Alignment.centerRight,
+            child: OutlinedButton.icon(
+              onPressed: vm.loading
+                  ? null
+                  : () => context.read<IncidentsViewModel>().loadIncidents(),
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text('Refrescar'),
+            ),
+          ),
+          const SizedBox(height: 12),
+          if (vm.error != null) ...[
+            ErrorBanner(message: vm.error!),
+            const SizedBox(height: 12),
+          ],
+          if (vm.loading)
+            Skeletonizer(
+              enabled: true,
+              child: Column(
+                children: List.generate(
+                  4,
+                  (index) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: SurfaceCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          Text('Grúa solicitada'),
+                          SizedBox(height: 10),
+                          Text('Estado pendiente'),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          )
-        else if (vm.incidents?.items.isEmpty ?? true)
-          const EmptyStatePanel(
-            title: 'No hay incidentes activos',
-            subtitle: 'Cuando exista una emergencia se listará aquí.',
-            icon: Icons.sos_rounded,
-          )
-        else
-          ...vm.incidents!.items.map(
-            (incident) => Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: IncidentCard(
-                incident: incident,
-                onTap: () => context.go('/incidents/${incident.id}'),
-                onEdit: () => showIncidentForm(context, existing: incident),
-                onCancel: () => confirmCancelIncident(context, incident),
+            )
+          else if (vm.incidents?.items.isEmpty ?? true)
+            const EmptyStatePanel(
+              title: 'No hay incidentes activos',
+              subtitle: 'Cuando exista una emergencia se listará aquí.',
+              icon: Icons.sos_rounded,
+            )
+          else
+            ...vm.incidents!.items.map(
+              (incident) => Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: IncidentCard(
+                  incident: incident,
+                  onTap: () => context.go('/incidents/${incident.id}'),
+                  onEdit: () => showIncidentForm(context, existing: incident),
+                  onCancel: () => confirmCancelIncident(context, incident),
+                ),
               ),
             ),
-          ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -443,33 +460,6 @@ Future<void> confirmCancelIncident(
   }
 }
 
-Widget _vehicleOptionLabel(VehicleEntity vehicle) {
-  final parts = <String>[
-    vehicle.plateNumber,
-    if ((vehicle.brand ?? '').trim().isNotEmpty) vehicle.brand!.trim(),
-    if ((vehicle.model ?? '').trim().isNotEmpty) vehicle.model!.trim(),
-    if (vehicle.year != null) vehicle.year.toString(),
-    if ((vehicle.vehicleType).trim().isNotEmpty) vehicle.vehicleType,
-  ];
-  final subtitle = parts.where((part) => part.trim().isNotEmpty).join(' • ');
-  return SizedBox(
-    width: double.infinity,
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(vehicle.plateNumber, maxLines: 1, overflow: TextOverflow.ellipsis),
-        Text(
-          subtitle,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontSize: 12),
-        ),
-      ],
-    ),
-  );
-}
-
 Widget _vehiclePickerCard(
   BuildContext context, {
   required String value,
@@ -496,8 +486,8 @@ Widget _vehiclePickerCard(
                   child: Text(
                     'Vehículo',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ),
               ],
@@ -505,9 +495,9 @@ Widget _vehiclePickerCard(
             const SizedBox(height: 10),
             Text(
               value,
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 4),
             Text(helper, style: Theme.of(context).textTheme.bodySmall),
@@ -516,9 +506,9 @@ Widget _vehiclePickerCard(
               detail,
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.blueGrey,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: Colors.blueGrey),
             ),
           ],
         ),
@@ -545,48 +535,44 @@ class _VehiclePickerSheet extends StatelessWidget {
               ),
             ]
           : vehicles
-              .map(
-                (vehicle) => Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(20),
-                    onTap: () => Navigator.of(context).pop(vehicle),
-                    child: SurfaceCard(
-                      padding: const EdgeInsets.all(14),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _vehicleSelectionLabel(vehicle),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w800,
-                                ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            _vehicleSelectionDetail(vehicle),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                        ],
+                .map(
+                  (vehicle) => Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(20),
+                      onTap: () => Navigator.of(context).pop(vehicle),
+                      child: SurfaceCard(
+                        padding: const EdgeInsets.all(14),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _vehicleSelectionLabel(vehicle),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.w800),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _vehicleSelectionDetail(vehicle),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-              )
-              .toList(),
+                )
+                .toList(),
     );
   }
 }
 
 class _SheetScaffold extends StatelessWidget {
-  const _SheetScaffold({
-    required this.title,
-    required this.children,
-  });
+  const _SheetScaffold({required this.title, required this.children});
 
   final String title;
   final List<Widget> children;

@@ -130,21 +130,23 @@ String tenantServiceDetailsLabel(Map<String, dynamic> record) {
 }
 
 String tenantProviderServiceSummary(Map<String, dynamic> record) {
-  final source = _labelSource(record);
-  final nestedCatalog = _mapValue(source['service_catalog']);
+  final providerService = _mapValue(record['provider_service']);
+  final nestedCatalog = _mapValue(record['service_catalog']);
   final serviceName =
       nestedCatalog['service_name']?.toString().trim() ??
-      source['service_name']?.toString().trim() ??
+      providerService['service_name']?.toString().trim() ??
       '';
   final serviceCode =
       nestedCatalog['service_code']?.toString().trim() ??
-      source['service_code']?.toString().trim() ??
+      providerService['service_code']?.toString().trim() ??
       '';
+  final availability = providerService['is_available'] == true
+      ? 'Disponible'
+      : 'No disponible';
   final parts = <String>[
     if (serviceName.isNotEmpty) serviceName,
     if (serviceCode.isNotEmpty) serviceCode,
-    if ((source['is_available'] is bool))
-      (source['is_available'] == true ? 'Disponible' : 'No disponible'),
+    availability,
   ];
   return parts.isEmpty ? tenantRecordPrimaryLabel(record) : parts.join(' • ');
 }
@@ -152,16 +154,24 @@ String tenantProviderServiceSummary(Map<String, dynamic> record) {
 String tenantProviderServiceDetailsLabel(Map<String, dynamic> record) {
   final providerService = _mapValue(record['provider_service']);
   final nestedCatalog = _mapValue(record['service_catalog']);
-  final serviceCatalogId =
-      providerService['service_catalog_id']?.toString().trim() ??
-      record['service_catalog_id']?.toString().trim() ??
+  final catalogName =
+      nestedCatalog['service_name']?.toString().trim() ??
+      record['service_name']?.toString().trim() ??
       '';
+  final catalogCode =
+      nestedCatalog['service_code']?.toString().trim() ??
+      record['service_code']?.toString().trim() ??
+      '';
+  final providerStatus =
+      providerService['is_available'] == true ? 'Disponible' : 'No disponible';
   final customMinPrice =
       providerService['custom_min_price']?.toString().trim() ?? '';
   final customMaxPrice =
       providerService['custom_max_price']?.toString().trim() ?? '';
   final parts = <String>[
-    if ((serviceCatalogId).isNotEmpty) 'Catálogo $serviceCatalogId',
+    if (catalogName.isNotEmpty) catalogName,
+    if (catalogCode.isNotEmpty) catalogCode,
+    providerStatus,
     if (customMinPrice.isNotEmpty) 'Min Bs $customMinPrice',
     if (customMaxPrice.isNotEmpty) 'Max Bs $customMaxPrice',
     if ((nestedCatalog['category']?.toString().trim() ?? '').isNotEmpty)
@@ -200,9 +210,28 @@ String tenantTechnicianServiceSummary(Map<String, dynamic> record) {
 
 String tenantTechnicianServiceDetailsLabel(Map<String, dynamic> record) {
   final technicianService = _mapValue(record['technician_service']);
+  final technician = _mapValue(record['technician']);
+  final technicianUser = _mapValue(technician['user']);
   final providerService = _mapValue(record['provider_service']);
   final nestedCatalog = _mapValue(providerService['service_catalog']);
+  final technicianName = [
+    technicianUser['first_name']?.toString().trim() ?? '',
+    technicianUser['last_name']?.toString().trim() ?? '',
+  ].where((part) => part.isNotEmpty).join(' ').trim();
+  final technicianCode = technician['technician_code']?.toString().trim() ?? '';
+  final serviceName =
+      nestedCatalog['service_name']?.toString().trim() ??
+      providerService['service_name']?.toString().trim() ??
+      '';
+  final serviceCode =
+      nestedCatalog['service_code']?.toString().trim() ??
+      providerService['service_code']?.toString().trim() ??
+      '';
   final parts = <String>[
+    if (technicianName.isNotEmpty) technicianName,
+    if (technicianCode.isNotEmpty) technicianCode,
+    if (serviceName.isNotEmpty) serviceName,
+    if (serviceCode.isNotEmpty) serviceCode,
     if ((technicianService['skill_level']?.toString().trim() ?? '').isNotEmpty)
       'Skill ${technicianService['skill_level']}',
     if ((technicianService['is_enabled'] is bool))
@@ -245,7 +274,7 @@ void showTenantRecordDetails(
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
     builder: (context) {
-      final entries = record.entries.toList();
+      final fields = _detailFieldsForTitle(title, record);
       return DraggableScrollableSheet(
         initialChildSize: 0.72,
         minChildSize: 0.45,
@@ -278,22 +307,14 @@ void showTenantRecordDetails(
                   ),
                 ),
                 const SizedBox(height: 12),
-                ...entries.map(
+                ...fields.map(
                   (entry) => Padding(
                     padding: const EdgeInsets.only(bottom: 10),
                     child: SurfaceCard(
                       padding: const EdgeInsets.all(14),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            entry.key.toString(),
-                            style: Theme.of(context).textTheme.labelLarge
-                                ?.copyWith(fontWeight: FontWeight.w800),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(entry.value?.toString() ?? '-'),
-                        ],
+                      child: _DetailField(
+                        label: entry.$1,
+                        value: entry.$2,
                       ),
                     ),
                   ),
@@ -368,4 +389,133 @@ String _formatMoney(dynamic value) {
 String _formatMinutes(dynamic value) {
   final text = value?.toString().trim() ?? '';
   return text.isEmpty || text == 'null' ? '' : '$text min';
+}
+
+List<(String, String)> _detailFieldsForTitle(
+  String title,
+  Map<String, dynamic> record,
+) {
+  switch (title) {
+    case 'Servicios del proveedor':
+      return [
+        ('Servicio', tenantProviderServiceSummary(record)),
+        ('Detalle', tenantProviderServiceDetailsLabel(record)),
+        (
+          'Catálogo',
+          _mapValue(record['service_catalog'])['id']?.toString() ??
+              _mapValue(record['provider_service'])['service_catalog_id']?.toString() ??
+              '-',
+        ),
+        (
+          'Proveedor',
+          _mapValue(record['provider_service'])['provider_profile_id']?.toString() ??
+              '-',
+        ),
+        (
+          'Disponibilidad',
+          _mapValue(record['provider_service'])['is_available'] == true
+              ? 'Disponible'
+              : 'No disponible',
+        ),
+        (
+          'Precio mínimo',
+          _mapValue(record['provider_service'])['custom_min_price']?.toString() ?? '-',
+        ),
+        (
+          'Precio máximo',
+          _mapValue(record['provider_service'])['custom_max_price']?.toString() ?? '-',
+        ),
+      ];
+    case 'Servicios técnicos':
+      return [
+        ('Servicio técnico', tenantTechnicianServiceSummary(record)),
+        ('Detalle', tenantTechnicianServiceDetailsLabel(record)),
+        (
+          'Técnico',
+          _mapValue(record['technician'])['technician_code']?.toString() ??
+              _mapValue(record['technician'])['id']?.toString() ??
+              '-',
+        ),
+        (
+          'Técnico',
+          [
+            _mapValue(record['technician'])['user'] is Map
+                ? _mapValue(_mapValue(record['technician'])['user'])['first_name']?.toString().trim() ?? ''
+                : '',
+            _mapValue(record['technician'])['user'] is Map
+                ? _mapValue(_mapValue(record['technician'])['user'])['last_name']?.toString().trim() ?? ''
+                : '',
+          ].where((part) => part.isNotEmpty).join(' ').trim().isEmpty
+              ? '-'
+              : [
+                  _mapValue(record['technician'])['user'] is Map
+                      ? _mapValue(_mapValue(record['technician'])['user'])['first_name']?.toString().trim() ?? ''
+                      : '',
+                  _mapValue(record['technician'])['user'] is Map
+                      ? _mapValue(_mapValue(record['technician'])['user'])['last_name']?.toString().trim() ?? ''
+                      : '',
+                ].where((part) => part.isNotEmpty).join(' ').trim(),
+        ),
+        (
+          'Servicio proveedor',
+          _mapValue(record['provider_service'])['id']?.toString() ?? '-',
+        ),
+        (
+          'Skill level',
+          _mapValue(record['technician_service'])['skill_level']?.toString() ?? '-',
+        ),
+        (
+          'Estado',
+          _mapValue(record['technician_service'])['is_enabled'] == true
+              ? 'Habilitado'
+              : 'Deshabilitado',
+        ),
+      ];
+    case 'Catálogo de servicios':
+      return [
+        ('Servicio', tenantCatalogSummary(record)),
+        ('Detalle', tenantServiceDetailsLabel(record)),
+        ('Código', _mapValue(record)['service_code']?.toString() ?? '-'),
+        ('Categoría', _mapValue(record)['category']?.toString() ?? '-'),
+        ('Precio mínimo', _formatMoney(_mapValue(record)['min_price']).isEmpty ? '-' : _formatMoney(_mapValue(record)['min_price'])),
+        ('Precio máximo', _formatMoney(_mapValue(record)['max_price']).isEmpty ? '-' : _formatMoney(_mapValue(record)['max_price'])),
+        ('Duración mínima', _formatMinutes(_mapValue(record)['min_duration_minutes']).isEmpty ? '-' : _formatMinutes(_mapValue(record)['min_duration_minutes'])),
+        ('Duración máxima', _formatMinutes(_mapValue(record)['max_duration_minutes']).isEmpty ? '-' : _formatMinutes(_mapValue(record)['max_duration_minutes'])),
+        ('Activo', _mapValue(record)['is_active'] == true ? 'Sí' : 'No'),
+      ];
+    default:
+      return record.entries
+          .map((entry) => (entry.key.toString(), entry.value?.toString() ?? '-'))
+          .toList();
+  }
+}
+
+class _DetailField extends StatelessWidget {
+  const _DetailField({
+    required this.label,
+    required this.value,
+  });
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          value.isEmpty ? '-' : value,
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
+      ],
+    );
+  }
 }

@@ -6,6 +6,7 @@ export 'info_row.dart';
 export 'incident_card.dart';
 export 'incident_preview_card.dart';
 export 'metric_card.dart';
+export 'password_text_field.dart';
 export 'section_header.dart';
 export 'vehicle_card.dart';
 export 'status_badge.dart';

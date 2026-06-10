@@ -292,20 +292,14 @@ Future<void> _showPasswordDialog(BuildContext context) async {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextFormField(
+              PasswordTextField(
                 controller: currentPassword,
-                decoration: const InputDecoration(
-                  labelText: 'Contraseña actual',
-                ),
-                obscureText: true,
+                label: 'Contraseña actual',
               ),
               const SizedBox(height: 10),
-              TextFormField(
+              PasswordTextField(
                 controller: newPassword,
-                decoration: const InputDecoration(
-                  labelText: 'Nueva contraseña',
-                ),
-                obscureText: true,
+                label: 'Nueva contraseña',
               ),
             ],
           ),

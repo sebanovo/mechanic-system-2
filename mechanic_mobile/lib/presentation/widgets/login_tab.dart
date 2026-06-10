@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'app_widgets.dart';
+
 class LoginTab extends StatelessWidget {
   const LoginTab({
     super.key,
@@ -30,10 +32,9 @@ class LoginTab extends StatelessWidget {
                 value == null || value.trim().isEmpty ? 'Requerido' : null,
           ),
           const SizedBox(height: 12),
-          TextFormField(
+          PasswordTextField(
             controller: password,
-            decoration: const InputDecoration(labelText: 'Contraseña'),
-            obscureText: true,
+            label: 'Contraseña',
             validator: (value) =>
                 value == null || value.isEmpty ? 'Requerido' : null,
           ),
