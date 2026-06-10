@@ -60,6 +60,12 @@ class IncidentDispatchService(BaseService):
         incident_id: str,
         analysis_id: str,
     ) -> IncidentDispatchResult:
+        logger.info(
+            "Incident dispatch started. incident_id=%s analysis_id=%s",
+            incident_id,
+            analysis_id,
+        )
+
         incident = self.incident_repository.get_by_id(incident_id)
 
         if incident is None or incident.deleted_at is not None:
@@ -123,6 +129,13 @@ class IncidentDispatchService(BaseService):
             incident_longitude=incident.longitude,
         )
 
+        logger.info(
+            "Incident eligible providers search finished. incident_id=%s service_catalog_id=%s eligible_count=%s",
+            incident.id,
+            incident.service_catalog_id,
+            len(eligible_providers),
+        )
+
         if not eligible_providers:
             unattended_reason = self._resolve_unattended_reason(
                 service_catalog_id=str(incident.service_catalog_id),
@@ -166,9 +179,21 @@ class IncidentDispatchService(BaseService):
             candidates=scored_candidates,
         )
 
+        logger.info(
+            "Incident candidate providers created. incident_id=%s total=%s",
+            incident.id,
+            len(candidate_providers),
+        )
+
         offers = self.create_incident_offers(
             incident_id=str(incident.id),
             candidate_providers=candidate_providers,
+        )
+
+        logger.info(
+            "Incident offers generated. incident_id=%s total=%s",
+            incident.id,
+            len(offers),
         )
 
         tenant_by_provider_id = {
@@ -227,6 +252,12 @@ class IncidentDispatchService(BaseService):
             service_catalog_id=service_catalog_id,
         )
 
+        logger.info(
+            "Incident provider eligibility query returned. service_catalog_id=%s rows=%s",
+            service_catalog_id,
+            len(rows),
+        )
+
         candidates: list[EligibleProviderCandidate] = []
 
         for provider_profile, provider_service, enabled_count, available_count in rows:
@@ -258,6 +289,12 @@ class IncidentDispatchService(BaseService):
                     distance_km=distance_km,
                 )
             )
+
+        logger.info(
+            "Incident eligible providers normalized. service_catalog_id=%s candidates=%s",
+            service_catalog_id,
+            len(candidates),
+        )
 
         return candidates
 
@@ -307,6 +344,12 @@ class IncidentDispatchService(BaseService):
 
         self.db.flush()
 
+        logger.info(
+            "Incident candidate provider batch finished. incident_id=%s total=%s",
+            incident_id,
+            len(created_candidates),
+        )
+
         return created_candidates
 
     def create_incident_offers(
@@ -349,7 +392,21 @@ class IncidentDispatchService(BaseService):
             offer = self.offer_repository.add(offer)
             created_offers.append(offer)
 
+            logger.info(
+                "Incident offer created. incident_id=%s candidate_provider_id=%s provider_profile_id=%s expires_at=%s",
+                incident_id,
+                candidate.id,
+                candidate.provider_profile_id,
+                expires_at.isoformat(),
+            )
+
         self.db.flush()
+
+        logger.info(
+            "Incident offer batch finished. incident_id=%s total=%s",
+            incident_id,
+            len(created_offers),
+        )
 
         return created_offers
 
@@ -359,18 +416,38 @@ class IncidentDispatchService(BaseService):
         offers: list[IncidentOffer],
         tenant_by_provider_id: dict[str, str],
     ) -> None:
+        logger.info(
+            "Incident offer notifications started. total_offers=%s",
+            len(offers),
+        )
+
         for offer in offers:
             tenant_id = tenant_by_provider_id.get(str(offer.provider_profile_id))
 
             if tenant_id is None:
+                logger.info(
+                    "Incident offer notification skipped. offer_id=%s reason=tenant_not_found",
+                    offer.id,
+                )
                 continue
 
             try:
+                logger.info(
+                    "Incident offer notification sending. offer_id=%s tenant_id=%s provider_profile_id=%s",
+                    offer.id,
+                    tenant_id,
+                    offer.provider_profile_id,
+                )
                 self.business_notifications.send_incident_offer_created(
                     tenant_id=tenant_id,
                     incident_id=str(offer.incident_id),
                     offer_id=str(offer.id),
                     provider_profile_id=str(offer.provider_profile_id),
+                )
+                logger.info(
+                    "Incident offer notification sent. offer_id=%s tenant_id=%s",
+                    offer.id,
+                    tenant_id,
                 )
             except Exception:
                 logger.exception(
@@ -448,12 +525,25 @@ class IncidentDispatchService(BaseService):
 
     def _mark_incident_unattended(self, incident, *, reason: str) -> None:
         if incident.status in FINAL_INCIDENT_STATUSES or incident.status == "UNATTENDED":
+            logger.info(
+                "Incident unattended skipped. incident_id=%s status=%s reason=%s",
+                incident.id,
+                incident.status,
+                reason,
+            )
             return
 
         previous_status = incident.status
         incident.status = "UNATTENDED"
         incident.unattended_reason = reason
         incident.unattended_at = datetime.now(timezone.utc)
+
+        logger.info(
+            "Incident marked as unattended. incident_id=%s previous_status=%s reason=%s",
+            incident.id,
+            previous_status,
+            reason,
+        )
 
         self.db.flush()
 
@@ -495,6 +585,10 @@ class IncidentDispatchService(BaseService):
         if accepted is not None:
             incident.status = "PROVIDER_ACCEPTED"
             self.db.flush()
+            logger.info(
+                "Incident offer outcome resolved. incident_id=%s result=ACCEPTED",
+                incident_id,
+            )
             return
 
         pending_offers, _ = self.offer_repository.list_pending_by_incident(
@@ -506,6 +600,11 @@ class IncidentDispatchService(BaseService):
         if pending_offers:
             incident.status = "WAITING_PROVIDER_RESPONSE"
             self.db.flush()
+            logger.info(
+                "Incident offer outcome resolved. incident_id=%s result=WAITING_PROVIDER_RESPONSE pending_count=%s",
+                incident_id,
+                len(pending_offers),
+            )
             return
 
         previous_status = incident.status
@@ -527,6 +626,11 @@ class IncidentDispatchService(BaseService):
         self.business_notifications.send_incident_unattended(
             incident_id=str(incident.id),
             unattended_reason=IncidentUnattendedReason.NO_PROVIDER_ACCEPTED,
+        )
+        logger.info(
+            "Incident offer outcome resolved. incident_id=%s result=UNATTENDED reason=%s",
+            incident_id,
+            IncidentUnattendedReason.NO_PROVIDER_ACCEPTED,
         )
 
     def _normalize_upper(self, value: str | None) -> str | None:

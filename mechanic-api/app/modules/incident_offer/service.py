@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timedelta, timezone
 
 from app.common.exceptions import ConflictException, NotFoundException
@@ -27,6 +28,8 @@ from app.modules.incident_offer.schemas import (
     IncidentOfferResponseRequest,
 )
 from app.modules.notification.business_notifications import BusinessNotificationService
+
+logger = logging.getLogger(__name__)
 
 FINAL_OFFER_STATUSES = {"ACCEPTED", "REJECTED", "EXPIRED", "CANCELLED"}
 
@@ -129,6 +132,11 @@ class IncidentOfferService(BaseService):
         incident_id: str,
         payload: IncidentOfferCreateRequest,
     ) -> IncidentOffer:
+        logger.info(
+            "Incident offer creation requested. incident_id=%s candidate_provider_id=%s",
+            incident_id,
+            payload.candidate_provider_id,
+        )
         candidate, incident, provider_profile = self._get_candidate_detail_or_fail(
             payload.candidate_provider_id
         )
@@ -170,6 +178,13 @@ class IncidentOfferService(BaseService):
         )
 
         offer = self.repository.add(offer)
+        logger.info(
+            "Incident offer persisted. incident_id=%s offer_id=%s candidate_provider_id=%s provider_profile_id=%s",
+            incident.id,
+            offer.id,
+            candidate.id,
+            provider_profile.id,
+        )
 
         self._notify_offer_received(
             provider_profile_id=str(provider_profile.id),
@@ -181,6 +196,12 @@ class IncidentOfferService(BaseService):
         incident.status = "WAITING_PROVIDER_RESPONSE"
 
         self.db.flush()
+        logger.info(
+            "Incident offer prepared for provider response. incident_id=%s offer_id=%s status=%s",
+            incident.id,
+            offer.id,
+            offer.offer_status,
+        )
 
         self.audit.created(
             offer,
@@ -198,6 +219,12 @@ class IncidentOfferService(BaseService):
 
         self.db.commit()
         self.db.refresh(offer)
+
+        logger.info(
+            "Incident offer flow finished. incident_id=%s offer_id=%s",
+            incident.id,
+            offer.id,
+        )
 
         return offer
 
@@ -287,8 +314,6 @@ class IncidentOfferService(BaseService):
         tenant_id: str | None,
         payload: IncidentOfferResponseRequest | None,
     ) -> IncidentOffer:
-        self._ensure_pending(offer)
-        self._ensure_valid_transition(offer.offer_status, "ACCEPTED")
         if self._is_expired(offer):
             self._expire_offer_and_candidate(
                 offer=offer,
@@ -297,7 +322,10 @@ class IncidentOfferService(BaseService):
                 tenant_id=tenant_id,
                 reason="expired_by_validation",
             )
-            raise ConflictException("La oferta ha vencido y no puede rechazarse.")
+            raise ConflictException("La oferta ya expiró y no puede aceptarse.")
+
+        self._ensure_pending(offer)
+        self._ensure_valid_transition(offer.offer_status, "ACCEPTED")
 
         accepted_offer = self.repository.get_accepted_by_incident(str(incident.id))
         if accepted_offer is not None and str(accepted_offer.id) != str(offer.id):
@@ -332,6 +360,28 @@ class IncidentOfferService(BaseService):
             offer=offer,
             provider_profile_id=str(offer.provider_profile_id),
             tenant_id=tenant_id,
+        )
+
+        customer_detail = self.customer_repository.get_detail_by_customer_id(
+            incident.customer_id
+        )
+        customer_user_id = (
+            str(customer_detail[1].id)
+            if customer_detail is not None and customer_detail[1] is not None
+            else None
+        )
+
+        logger.info(
+            "Incident offer accepted. incident_id=%s offer_id=%s provider_profile_id=%s",
+            incident.id,
+            offer.id,
+            offer.provider_profile_id,
+        )
+        logger.info(
+            "Incident offer accepted notification requested. incident_id=%s offer_id=%s customer_user_id=%s",
+            incident.id,
+            offer.id,
+            customer_user_id,
         )
 
         self.db.flush()
@@ -389,8 +439,6 @@ class IncidentOfferService(BaseService):
         tenant_id: str | None,
         payload: IncidentOfferResponseRequest | None,
     ) -> IncidentOffer:
-        self._ensure_pending(offer)
-        self._ensure_valid_transition(offer.offer_status, "REJECTED")
         if self._is_expired(offer):
             self._expire_offer_and_candidate(
                 offer=offer,
@@ -399,7 +447,10 @@ class IncidentOfferService(BaseService):
                 tenant_id=tenant_id,
                 reason="expired_by_validation",
             )
-            raise ConflictException("La oferta ha vencido y no puede aceptarse.")
+            raise ConflictException("La oferta ya expiró y no puede rechazarse.")
+
+        self._ensure_pending(offer)
+        self._ensure_valid_transition(offer.offer_status, "REJECTED")
 
         offer.offer_status = "REJECTED"
         offer.response_message = (
@@ -412,6 +463,13 @@ class IncidentOfferService(BaseService):
         candidate.candidate_status = "DISCARDED"
 
         self.db.flush()
+
+        logger.info(
+            "Incident offer rejected. incident_id=%s offer_id=%s candidate_provider_id=%s",
+            incident.id,
+            offer.id,
+            candidate.id,
+        )
 
         self.audit.updated(
             offer,
@@ -447,6 +505,12 @@ class IncidentOfferService(BaseService):
 
         self.db.flush()
 
+        logger.info(
+            "Incident offer cancelled. offer_id=%s tenant_id=%s",
+            offer.id,
+            tenant_id,
+        )
+
         self.audit.updated(
             offer,
             IncidentOfferAuditEvent.INCIDENT_OFFER_CANCELLED,
@@ -481,6 +545,13 @@ class IncidentOfferService(BaseService):
             candidate=candidate,
             tenant_id=tenant_id,
             reason="manual_expire",
+        )
+
+        logger.info(
+            "Incident offer expired. offer_id=%s incident_id=%s candidate_provider_id=%s",
+            offer.id,
+            incident.id if incident is not None else None,
+            candidate.id if candidate is not None else None,
         )
 
         if incident is not None:
@@ -566,8 +637,22 @@ class IncidentOfferService(BaseService):
         return detail
 
     def _ensure_pending(self, offer: IncidentOffer) -> None:
-        if offer.offer_status != "PENDING":
-            raise ConflictException("La oferta ya fue respondida o no está pendiente.")
+        if offer.offer_status == "PENDING":
+            return
+
+        if offer.offer_status == "EXPIRED":
+            raise ConflictException("La oferta ya expiró.")
+
+        if offer.offer_status == "ACCEPTED":
+            raise ConflictException("La oferta ya fue aceptada.")
+
+        if offer.offer_status == "REJECTED":
+            raise ConflictException("La oferta ya fue rechazada.")
+
+        if offer.offer_status == "CANCELLED":
+            raise ConflictException("La oferta fue cancelada.")
+
+        raise ConflictException("La oferta no está pendiente.")
 
     def _ensure_valid_transition(self, current_status: str, next_status: str) -> None:
         allowed_next_statuses = self.ALLOWED_OFFER_TRANSITIONS.get(current_status, set())
@@ -667,6 +752,10 @@ class IncidentOfferService(BaseService):
         if any(offer.offer_status == "ACCEPTED" for offer, _, _, _ in offers):
             incident.status = "PROVIDER_ACCEPTED"
             self.db.flush()
+            logger.info(
+                "Incident offer outcome resolved. incident_id=%s result=ACCEPTED",
+                incident_id,
+            )
             return
 
         now = datetime.now(timezone.utc)
@@ -679,6 +768,10 @@ class IncidentOfferService(BaseService):
         ):
             incident.status = "WAITING_PROVIDER_RESPONSE"
             self.db.flush()
+            logger.info(
+                "Incident offer outcome resolved. incident_id=%s result=WAITING_PROVIDER_RESPONSE",
+                incident_id,
+            )
             return
 
         if any(
@@ -687,6 +780,10 @@ class IncidentOfferService(BaseService):
         ):
             incident.status = "WAITING_PROVIDER_RESPONSE"
             self.db.flush()
+            logger.info(
+                "Incident offer outcome resolved. incident_id=%s result=WAITING_PROVIDER_RESPONSE reason=unbounded_pending",
+                incident_id,
+            )
             return
 
         previous_status = incident.status
@@ -711,6 +808,11 @@ class IncidentOfferService(BaseService):
         self.business_notifications.send_incident_unattended(
             incident_id=str(incident.id),
             unattended_reason=IncidentUnattendedReason.NO_PROVIDER_ACCEPTED,
+        )
+        logger.info(
+            "Incident offer outcome resolved. incident_id=%s result=UNATTENDED reason=%s",
+            incident_id,
+            IncidentUnattendedReason.NO_PROVIDER_ACCEPTED,
         )
 
     def expire_due_pending_offers(self, *, limit: int = 200) -> int:

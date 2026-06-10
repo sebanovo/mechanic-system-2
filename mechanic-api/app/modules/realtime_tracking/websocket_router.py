@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect
 from pydantic import ValidationError
@@ -183,7 +184,7 @@ def _get_websocket_token(websocket: WebSocket, token: str | None) -> str:
     raise UnauthorizedException("Token WebSocket requerido.")
 
 
-def _get_customer_user_id(customer_id: object, db: Session) -> str | None:
+def _get_customer_user_id(customer_id: str | UUID, db: Session) -> str | None:
     customer_detail = CustomerRepository(db).get_detail_by_customer_id(customer_id)
 
     if customer_detail is None:

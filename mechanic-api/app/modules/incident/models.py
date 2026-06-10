@@ -123,7 +123,7 @@ class Incident(BaseModel):
 
     cancelled_by_user_id: Mapped[UUID | None] = mapped_column(
         PGUUID(as_uuid=True),
-        ForeignKey("user.id", ondelete="SET NULL"),
+        ForeignKey("app_user.id", ondelete="SET NULL"),
         nullable=True,
     )
 

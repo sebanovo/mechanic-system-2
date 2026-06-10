@@ -123,8 +123,8 @@ def _build_client_persisted_data(
     service_label: str,
     vehicle_label: str,
     priority_label: str,
-    estimated_price_label: str,
-    estimated_duration_label: str,
+    estimated_price_label: str | None,
+    estimated_duration_label: str | None,
 ) -> dict[str, Any]:
     return {
         "type": payload.notification_type,

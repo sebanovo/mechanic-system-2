@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timezone
 from typing import Any
 
@@ -17,6 +18,8 @@ from app.modules.notification.schemas import (
     NotificationSendRequest,
 )
 from app.modules.notification_device.repository import NotificationDeviceRepository
+
+logger = logging.getLogger(__name__)
 
 
 class NotificationService(BaseService):
@@ -88,6 +91,15 @@ class NotificationService(BaseService):
         if user is None or user.deleted_at is not None:
             raise NotFoundException("Usuario destinatario no encontrado.")
 
+        logger.info(
+            "Notification create requested. recipient_user_id=%s tenant_id=%s notification_type=%s audience=%s has_push_data=%s",
+            recipient_user_id,
+            tenant_id,
+            notification_type,
+            self._normalize_upper(self.context.actor_type),
+            push_data is not None,
+        )
+
         notification = Notification(
             recipient_user_id=to_uuid(recipient_user_id, "recipient_user_id"),
             tenant_id=optional_uuid(tenant_id, "tenant_id"),
@@ -106,7 +118,20 @@ class NotificationService(BaseService):
         self.db.commit()
         self.db.refresh(notification)
 
+        logger.info(
+            "Notification persisted. notification_id=%s recipient_user_id=%s status=%s",
+            notification.id,
+            recipient_user_id,
+            notification.notification_status,
+        )
+
         devices = self.device_repository.list_active_by_user(recipient_user_id)
+        logger.info(
+            "Notification devices resolved. notification_id=%s recipient_user_id=%s device_count=%s",
+            notification.id,
+            recipient_user_id,
+            len(devices),
+        )
 
         try:
             message_ids: list[str] = []
@@ -122,6 +147,12 @@ class NotificationService(BaseService):
                     "notification_created_at": notification.created_at.isoformat(),
                 }
 
+                logger.info(
+                    "Notification push sending started. notification_id=%s device_count=%s",
+                    notification.id,
+                    len(devices),
+                )
+
                 for device in devices:
                     message_id = NotificationDispatcher().send_push(
                         PushNotificationPayload(
@@ -133,6 +164,17 @@ class NotificationService(BaseService):
                     if message_id is not None:
                         message_ids.append(message_id)
 
+                logger.info(
+                    "Notification push sending finished. notification_id=%s sent_messages=%s",
+                    notification.id,
+                    len(message_ids),
+                )
+            else:
+                logger.info(
+                    "Notification push skipped. notification_id=%s reason=no_devices",
+                    notification.id,
+                )
+
             notification.notification_status = "SENT"
             notification.provider_message_id = (
                 ",".join(message_ids) if message_ids else None
@@ -142,9 +184,20 @@ class NotificationService(BaseService):
         except Exception as exc:
             notification.notification_status = "FAILED"
             notification.error_message = str(exc)
+            logger.exception(
+                "Notification push failed. notification_id=%s recipient_user_id=%s",
+                notification.id,
+                recipient_user_id,
+            )
 
         self.db.commit()
         self.db.refresh(notification)
+
+        logger.info(
+            "Notification flow finished. notification_id=%s status=%s",
+            notification.id,
+            notification.notification_status,
+        )
 
         return notification
 
