@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 import 'tenant_owner_catalog_tab.dart';
 import 'tenant_owner_network_tab.dart';
@@ -6,6 +8,7 @@ import 'tenant_owner_operations_tab.dart';
 import 'tenant_owner_overview_tab.dart';
 import 'tenant_owner_profile_tab.dart';
 import 'notifications_page.dart';
+import '../viewmodels/auth_viewmodel.dart';
 
 class TenantOwnerShellPage extends StatefulWidget {
   const TenantOwnerShellPage({super.key});
@@ -44,16 +47,16 @@ class _TenantOwnerShellPageState extends State<TenantOwnerShellPage> {
         onOperationsTap: () => _goTo(1),
         onCatalogTap: () => _goTo(2),
         onNetworkTap: () => _goTo(3),
-        onProfileTap: () => _goTo(4),
+        onProfileTap: () => _goTo(5),
       ),
       const TenantOwnerOperationsTab(),
       const TenantOwnerCatalogTab(),
       const TenantOwnerNetworkTab(),
-      const TenantOwnerProfileTab(),
       const NotificationsPage(
         title: 'Notificaciones del taller',
         showDevices: true,
       ),
+      const TenantOwnerProfileTab(),
     ];
 
     return Scaffold(
@@ -61,6 +64,33 @@ class _TenantOwnerShellPageState extends State<TenantOwnerShellPage> {
           ? null
           : AppBar(
               title: const Text('Panel de taller'),
+              leading: Builder(
+                builder: (context) {
+                  final canPop = Navigator.of(context).canPop();
+                  return IconButton(
+                    onPressed: canPop
+                        ? () => Navigator.of(context).maybePop()
+                        : () => Scaffold.of(context).openDrawer(),
+                    icon: Icon(
+                      canPop ? Icons.arrow_back_rounded : Icons.menu_rounded,
+                    ),
+                  );
+                },
+              ),
+              actions: [
+                IconButton(
+                  onPressed: () => setState(() => _index = 0),
+                  icon: const Icon(Icons.dashboard_rounded),
+                ),
+                IconButton(
+                  onPressed: () => context.read<AuthViewModel>().signOut().then(
+                        (_) {
+                          if (context.mounted) context.go('/entry');
+                        },
+                      ),
+                  icon: const Icon(Icons.logout_rounded),
+                ),
+              ],
             ),
       drawer: wide ? null : _buildDrawer(context),
       body: SafeArea(
@@ -98,7 +128,7 @@ class _TenantOwnerShellPageState extends State<TenantOwnerShellPage> {
     return NavigationRail(
       selectedIndex: _index,
       onDestinationSelected: _goTo,
-      labelType: NavigationRailLabelType.all,
+        labelType: NavigationRailLabelType.all,
       leading: Padding(
         padding: const EdgeInsets.all(16),
         child: Text(
@@ -126,14 +156,26 @@ class _TenantOwnerShellPageState extends State<TenantOwnerShellPage> {
           label: Text('Red'),
         ),
         NavigationRailDestination(
-          icon: Icon(Icons.person_rounded),
-          label: Text('Perfil'),
-        ),
-        NavigationRailDestination(
           icon: Icon(Icons.notifications_rounded),
           label: Text('Notificaciones'),
         ),
+        NavigationRailDestination(
+          icon: Icon(Icons.person_rounded),
+          label: Text('Perfil'),
+        ),
       ],
+      trailing: Padding(
+        padding: const EdgeInsets.all(16),
+        child: FilledButton.tonalIcon(
+          onPressed: () async {
+            await context.read<AuthViewModel>().signOut();
+            if (!context.mounted) return;
+            context.go('/entry');
+          },
+          icon: const Icon(Icons.logout_rounded),
+          label: const Text('Salir'),
+        ),
+      ),
     );
   }
 
@@ -155,8 +197,18 @@ class _TenantOwnerShellPageState extends State<TenantOwnerShellPage> {
             _drawerTile(context, index: 1, icon: Icons.handyman_rounded, label: 'Operaciones'),
             _drawerTile(context, index: 2, icon: Icons.inventory_2_rounded, label: 'Catálogo'),
             _drawerTile(context, index: 3, icon: Icons.apartment_rounded, label: 'Red'),
-            _drawerTile(context, index: 4, icon: Icons.person_rounded, label: 'Perfil'),
-            _drawerTile(context, index: 5, icon: Icons.notifications_rounded, label: 'Notificaciones'),
+            _drawerTile(context, index: 4, icon: Icons.notifications_rounded, label: 'Notificaciones'),
+            _drawerTile(context, index: 5, icon: Icons.person_rounded, label: 'Perfil'),
+            const Divider(height: 24),
+            ListTile(
+              leading: const Icon(Icons.logout_rounded),
+              title: const Text('Cerrar sesión'),
+              onTap: () async {
+                await context.read<AuthViewModel>().signOut();
+                if (!context.mounted) return;
+                context.go('/entry');
+              },
+            ),
           ],
         ),
       ),

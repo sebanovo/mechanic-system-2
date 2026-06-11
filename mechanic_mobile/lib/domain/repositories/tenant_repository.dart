@@ -5,6 +5,10 @@ abstract class TenantRepository {
 
   Future<Map<String, dynamic>> getCurrentTenant();
   Future<Map<String, dynamic>> getCurrentTenantDetail();
+  Future<Map<String, dynamic>> getCurrentOperationalDashboard({
+    String? dateFrom,
+    String? dateTo,
+  });
 
   Future<Map<String, dynamic>> getCurrentProfile();
   Future<Map<String, dynamic>> updateCurrentProfile(Map<String, dynamic> payload);

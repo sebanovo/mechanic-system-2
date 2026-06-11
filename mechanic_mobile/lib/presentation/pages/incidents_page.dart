@@ -301,15 +301,13 @@ Future<void> showIncidentForm(
                           ),
                         ),
                         const SizedBox(width: 8),
-                        IconButton.filledTonal(
-                          tooltip: 'Usar ubicación actual',
+                        FilledButton.tonalIcon(
                           onPressed: () async {
                             try {
                               final position = await _resolveCurrentPosition();
                               if (!sheetContext.mounted) return;
                               latController.text = position.latitude.toString();
-                              lngController.text = position.longitude
-                                  .toString();
+                              lngController.text = position.longitude.toString();
                               setState(() {});
                             } catch (exception) {
                               formError = exception.toString().replaceFirst(
@@ -320,6 +318,7 @@ Future<void> showIncidentForm(
                             }
                           },
                           icon: const Icon(Icons.my_location_rounded),
+                          label: const Text('Usar GPS'),
                         ),
                       ],
                     ),

@@ -25,6 +25,7 @@ class TenantViewModel extends ChangeNotifier {
   Map<String, dynamic>? currentProfile;
   Map<String, dynamic>? currentSettings;
   Map<String, dynamic>? currentProviderProfile;
+  Map<String, dynamic>? operationalDashboard;
 
   PagedResult<Map<String, dynamic>> technicians = _emptyPaged();
   PagedResult<Map<String, dynamic>> members = _emptyPaged();
@@ -119,12 +120,16 @@ class TenantViewModel extends ChangeNotifier {
       final settings = await _safeMap(
         () => _tenantRepository.getCurrentSettings(),
       );
+      final dashboard = await _safeMap(
+        () => _tenantRepository.getCurrentOperationalDashboard(),
+      );
       myTenants = tenants;
       currentTenant = tenant;
       currentTenantDetail = const <String, dynamic>{};
       currentProfile = profile;
       currentSettings = settings;
       currentProviderProfile = const <String, dynamic>{};
+      operationalDashboard = dashboard;
       _loadedWorkspaceKey = _workspaceKey();
     } catch (exception) {
       error = appFailureMessage(exception);
@@ -156,6 +161,7 @@ class TenantViewModel extends ChangeNotifier {
       currentTenantDetail = Map<String, dynamic>.from(results[2] as Map);
       currentProfile = Map<String, dynamic>.from(results[3] as Map);
       currentSettings = Map<String, dynamic>.from(results[4] as Map);
+      operationalDashboard = const <String, dynamic>{};
       currentProviderProfile = Map<String, dynamic>.from(results[5] as Map);
       technicianServices = results[6] as PagedResult<Map<String, dynamic>>;
       incidents = results[7] as PagedResult<Map<String, dynamic>>;

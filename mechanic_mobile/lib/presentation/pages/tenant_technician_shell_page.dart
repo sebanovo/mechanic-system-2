@@ -62,6 +62,19 @@ class _TenantTechnicianShellPageState extends State<TenantTechnicianShellPage> {
           ? null
           : AppBar(
               title: const Text('Técnico'),
+              leading: Builder(
+                builder: (context) {
+                  final canPop = Navigator.of(context).canPop();
+                  return IconButton(
+                    onPressed: canPop
+                        ? () => Navigator.of(context).maybePop()
+                        : () => Scaffold.of(context).openDrawer(),
+                    icon: Icon(
+                      canPop ? Icons.arrow_back_rounded : Icons.menu_rounded,
+                    ),
+                  );
+                },
+              ),
               actions: [
                 IconButton(
                   onPressed: vm.loading ? null : () => vm.refresh(),
@@ -145,6 +158,24 @@ class _TenantTechnicianShellPageState extends State<TenantTechnicianShellPage> {
           label: Text('Perfil'),
         ),
       ],
+      trailing: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            FilledButton.tonalIcon(
+              onPressed: () async {
+                await context.read<AuthViewModel>().signOut();
+                if (!context.mounted) return;
+                context.go('/entry');
+              },
+              icon: const Icon(Icons.logout_rounded),
+              label: const Text('Salir'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -174,6 +205,16 @@ class _TenantTechnicianShellPageState extends State<TenantTechnicianShellPage> {
             _drawerTile(context, 4, Icons.devices_other_rounded, 'Sesiones'),
             _drawerTile(context, 5, Icons.inventory_2_rounded, 'Catálogo'),
             _drawerTile(context, 6, Icons.person_rounded, 'Perfil'),
+            const Divider(height: 24),
+            ListTile(
+              leading: const Icon(Icons.logout_rounded),
+              title: const Text('Cerrar sesión'),
+              onTap: () async {
+                await context.read<AuthViewModel>().signOut();
+                if (!context.mounted) return;
+                context.go('/entry');
+              },
+            ),
           ],
         ),
       ),
@@ -218,70 +259,6 @@ class _TenantTechnicianShellPageState extends State<TenantTechnicianShellPage> {
             const LinearProgressIndicator(),
             const SizedBox(height: 12),
           ],
-          _capabilitySection(
-            context,
-            title: 'Accesos permitidos',
-            subtitle: 'Funciones operativas para ejecutar tu trabajo.',
-            items: const [
-              (
-                title: 'Ver asignaciones',
-                subtitle: 'Revisar y seguir tus asignaciones activas.',
-                icon: Icons.assignment_turned_in_rounded,
-                allowed: true,
-              ),
-              (
-                title: 'Ver tracking',
-                subtitle: 'Abrir el seguimiento en vivo de una asignación.',
-                icon: Icons.timeline_rounded,
-                allowed: true,
-              ),
-              (
-                title: 'Ver incidentes',
-                subtitle: 'Consultar incidentes relacionados con tu trabajo.',
-                icon: Icons.report_problem_rounded,
-                allowed: true,
-              ),
-              (
-                title: 'Ver sesiones',
-                subtitle: 'Revisar sesiones del tenant actual.',
-                icon: Icons.devices_other_rounded,
-                allowed: true,
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          _capabilitySection(
-            context,
-            title: 'Restringido para tu rol',
-            subtitle: 'Funciones de administración reservadas al taller.',
-            items: const [
-              (
-                title: 'Crear técnicos',
-                subtitle: 'Alta y gestión de otros técnicos.',
-                icon: Icons.person_add_alt_1_rounded,
-                allowed: false,
-              ),
-              (
-                title: 'Crear servicios proveedor',
-                subtitle: 'Definir servicios comerciales del taller.',
-                icon: Icons.add_business_rounded,
-                allowed: false,
-              ),
-              (
-                title: 'Gestionar red',
-                subtitle: 'Miembros, sucursales y relaciones.',
-                icon: Icons.apartment_rounded,
-                allowed: false,
-              ),
-              (
-                title: 'Editar perfil del taller',
-                subtitle: 'Cambios globales del workspace.',
-                icon: Icons.store_rounded,
-                allowed: false,
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
           SectionHeader(
             title: 'Atajos',
             subtitle: 'Ir directo a tus áreas de trabajo.',

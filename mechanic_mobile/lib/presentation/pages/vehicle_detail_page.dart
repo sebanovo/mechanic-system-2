@@ -26,6 +26,16 @@ class VehicleDetailPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          tooltip: 'Volver atrás',
+          onPressed: () async {
+            final popped = await Navigator.of(context).maybePop();
+            if (!popped && context.mounted) {
+              context.go('/home');
+            }
+          },
+          icon: const Icon(Icons.arrow_back_rounded),
+        ),
         title: const Text('Detalle del vehículo'),
         actions: [
           IconButton(
@@ -95,7 +105,12 @@ class VehicleDetailPage extends StatelessWidget {
                             onPressed: () async {
                               final ok = await context.read<VehiclesViewModel>().remove(vehicleId);
                               if (!context.mounted) return;
-                              if (ok) context.pop();
+                              if (ok) {
+                                final popped = await Navigator.of(context).maybePop();
+                                if (!popped && context.mounted) {
+                                  context.go('/home');
+                                }
+                              }
                             },
                             icon: const Icon(Icons.delete_rounded),
                             label: const Text('Eliminar vehículo'),

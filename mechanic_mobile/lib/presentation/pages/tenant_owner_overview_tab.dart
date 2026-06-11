@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../helpers/tenant_record_helpers.dart';
+import '../../app/theme/app_theme.dart';
 import '../viewmodels/auth_viewmodel.dart';
 import '../viewmodels/tenant_viewmodel.dart';
 import '../widgets/app_widgets.dart';
@@ -28,16 +28,14 @@ class TenantOwnerOverviewTab extends StatelessWidget {
 
     final tenant = vm.currentTenant ?? const <String, dynamic>{};
     final detail = vm.currentTenantDetail ?? const <String, dynamic>{};
-    final profile = vm.currentProfile ?? const <String, dynamic>{};
-    final settings = vm.currentSettings ?? const <String, dynamic>{};
-    final provider = vm.currentProviderProfile ?? const <String, dynamic>{};
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Taller'),
         actions: [
           IconButton(
-            onPressed: vm.loading ? null : () => vm.refresh(),
+            tooltip: 'Actualizar',
+            onPressed: vm.loading ? null : vm.refresh,
             icon: const Icon(Icons.refresh_rounded),
           ),
         ],
@@ -63,6 +61,15 @@ class TenantOwnerOverviewTab extends StatelessWidget {
               const LinearProgressIndicator(),
               const SizedBox(height: 12),
             ],
+            SectionHeader(
+              title: 'Dashboard operativo',
+              subtitle: 'Indicadores y tendencias del taller.',
+            ),
+            const SizedBox(height: 10),
+            _dashboardMetrics(context, vm.operationalDashboard),
+            const SizedBox(height: 12),
+            _dashboardLists(context, vm.operationalDashboard),
+            const SizedBox(height: 18),
             SectionHeader(
               title: 'Atajos',
               subtitle: 'Entra directo al módulo que necesitas.',
@@ -99,43 +106,6 @@ class TenantOwnerOverviewTab extends StatelessWidget {
               icon: Icons.person_rounded,
               onTap: onProfileTap,
             ),
-            const SizedBox(height: 18),
-            SectionHeader(
-              title: 'Resumen del tenant',
-              subtitle: 'Datos base que ya están cargados.',
-            ),
-            const SizedBox(height: 10),
-            SurfaceCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _infoLine('Tenant', tenant['commercial_name']?.toString()),
-                  const SizedBox(height: 8),
-                  _infoLine('Tipo', tenantRecordSecondaryLabel(tenant)),
-                  const SizedBox(height: 8),
-                  _infoLine(
-                    'Perfil legal',
-                    profile.isEmpty
-                        ? 'Sin datos'
-                        : (profile['legal_name']?.toString() ?? 'Sin datos'),
-                  ),
-                  const SizedBox(height: 8),
-                  _infoLine(
-                    'Configuración',
-                    settings.isEmpty
-                        ? 'Sin datos'
-                        : '${settings['default_currency'] ?? '-'} • ${settings['default_language'] ?? '-'}',
-                  ),
-                  const SizedBox(height: 8),
-                  _infoLine(
-                    'Proveedor',
-                    provider.isEmpty
-                        ? 'Sin perfil'
-                        : tenantRecordStatusLabel(provider),
-                  ),
-                ],
-              ),
-            ),
           ],
         ),
       ),
@@ -143,19 +113,260 @@ class TenantOwnerOverviewTab extends StatelessWidget {
   }
 }
 
-Widget _infoLine(String label, String? value) {
-  return Row(
+Widget _dashboardMetrics(BuildContext context, Map<String, dynamic>? dashboard) {
+  final kpis = dashboard?['kpis'] is Map
+      ? Map<String, dynamic>.from(dashboard!['kpis'] as Map)
+      : const <String, dynamic>{};
+  final cancelled = kpis['cancelled_cases'] is Map
+      ? Map<String, dynamic>.from(kpis['cancelled_cases'] as Map)
+      : const <String, dynamic>{};
+  final withinTime = kpis['services_completed_within_estimated_time'] is Map
+      ? Map<String, dynamic>.from(
+          kpis['services_completed_within_estimated_time'] as Map,
+        )
+      : const <String, dynamic>{};
+  final metrics = [
+    (
+      'Completados',
+      kpis['completed_cases']?.toString() ?? '0',
+      Icons.task_alt_rounded,
+    ),
+    (
+      'Llegada media',
+      '${kpis['average_arrival_time_minutes']?.toString() ?? '0'} min',
+      Icons.timer_rounded,
+    ),
+    (
+      'Resolución media',
+      '${kpis['average_resolution_time_minutes']?.toString() ?? '0'} min',
+      Icons.hourglass_bottom_rounded,
+    ),
+    (
+      'Cancelados',
+      cancelled['total']?.toString() ?? '0',
+      Icons.cancel_rounded,
+    ),
+    (
+      'Cumplimiento',
+      '${withinTime['percentage']?.toString() ?? '0'}%',
+      Icons.verified_rounded,
+    ),
+  ];
+
+  return LayoutBuilder(
+    builder: (context, constraints) {
+      final tileWidth = constraints.maxWidth >= 720
+          ? (constraints.maxWidth - 12) / 2
+          : constraints.maxWidth;
+      return Wrap(
+        spacing: 12,
+        runSpacing: 12,
+        children: [
+          for (final metric in metrics)
+            SizedBox(
+              width: tileWidth,
+              child: _metricCard(
+                context,
+                title: metric.$1,
+                value: metric.$2,
+                icon: metric.$3,
+              ),
+            ),
+        ],
+      );
+    },
+  );
+}
+
+Widget _dashboardLists(BuildContext context, Map<String, dynamic>? dashboard) {
+  final data = dashboard ?? const <String, dynamic>{};
+  final kpis = data['kpis'] is Map
+      ? Map<String, dynamic>.from(data['kpis'] as Map)
+      : const <String, dynamic>{};
+  final topIncidents = (kpis['top_incident_types'] as List?) ?? const [];
+  final topTechnicians = (kpis['top_technicians'] as List?) ?? const [];
+  final topZones = (kpis['top_zones'] as List?) ?? const [];
+  final charts = data['charts'] is Map
+      ? Map<String, dynamic>.from(data['charts'] as Map)
+      : const <String, dynamic>{};
+  final compliance = (charts['service_compliance'] as List?) ?? const [];
+
+  return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      SizedBox(
-        width: 120,
-        child: Text(label, style: const TextStyle(fontWeight: FontWeight.w800)),
-      ),
-      Expanded(
-        child: Text(
-          (value == null || value.trim().isEmpty) ? 'Sin datos' : value,
+      SurfaceCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Incidencias principales',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 10),
+            if (topIncidents.isEmpty)
+              const Text('Sin datos suficientes para mostrar incidencias.')
+            else
+              ...topIncidents.take(3).map((item) {
+                final map = item is Map
+                    ? Map<String, dynamic>.from(item)
+                    : const <String, dynamic>{};
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: _simpleMetricLine(
+                    map['name']?.toString() ?? 'Sin nombre',
+                    map['total']?.toString() ?? '0',
+                  ),
+                );
+              }),
+          ],
         ),
       ),
+      const SizedBox(height: 12),
+      SurfaceCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Técnicos destacados',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 10),
+            if (topTechnicians.isEmpty)
+              const Text('Sin datos suficientes para mostrar técnicos.')
+            else
+              ...topTechnicians.take(3).map((item) {
+                final map = item is Map
+                    ? Map<String, dynamic>.from(item)
+                    : const <String, dynamic>{};
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: _simpleMetricLine(
+                    map['name']?.toString() ?? 'Sin nombre',
+                    map['total']?.toString() ?? '0',
+                  ),
+                );
+              }),
+          ],
+        ),
+      ),
+      const SizedBox(height: 12),
+      SurfaceCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Zonas con más casos',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 10),
+            if (topZones.isEmpty)
+              const Text('Sin datos suficientes para mostrar zonas.')
+            else
+              ...topZones.take(3).map((item) {
+                final map = item is Map
+                    ? Map<String, dynamic>.from(item)
+                    : const <String, dynamic>{};
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: _simpleMetricLine(
+                    map['name']?.toString() ??
+                        map['zone']?.toString() ??
+                        'Sin nombre',
+                    map['total']?.toString() ??
+                        map['incidents']?.toString() ??
+                        '0',
+                  ),
+                );
+              }),
+          ],
+        ),
+      ),
+      const SizedBox(height: 12),
+      SurfaceCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Cumplimiento por servicio',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 10),
+            if (compliance.isEmpty)
+              const Text('Sin datos suficientes para mostrar cumplimiento.')
+            else
+              ...compliance.take(3).map((item) {
+                final map = item is Map
+                    ? Map<String, dynamic>.from(item)
+                    : const <String, dynamic>{};
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: _simpleMetricLine(
+                    map['name']?.toString() ?? 'Servicio',
+                    map['value']?.toString() ?? '0',
+                  ),
+                );
+              }),
+          ],
+        ),
+      ),
+    ],
+  );
+}
+
+Widget _metricCard(
+  BuildContext context, {
+  required String title,
+  required String value,
+  required IconData icon,
+}) {
+  return SurfaceCard(
+    child: Padding(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              color: SapphirePalette.sapphire50,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(icon, color: SapphirePalette.sapphire700),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w900,
+                      ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+Widget _simpleMetricLine(String label, String value) {
+  return Row(
+    children: [
+      Expanded(
+        child: Text(label, style: const TextStyle(fontWeight: FontWeight.w700)),
+      ),
+      Text(value, style: const TextStyle(fontWeight: FontWeight.w900)),
     ],
   );
 }

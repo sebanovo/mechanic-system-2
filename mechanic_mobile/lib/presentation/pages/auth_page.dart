@@ -23,7 +23,20 @@ class AuthPage extends StatelessWidget {
         builder: (context, form, _) {
           final vm = context.watch<AuthViewModel>();
           return Scaffold(
-            appBar: AppBar(title: Text(_titleForRole(role))),
+            appBar: AppBar(
+              title: Text(_titleForRole(role)),
+              leading: IconButton(
+                tooltip: 'Regresar',
+                onPressed: () {
+                  if (context.canPop()) {
+                    context.pop();
+                  } else {
+                    context.go('/entry');
+                  }
+                },
+                icon: const Icon(Icons.arrow_back_rounded),
+              ),
+            ),
             body: ListView(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
               children: [

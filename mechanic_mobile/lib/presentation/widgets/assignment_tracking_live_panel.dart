@@ -39,6 +39,7 @@ class _AssignmentTrackingLivePanelState
   final TextEditingController _heading = TextEditingController();
   final TextEditingController _speed = TextEditingController();
   final List<Map<String, dynamic>> _logs = <Map<String, dynamic>>[];
+  bool _resolvingLocation = false;
 
   @override
   void initState() {
@@ -132,7 +133,7 @@ class _AssignmentTrackingLivePanelState
                             SnackBar(content: Text(exception.toString())),
                           );
                         }
-                      },
+                },
                 icon: const Icon(Icons.link_rounded),
                 label: const Text('Conectar'),
               ),
@@ -143,33 +144,36 @@ class _AssignmentTrackingLivePanelState
                         await _socket.disconnect();
                         if (!mounted) return;
                         setState(() {});
-                      },
+                },
                 icon: const Icon(Icons.link_off_rounded),
                 label: const Text('Desconectar'),
               ),
-              OutlinedButton.icon(
-                onPressed: !canSendLocation
+              FilledButton.tonalIcon(
+                onPressed: _resolvingLocation
                     ? null
                     : () async {
-                        try {
-                          final position = await _resolveCurrentPosition();
-                          _latitude.text = position.latitude.toString();
-                          _longitude.text = position.longitude.toString();
-                          if (!mounted) return;
-                          setState(() {});
-                        } catch (exception) {
-                          if (!mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(exception.toString())),
-                          );
-                        }
+                        await _fillCurrentLocation();
                       },
-                icon: const Icon(Icons.my_location_rounded),
+                icon: _resolvingLocation
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.my_location_rounded),
                 label: const Text('Usar GPS'),
               ),
             ],
           ),
           const SizedBox(height: 14),
+          if (!canSendLocation)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Text(
+                'El GPS se puede usar para leer coordenadas, pero solo el técnico puede enviar ubicación al WebSocket.',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ),
           Text(
             'Enviar ubicación de prueba',
             style: Theme.of(
@@ -303,6 +307,26 @@ class _AssignmentTrackingLivePanelState
         ],
       ),
     );
+  }
+
+  Future<void> _fillCurrentLocation() async {
+    setState(() => _resolvingLocation = true);
+    try {
+      final position = await _resolveCurrentPosition();
+      _latitude.text = position.latitude.toString();
+      _longitude.text = position.longitude.toString();
+      if (!mounted) return;
+      setState(() {});
+    } catch (exception) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(exception.toString())),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _resolvingLocation = false);
+      }
+    }
   }
 
   Uri _buildSocketUri(SessionStorage storage) {
