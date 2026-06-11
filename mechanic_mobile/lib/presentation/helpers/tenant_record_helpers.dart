@@ -162,8 +162,9 @@ String tenantProviderServiceDetailsLabel(Map<String, dynamic> record) {
       nestedCatalog['service_code']?.toString().trim() ??
       record['service_code']?.toString().trim() ??
       '';
-  final providerStatus =
-      providerService['is_available'] == true ? 'Disponible' : 'No disponible';
+  final providerStatus = providerService['is_available'] == true
+      ? 'Disponible'
+      : 'No disponible';
   final customMinPrice =
       providerService['custom_min_price']?.toString().trim() ?? '';
   final customMaxPrice =
@@ -245,6 +246,8 @@ String tenantTechnicianServiceDetailsLabel(Map<String, dynamic> record) {
 }
 
 String tenantRecordId(Map<String, dynamic> record) {
+  final assignmentId = tenantAssignmentId(record);
+  if (assignmentId.isNotEmpty) return assignmentId;
   final source = _labelSource(record);
   final candidates = [
     source['id'],
@@ -258,6 +261,25 @@ String tenantRecordId(Map<String, dynamic> record) {
     source['offer_id'],
   ];
   for (final candidate in candidates) {
+    final text = candidate?.toString().trim() ?? '';
+    if (text.isNotEmpty) return text;
+  }
+  return '';
+}
+
+String tenantAssignmentId(Map<String, dynamic> record) {
+  final directCandidates = <Object?>[
+    record['assignment_id'],
+    record['id'],
+  ];
+  final assignment = _mapValue(record['assignment']);
+  if (assignment.isNotEmpty) {
+    directCandidates.insertAll(0, [
+      assignment['id'],
+      assignment['assignment_id'],
+    ]);
+  }
+  for (final candidate in directCandidates) {
     final text = candidate?.toString().trim() ?? '';
     if (text.isNotEmpty) return text;
   }
@@ -312,13 +334,18 @@ void showTenantRecordDetails(
                     padding: const EdgeInsets.only(bottom: 10),
                     child: SurfaceCard(
                       padding: const EdgeInsets.all(14),
-                      child: _DetailField(
-                        label: entry.$1,
-                        value: entry.$2,
-                      ),
+                      child: _DetailField(label: entry.$1, value: entry.$2),
                     ),
                   ),
                 ),
+                if (title == 'Asignaciones' &&
+                    _mapValue(record['tracking_session']).isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  AssignmentTrackingLivePanel(
+                    assignmentId: tenantAssignmentId(record),
+                    trackingSession: _mapValue(record['tracking_session']),
+                  ),
+                ],
               ],
             ),
           );
@@ -403,12 +430,16 @@ List<(String, String)> _detailFieldsForTitle(
         (
           'Catálogo',
           _mapValue(record['service_catalog'])['id']?.toString() ??
-              _mapValue(record['provider_service'])['service_catalog_id']?.toString() ??
+              _mapValue(
+                record['provider_service'],
+              )['service_catalog_id']?.toString() ??
               '-',
         ),
         (
           'Proveedor',
-          _mapValue(record['provider_service'])['provider_profile_id']?.toString() ??
+          _mapValue(
+                record['provider_service'],
+              )['provider_profile_id']?.toString() ??
               '-',
         ),
         (
@@ -419,11 +450,17 @@ List<(String, String)> _detailFieldsForTitle(
         ),
         (
           'Precio mínimo',
-          _mapValue(record['provider_service'])['custom_min_price']?.toString() ?? '-',
+          _mapValue(
+                record['provider_service'],
+              )['custom_min_price']?.toString() ??
+              '-',
         ),
         (
           'Precio máximo',
-          _mapValue(record['provider_service'])['custom_max_price']?.toString() ?? '-',
+          _mapValue(
+                record['provider_service'],
+              )['custom_max_price']?.toString() ??
+              '-',
         ),
       ];
     case 'Servicios técnicos':
@@ -439,20 +476,32 @@ List<(String, String)> _detailFieldsForTitle(
         (
           'Técnico',
           [
-            _mapValue(record['technician'])['user'] is Map
-                ? _mapValue(_mapValue(record['technician'])['user'])['first_name']?.toString().trim() ?? ''
-                : '',
-            _mapValue(record['technician'])['user'] is Map
-                ? _mapValue(_mapValue(record['technician'])['user'])['last_name']?.toString().trim() ?? ''
-                : '',
-          ].where((part) => part.isNotEmpty).join(' ').trim().isEmpty
+                _mapValue(record['technician'])['user'] is Map
+                    ? _mapValue(
+                            _mapValue(record['technician'])['user'],
+                          )['first_name']?.toString().trim() ??
+                          ''
+                    : '',
+                _mapValue(record['technician'])['user'] is Map
+                    ? _mapValue(
+                            _mapValue(record['technician'])['user'],
+                          )['last_name']?.toString().trim() ??
+                          ''
+                    : '',
+              ].where((part) => part.isNotEmpty).join(' ').trim().isEmpty
               ? '-'
               : [
                   _mapValue(record['technician'])['user'] is Map
-                      ? _mapValue(_mapValue(record['technician'])['user'])['first_name']?.toString().trim() ?? ''
+                      ? _mapValue(
+                              _mapValue(record['technician'])['user'],
+                            )['first_name']?.toString().trim() ??
+                            ''
                       : '',
                   _mapValue(record['technician'])['user'] is Map
-                      ? _mapValue(_mapValue(record['technician'])['user'])['last_name']?.toString().trim() ?? ''
+                      ? _mapValue(
+                              _mapValue(record['technician'])['user'],
+                            )['last_name']?.toString().trim() ??
+                            ''
                       : '',
                 ].where((part) => part.isNotEmpty).join(' ').trim(),
         ),
@@ -462,7 +511,8 @@ List<(String, String)> _detailFieldsForTitle(
         ),
         (
           'Skill level',
-          _mapValue(record['technician_service'])['skill_level']?.toString() ?? '-',
+          _mapValue(record['technician_service'])['skill_level']?.toString() ??
+              '-',
         ),
         (
           'Estado',
@@ -477,24 +527,115 @@ List<(String, String)> _detailFieldsForTitle(
         ('Detalle', tenantServiceDetailsLabel(record)),
         ('Código', _mapValue(record)['service_code']?.toString() ?? '-'),
         ('Categoría', _mapValue(record)['category']?.toString() ?? '-'),
-        ('Precio mínimo', _formatMoney(_mapValue(record)['min_price']).isEmpty ? '-' : _formatMoney(_mapValue(record)['min_price'])),
-        ('Precio máximo', _formatMoney(_mapValue(record)['max_price']).isEmpty ? '-' : _formatMoney(_mapValue(record)['max_price'])),
-        ('Duración mínima', _formatMinutes(_mapValue(record)['min_duration_minutes']).isEmpty ? '-' : _formatMinutes(_mapValue(record)['min_duration_minutes'])),
-        ('Duración máxima', _formatMinutes(_mapValue(record)['max_duration_minutes']).isEmpty ? '-' : _formatMinutes(_mapValue(record)['max_duration_minutes'])),
+        (
+          'Precio mínimo',
+          _formatMoney(_mapValue(record)['min_price']).isEmpty
+              ? '-'
+              : _formatMoney(_mapValue(record)['min_price']),
+        ),
+        (
+          'Precio máximo',
+          _formatMoney(_mapValue(record)['max_price']).isEmpty
+              ? '-'
+              : _formatMoney(_mapValue(record)['max_price']),
+        ),
+        (
+          'Duración mínima',
+          _formatMinutes(_mapValue(record)['min_duration_minutes']).isEmpty
+              ? '-'
+              : _formatMinutes(_mapValue(record)['min_duration_minutes']),
+        ),
+        (
+          'Duración máxima',
+          _formatMinutes(_mapValue(record)['max_duration_minutes']).isEmpty
+              ? '-'
+              : _formatMinutes(_mapValue(record)['max_duration_minutes']),
+        ),
         ('Activo', _mapValue(record)['is_active'] == true ? 'Sí' : 'No'),
+      ];
+    case 'Asignaciones':
+      return [
+        ('Asignación', tenantRecordPrimaryLabel(record)),
+        ('Detalle', tenantRecordSecondaryLabel(record)),
+        (
+          'Estado',
+          _mapValue(record['assignment'])['assignment_status']?.toString() ??
+              _mapValue(record)['assignment_status']?.toString() ??
+              '-',
+        ),
+        (
+          'Incidente',
+          _mapValue(record['incident'])['title']?.toString() ??
+              _mapValue(record['incident'])['incident_code']?.toString() ??
+              _mapValue(record)['incident_id']?.toString() ??
+              '-',
+        ),
+        (
+          'Técnico',
+          [
+                _mapValue(record['technician'])['user'] is Map
+                    ? _mapValue(
+                            _mapValue(record['technician'])['user'],
+                          )['first_name']?.toString().trim() ??
+                          ''
+                    : '',
+                _mapValue(record['technician'])['user'] is Map
+                    ? _mapValue(
+                            _mapValue(record['technician'])['user'],
+                          )['last_name']?.toString().trim() ??
+                          ''
+                    : '',
+              ].where((part) => part.isNotEmpty).join(' ').trim().isNotEmpty
+              ? [
+                  _mapValue(record['technician'])['user'] is Map
+                      ? _mapValue(
+                              _mapValue(record['technician'])['user'],
+                            )['first_name']?.toString().trim() ??
+                            ''
+                      : '',
+                  _mapValue(record['technician'])['user'] is Map
+                      ? _mapValue(
+                              _mapValue(record['technician'])['user'],
+                            )['last_name']?.toString().trim() ??
+                            ''
+                      : '',
+                ].where((part) => part.isNotEmpty).join(' ').trim()
+              : _mapValue(
+                      record['technician'],
+                    )['technician_code']?.toString() ??
+                    _mapValue(record)['technician_id']?.toString() ??
+                    '-',
+        ),
+        (
+          'Oferta',
+          _mapValue(record['offer'])['offer_status']?.toString() ??
+              _mapValue(record)['offer_id']?.toString() ??
+              '-',
+        ),
+        (
+          'Notas',
+          _mapValue(record['assignment'])['notes']?.toString() ??
+              _mapValue(record)['notes']?.toString() ??
+              '-',
+        ),
+        (
+          'Asignada',
+          _mapValue(record['assignment'])['assigned_at']?.toString() ??
+              _mapValue(record)['assigned_at']?.toString() ??
+              '-',
+        ),
       ];
     default:
       return record.entries
-          .map((entry) => (entry.key.toString(), entry.value?.toString() ?? '-'))
+          .map(
+            (entry) => (entry.key.toString(), entry.value?.toString() ?? '-'),
+          )
           .toList();
   }
 }
 
 class _DetailField extends StatelessWidget {
-  const _DetailField({
-    required this.label,
-    required this.value,
-  });
+  const _DetailField({required this.label, required this.value});
 
   final String label;
   final String value;
@@ -506,9 +647,9 @@ class _DetailField extends StatelessWidget {
       children: [
         Text(
           label,
-          style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w800),
         ),
         const SizedBox(height: 6),
         Text(

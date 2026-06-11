@@ -457,6 +457,13 @@ class TenantRemoteDataSource {
         data: payload,
       );
 
+  Future<Map<String, dynamic>> getCurrentAssignmentTrackingSession(
+    String assignmentId,
+  ) =>
+      _apiClient.get(
+        '/api/tenants/current/assignments/$assignmentId/tracking-session',
+      );
+
   Map<String, dynamic> _paging({
     dynamic status,
     dynamic actorId,

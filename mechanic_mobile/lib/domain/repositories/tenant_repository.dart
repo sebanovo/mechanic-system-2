@@ -237,4 +237,8 @@ abstract class TenantRepository {
     String assignmentId,
     Map<String, dynamic> payload,
   );
+
+  Future<Map<String, dynamic>> getCurrentAssignmentTrackingSession(
+    String assignmentId,
+  );
 }

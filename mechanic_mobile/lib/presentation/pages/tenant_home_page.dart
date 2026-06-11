@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../viewmodels/auth_viewmodel.dart';
 import 'shell_page.dart';
 import 'tenant_owner_page.dart';
-import 'tenant_technician_page.dart';
+import 'tenant_technician_shell_page.dart';
 
 class TenantHomePage extends StatelessWidget {
   const TenantHomePage({super.key});
@@ -18,7 +18,7 @@ class TenantHomePage extends StatelessWidget {
       case 'TENANT_OWNER':
         return const TenantOwnerPage();
       case 'TECHNICIAN':
-        return const TenantTechnicianPage();
+        return const TenantTechnicianShellPage();
       case 'CLIENT':
         return const ShellPage();
       default:

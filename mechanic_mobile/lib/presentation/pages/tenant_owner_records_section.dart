@@ -113,7 +113,17 @@ Future<void> _openRecord(
   if (title == 'Asignaciones') {
     final detail = await vm.reloadAssignment(_recordId(title, item));
     if (!context.mounted) return;
-    showTenantRecordDetails(context, title: title, record: detail ?? item);
+    final recordId = _recordId(title, item);
+    final session = recordId.isEmpty
+        ? null
+        : await vm.reloadAssignmentTrackingSession(recordId);
+    if (!context.mounted) return;
+    final merged = <String, dynamic>{
+      ...item,
+      ...?detail,
+      'tracking_session': ?session,
+    };
+    showTenantRecordDetails(context, title: title, record: merged);
     return;
   }
 

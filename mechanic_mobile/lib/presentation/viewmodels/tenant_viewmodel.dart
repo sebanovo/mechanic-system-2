@@ -39,6 +39,7 @@ class TenantViewModel extends ChangeNotifier {
   PagedResult<Map<String, dynamic>> offers = _emptyPaged();
   PagedResult<Map<String, dynamic>> assignments = _emptyPaged();
   PagedResult<Map<String, dynamic>> assignmentTrackingEvents = _emptyPaged();
+  Map<String, dynamic>? assignmentTrackingSession;
 
   static PagedResult<Map<String, dynamic>> _emptyPaged() {
     return PagedResult<Map<String, dynamic>>(
@@ -80,6 +81,7 @@ class TenantViewModel extends ChangeNotifier {
 
   Future<void> bootstrap() async {
     final normalized = _workspaceKey();
+    final role = userType.toUpperCase();
     if (loading) return;
     if (_loadedWorkspaceKey == normalized &&
         currentTenant != null &&
@@ -87,11 +89,11 @@ class TenantViewModel extends ChangeNotifier {
       return;
     }
     _loadedWorkspaceKey = normalized;
-    if (normalized == 'TENANT_OWNER') {
+    if (role == 'TENANT_OWNER') {
       await loadOwnerWorkspace();
       return;
     }
-    if (normalized == 'TECHNICIAN') {
+    if (role == 'TECHNICIAN') {
       await loadTechnicianWorkspace();
       return;
     }
@@ -310,6 +312,23 @@ class TenantViewModel extends ChangeNotifier {
       );
       notifyListeners();
       return assignment;
+    } catch (exception) {
+      error = appFailureMessage(exception);
+      notifyListeners();
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> reloadAssignmentTrackingSession(
+    String assignmentId,
+  ) async {
+    try {
+      final session = await _tenantRepository.getCurrentAssignmentTrackingSession(
+        assignmentId,
+      );
+      assignmentTrackingSession = session;
+      notifyListeners();
+      return session;
     } catch (exception) {
       error = appFailureMessage(exception);
       notifyListeners();

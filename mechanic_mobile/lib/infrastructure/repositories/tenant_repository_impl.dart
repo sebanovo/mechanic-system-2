@@ -632,4 +632,13 @@ class TenantRepositoryImpl implements TenantRepository {
       ),
     );
   }
+
+  @override
+  Future<Map<String, dynamic>> getCurrentAssignmentTrackingSession(
+    String assignmentId,
+  ) async {
+    return _data(
+      await _remoteDataSource.getCurrentAssignmentTrackingSession(assignmentId),
+    );
+  }
 }
