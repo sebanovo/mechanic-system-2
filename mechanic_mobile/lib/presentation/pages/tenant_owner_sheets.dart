@@ -472,8 +472,7 @@ void showEditTenantProfileSheet(BuildContext context, TenantViewModel vm) {
                 const SizedBox(width: 10),
                 Expanded(child: _sheetField(longitude, 'Longitud')),
                 const SizedBox(width: 8),
-                IconButton.filledTonal(
-                  tooltip: 'Usar ubicación actual',
+                FilledButton.tonalIcon(
                   onPressed: () async {
                     try {
                       final position = await _resolveCurrentPosition();
@@ -488,6 +487,7 @@ void showEditTenantProfileSheet(BuildContext context, TenantViewModel vm) {
                     }
                   },
                   icon: const Icon(Icons.my_location_rounded),
+                  label: const Text('Usar GPS'),
                 ),
               ],
             ),

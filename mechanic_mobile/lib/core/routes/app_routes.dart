@@ -22,6 +22,10 @@ final appRouter = GoRouter(
       builder: (context, state) => const TenantHomePage(),
     ),
     GoRoute(
+      path: '/tenant-dashboard',
+      builder: (context, state) => const TenantOwnerPage(),
+    ),
+    GoRoute(
       path: '/select-tenants',
       builder: (context, state) => const TenantHubPage(),
     ),

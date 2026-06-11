@@ -119,66 +119,6 @@ class ProfilePage extends StatelessWidget {
           onTap: () => context.push('/notifications'),
         ),
         const SizedBox(height: 12),
-        if (sessionsVm.loading)
-          const Center(
-            child: Padding(
-              padding: EdgeInsets.all(20),
-              child: CircularProgressIndicator(),
-            ),
-          )
-        else if (sessionsVm.sessions?.items.isEmpty ?? true)
-          const EmptyStatePanel(
-            title: 'No hay sesiones activas',
-            subtitle: 'Cuando inicies sesión se mostrarán aquí.',
-            icon: Icons.devices_rounded,
-          )
-        else
-          ...sessionsVm.sessions!.items
-              .take(3)
-              .map(
-                (session) => Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: SurfaceCard(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                session.deviceName ?? 'Dispositivo',
-                                style: Theme.of(context).textTheme.titleMedium
-                                    ?.copyWith(fontWeight: FontWeight.w700),
-                              ),
-                            ),
-                            StatusBadge(label: session.sessionStatus),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Expira: ${_formatDate(session.expiresAt)}',
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                        const SizedBox(height: 12),
-                        OutlinedButton(
-                          onPressed: () async {
-                            final ok = await context
-                                .read<SessionsViewModel>()
-                                .revoke(session.id);
-                            if (!context.mounted) return;
-                            _toast(
-                              context,
-                              ok ? 'Sesión revocada' : 'No se pudo revocar',
-                            );
-                          },
-                          child: const Text('Revocar'),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-        const SizedBox(height: 18),
         ElevatedButton.icon(
           onPressed: () async {
             await context.read<AuthViewModel>().signOut();

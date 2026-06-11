@@ -53,7 +53,7 @@ class DashboardPage extends StatelessWidget {
           title: 'Perfil',
           subtitle: 'Datos personales, configuración y seguridad.',
           icon: Icons.person_rounded,
-          onTap: () => shellVm.setIndex(4),
+          onTap: () => shellVm.setIndex(5),
         ),
         const SizedBox(height: 12),
         ActionCard(
@@ -131,6 +131,8 @@ String _sectionLabel(int index) {
     case 3:
       return 'Asignaciones';
     case 4:
+      return 'Notificaciones';
+    case 5:
       return 'Perfil';
     default:
       return 'Inicio';

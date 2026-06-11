@@ -27,6 +27,16 @@ class IncidentDetailPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          tooltip: 'Volver atrás',
+          onPressed: () async {
+            final popped = await Navigator.of(context).maybePop();
+            if (!popped && context.mounted) {
+              context.go('/home');
+            }
+          },
+          icon: const Icon(Icons.arrow_back_rounded),
+        ),
         title: const Text('Detalle del incidente'),
         actions: [
           IconButton(
@@ -148,7 +158,12 @@ class IncidentDetailPage extends StatelessWidget {
                                     const IncidentCancelInput(),
                                   );
                               if (!context.mounted) return;
-                              if (ok) context.pop();
+                              if (ok) {
+                                final popped = await Navigator.of(context).maybePop();
+                                if (!popped && context.mounted) {
+                                  context.go('/home');
+                                }
+                              }
                             },
                             icon: const Icon(Icons.cancel_rounded),
                             label: const Text('Cancelar incidente'),

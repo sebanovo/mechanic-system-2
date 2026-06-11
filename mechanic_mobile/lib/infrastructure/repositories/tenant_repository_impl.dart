@@ -53,6 +53,19 @@ class TenantRepositoryImpl implements TenantRepository {
   }
 
   @override
+  Future<Map<String, dynamic>> getCurrentOperationalDashboard({
+    String? dateFrom,
+    String? dateTo,
+  }) async {
+    return _data(
+      await _remoteDataSource.getCurrentOperationalDashboard(
+        dateFrom: dateFrom,
+        dateTo: dateTo,
+      ),
+    );
+  }
+
+  @override
   Future<Map<String, dynamic>> getCurrentProfile() async {
     return _data(await _remoteDataSource.getCurrentProfile());
   }
@@ -630,6 +643,15 @@ class TenantRepositoryImpl implements TenantRepository {
         assignmentId,
         payload,
       ),
+    );
+  }
+
+  @override
+  Future<Map<String, dynamic>> getCurrentAssignmentTrackingSession(
+    String assignmentId,
+  ) async {
+    return _data(
+      await _remoteDataSource.getCurrentAssignmentTrackingSession(assignmentId),
     );
   }
 }

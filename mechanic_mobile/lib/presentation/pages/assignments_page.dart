@@ -57,7 +57,8 @@ class AssignmentsPage extends StatelessWidget {
           else if (vm.assignments?.items.isEmpty ?? true)
             const EmptyStatePanel(
               title: 'No hay asignaciones',
-              subtitle: 'Cuando un incidente se asigne a un técnico aparecerá aquí.',
+              subtitle:
+                  'Cuando un incidente se asigne a un técnico aparecerá aquí.',
               icon: Icons.assignment_turned_in_rounded,
             )
           else
@@ -79,10 +80,21 @@ class AssignmentsPage extends StatelessWidget {
                               ),
                             ),
                             StatusBadge(
-                              label: _stringValue(
-                                    _mapValue(assignment, 'assignment', 'assignment_status'),
+                              label:
+                                  _stringValue(
+                                    _mapValue(
+                                      assignment,
+                                      'assignment',
+                                      'assignment_status',
+                                    ),
                                   ) ??
-                                  _stringValue(_mapValue(assignment, 'assignment', 'status')) ??
+                                  _stringValue(
+                                    _mapValue(
+                                      assignment,
+                                      'assignment',
+                                      'status',
+                                    ),
+                                  ) ??
                                   '-',
                             ),
                           ],
@@ -90,23 +102,55 @@ class AssignmentsPage extends StatelessWidget {
                         const SizedBox(height: 10),
                         InfoRow(
                           label: 'Incidente',
-                          value: _nestedStringValue(assignment, 'incident', 'title') ??
-                              _nestedStringValue(assignment, 'incident', 'incident_code') ??
-                              _stringValue(_mapValue(assignment, 'assignment', 'incident_id')) ??
+                          value:
+                              _nestedStringValue(
+                                assignment,
+                                'incident',
+                                'title',
+                              ) ??
+                              _nestedStringValue(
+                                assignment,
+                                'incident',
+                                'incident_code',
+                              ) ??
+                              _stringValue(
+                                _mapValue(
+                                  assignment,
+                                  'assignment',
+                                  'incident_id',
+                                ),
+                              ) ??
                               '-',
                         ),
                         const Divider(height: 24),
                         InfoRow(
                           label: 'Técnico',
-                          value: _nestedStringValue(assignment, 'technician', 'full_name') ??
-                              _nestedStringValue(assignment, 'technician', 'id') ??
-                              _stringValue(_mapValue(assignment, 'assignment', 'technician_id')) ??
+                          value:
+                              _nestedStringValue(
+                                assignment,
+                                'technician',
+                                'full_name',
+                              ) ??
+                              _nestedStringValue(
+                                assignment,
+                                'technician',
+                                'id',
+                              ) ??
+                              _stringValue(
+                                _mapValue(
+                                  assignment,
+                                  'assignment',
+                                  'technician_id',
+                                ),
+                              ) ??
                               '-',
                         ),
                         const Divider(height: 24),
                         InfoRow(
                           label: 'Creada',
-                          value: _dateValue(_mapValue(assignment, 'assignment', 'created_at')),
+                          value: _dateValue(
+                            _mapValue(assignment, 'assignment', 'created_at'),
+                          ),
                         ),
                       ],
                     ),
@@ -129,9 +173,9 @@ class AssignmentsPage extends StatelessWidget {
     if (!context.mounted) return;
     final vm = context.read<AssignmentsViewModel>();
     if (vm.error != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(vm.error!)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(vm.error!)));
       return;
     }
     await showModalBottomSheet<void>(
@@ -176,37 +220,87 @@ class AssignmentsPage extends StatelessWidget {
                       children: [
                         InfoRow(
                           label: 'ID',
-                          value: _stringValue(_mapValue(vm.selectedAssignment, 'assignment', 'id')) ?? id,
+                          value:
+                              _stringValue(
+                                _mapValue(
+                                  vm.selectedAssignment,
+                                  'assignment',
+                                  'id',
+                                ),
+                              ) ??
+                              id,
                         ),
                         const Divider(height: 24),
                         InfoRow(
                           label: 'Estado',
-                          value: _stringValue(
-                                _mapValue(vm.selectedAssignment, 'assignment', 'assignment_status'),
+                          value:
+                              _stringValue(
+                                _mapValue(
+                                  vm.selectedAssignment,
+                                  'assignment',
+                                  'assignment_status',
+                                ),
                               ) ??
                               '-',
                         ),
                         const Divider(height: 24),
                         InfoRow(
                           label: 'Incidente',
-                          value: _nestedStringValue(vm.selectedAssignment, 'incident', 'title') ??
-                              _nestedStringValue(vm.selectedAssignment, 'incident', 'incident_code') ??
-                              _stringValue(_mapValue(vm.selectedAssignment, 'assignment', 'incident_id')) ??
+                          value:
+                              _nestedStringValue(
+                                vm.selectedAssignment,
+                                'incident',
+                                'title',
+                              ) ??
+                              _nestedStringValue(
+                                vm.selectedAssignment,
+                                'incident',
+                                'incident_code',
+                              ) ??
+                              _stringValue(
+                                _mapValue(
+                                  vm.selectedAssignment,
+                                  'assignment',
+                                  'incident_id',
+                                ),
+                              ) ??
                               '-',
                         ),
                         const Divider(height: 24),
                         InfoRow(
                           label: 'Técnico',
-                          value: _nestedStringValue(vm.selectedAssignment, 'technician', 'full_name') ??
-                              _nestedStringValue(vm.selectedAssignment, 'technician', 'first_name') ??
-                              _nestedStringValue(vm.selectedAssignment, 'technician', 'id') ??
+                          value:
+                              _nestedStringValue(
+                                vm.selectedAssignment,
+                                'technician',
+                                'full_name',
+                              ) ??
+                              _nestedStringValue(
+                                vm.selectedAssignment,
+                                'technician',
+                                'first_name',
+                              ) ??
+                              _nestedStringValue(
+                                vm.selectedAssignment,
+                                'technician',
+                                'id',
+                              ) ??
                               '-',
                         ),
                         const Divider(height: 24),
                         InfoRow(
                           label: 'Proveedor',
-                          value: _nestedStringValue(vm.selectedAssignment, 'provider_profile', 'commercial_name') ??
-                              _nestedStringValue(vm.selectedAssignment, 'provider_profile', 'id') ??
+                          value:
+                              _nestedStringValue(
+                                vm.selectedAssignment,
+                                'provider_profile',
+                                'commercial_name',
+                              ) ??
+                              _nestedStringValue(
+                                vm.selectedAssignment,
+                                'provider_profile',
+                                'id',
+                              ) ??
                               '-',
                         ),
                       ],
@@ -217,32 +311,59 @@ class AssignmentsPage extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Tracking session', style: Theme.of(sheetContext).textTheme.titleLarge),
+                        Text(
+                          'Tracking session',
+                          style: Theme.of(sheetContext).textTheme.titleLarge,
+                        ),
                         const SizedBox(height: 10),
                         InfoRow(
                           label: 'Assignment',
-                          value: _stringValue(_mapValue(vm.trackingSession, 'assignment_id')) ?? '-',
+                          value:
+                              _stringValue(
+                                _mapValue(vm.trackingSession, 'assignment_id'),
+                              ) ??
+                              '-',
                         ),
                         const Divider(height: 24),
                         InfoRow(
                           label: 'Incident status',
-                          value: _stringValue(_mapValue(vm.trackingSession, 'incident_status')) ?? '-',
+                          value:
+                              _stringValue(
+                                _mapValue(
+                                  vm.trackingSession,
+                                  'incident_status',
+                                ),
+                              ) ??
+                              '-',
                         ),
                         const Divider(height: 24),
                         InfoRow(
                           label: 'Maps',
-                          value: _stringValue(_mapValue(vm.trackingSession, 'maps')) ?? '-',
+                          value:
+                              _stringValue(
+                                _mapValue(vm.trackingSession, 'maps'),
+                              ) ??
+                              '-',
                         ),
                       ],
                     ),
                   ),
                   const SizedBox(height: 12),
-                  Text('Eventos', style: Theme.of(sheetContext).textTheme.titleLarge),
+                  AssignmentTrackingLivePanel(
+                    assignmentId: id,
+                    trackingSession: vm.trackingSession,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Eventos',
+                    style: Theme.of(sheetContext).textTheme.titleLarge,
+                  ),
                   const SizedBox(height: 8),
                   if ((vm.trackingEvents?.items.isEmpty ?? true))
                     const EmptyStatePanel(
                       title: 'Sin eventos',
-                      subtitle: 'Aún no se registran eventos de tracking para esta asignación.',
+                      subtitle:
+                          'Aún no se registran eventos de tracking para esta asignación.',
                       icon: Icons.timeline_rounded,
                     )
                   else
@@ -258,7 +379,9 @@ class AssignmentsPage extends StatelessWidget {
                                   Expanded(
                                     child: Text(
                                       _stringValue(event['event_type']) ?? '-',
-                                      style: Theme.of(sheetContext).textTheme.titleMedium,
+                                      style: Theme.of(
+                                        sheetContext,
+                                      ).textTheme.titleMedium,
                                     ),
                                   ),
                                   Text(_dateValue(event['occurred_at'])),
@@ -286,7 +409,11 @@ class AssignmentsPage extends StatelessWidget {
     );
   }
 
-  Object? _mapValue(Map<String, dynamic>? map, [String? key, String? nestedKey]) {
+  Object? _mapValue(
+    Map<String, dynamic>? map, [
+    String? key,
+    String? nestedKey,
+  ]) {
     if (map == null) return null;
     if (nestedKey == null) return map[key];
     final nested = map[key];

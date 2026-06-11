@@ -13,6 +13,18 @@ class TenantRemoteDataSource {
   Future<Map<String, dynamic>> getCurrentTenantDetail() =>
       _apiClient.get('/api/tenants/current/detail');
 
+  Future<Map<String, dynamic>> getCurrentOperationalDashboard({
+    String? dateFrom,
+    String? dateTo,
+  }) =>
+      _apiClient.get(
+        '/api/tenants/current/dashboard/operational',
+        queryParameters: _paging(
+          createdFrom: dateFrom,
+          createdTo: dateTo,
+        ),
+      );
+
   Future<Map<String, dynamic>> getCurrentProfile() =>
       _apiClient.get('/api/tenants/current/profile');
 
@@ -455,6 +467,13 @@ class TenantRemoteDataSource {
       _apiClient.post(
         '/api/tenants/current/assignments/$assignmentId/tracking-events',
         data: payload,
+      );
+
+  Future<Map<String, dynamic>> getCurrentAssignmentTrackingSession(
+    String assignmentId,
+  ) =>
+      _apiClient.get(
+        '/api/tenants/current/assignments/$assignmentId/tracking-session',
       );
 
   Map<String, dynamic> _paging({

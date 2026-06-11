@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../viewmodels/app_viewmodels.dart';
@@ -19,7 +20,20 @@ class SessionsPage extends StatelessWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Sesiones activas')),
+      appBar: AppBar(
+        leading: IconButton(
+          tooltip: 'Volver atrás',
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/home');
+            }
+          },
+          icon: const Icon(Icons.arrow_back_rounded),
+        ),
+        title: const Text('Sesiones activas'),
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
         children: [

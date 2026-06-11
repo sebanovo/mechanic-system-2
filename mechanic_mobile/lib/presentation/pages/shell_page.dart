@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../viewmodels/auth_viewmodel.dart';
 import '../viewmodels/app_viewmodels.dart';
 import 'notifications_page.dart';
 import 'assignments_page.dart';
@@ -20,8 +22,8 @@ class ShellPage extends StatelessWidget {
       const VehiclesPage(),
       const IncidentsPage(),
       const AssignmentsPage(),
-      const ProfilePage(),
       const NotificationsPage(title: 'Mis notificaciones', showDevices: true),
+      const ProfilePage(),
     ];
     final wide = MediaQuery.of(context).size.width >= 1024;
 
@@ -89,14 +91,26 @@ class ShellPage extends StatelessWidget {
           label: Text('Asignaciones'),
         ),
         NavigationRailDestination(
-          icon: Icon(Icons.person_rounded),
-          label: Text('Perfil'),
-        ),
-        NavigationRailDestination(
           icon: Icon(Icons.notifications_rounded),
           label: Text('Notificaciones'),
         ),
+        NavigationRailDestination(
+          icon: Icon(Icons.person_rounded),
+          label: Text('Perfil'),
+        ),
       ],
+      trailing: Padding(
+        padding: const EdgeInsets.all(16),
+        child: FilledButton.tonalIcon(
+          onPressed: () async {
+            await context.read<AuthViewModel>().signOut();
+            if (!context.mounted) return;
+            context.go('/entry');
+          },
+          icon: const Icon(Icons.logout_rounded),
+          label: const Text('Salir'),
+        ),
+      ),
     );
   }
 
@@ -146,15 +160,25 @@ class ShellPage extends StatelessWidget {
               context,
               vm,
               index: 4,
-              icon: Icons.person_rounded,
-              label: 'Perfil',
+              icon: Icons.notifications_rounded,
+              label: 'Notificaciones',
             ),
             _drawerTile(
               context,
               vm,
               index: 5,
-              icon: Icons.notifications_rounded,
-              label: 'Notificaciones',
+              icon: Icons.person_rounded,
+              label: 'Perfil',
+            ),
+            const Divider(height: 24),
+            ListTile(
+              leading: const Icon(Icons.logout_rounded),
+              title: const Text('Cerrar sesión'),
+              onTap: () async {
+                await context.read<AuthViewModel>().signOut();
+                if (!context.mounted) return;
+                context.go('/entry');
+              },
             ),
           ],
         ),
