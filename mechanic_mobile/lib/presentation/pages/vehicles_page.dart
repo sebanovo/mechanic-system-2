@@ -32,6 +32,17 @@ class VehiclesPage extends StatelessWidget {
           onAction: () => showVehicleForm(context),
         ),
         const SizedBox(height: 12),
+        Align(
+          alignment: Alignment.centerRight,
+          child: OutlinedButton.icon(
+            onPressed: vm.loading
+                ? null
+                : () => context.read<VehiclesViewModel>().loadVehicles(),
+            icon: const Icon(Icons.refresh_rounded),
+            label: const Text('Refresh'),
+          ),
+        ),
+        const SizedBox(height: 12),
         if (vm.error != null)
           ErrorBanner(message: vm.error!)
         else if (vm.loading)

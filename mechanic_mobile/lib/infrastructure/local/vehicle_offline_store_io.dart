@@ -23,22 +23,10 @@ class VehicleOfflineStore {
       dbPath,
       version: _dbVersion,
       onCreate: (db, version) async {
-        await db.execute('''
-          CREATE TABLE $_vehiclesTable (
-            id TEXT PRIMARY KEY,
-            data TEXT NOT NULL,
-            updated_at INTEGER NOT NULL
-          )
-        ''');
-        await db.execute('''
-          CREATE TABLE $_opsTable (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            op_type TEXT NOT NULL,
-            resource_id TEXT NOT NULL,
-            payload TEXT NOT NULL,
-            created_at INTEGER NOT NULL
-          )
-        ''');
+        await _ensureSchema(db);
+      },
+      onOpen: (db) async {
+        await _ensureSchema(db);
       },
     );
   }
@@ -152,5 +140,40 @@ class VehicleOfflineStore {
     if (decoded is Map<String, dynamic>) return decoded;
     if (decoded is Map) return Map<String, dynamic>.from(decoded);
     return null;
+  }
+
+  Future<void> _ensureSchema(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS $_vehiclesTable (
+        id TEXT PRIMARY KEY,
+        data TEXT NOT NULL,
+        updated_at INTEGER NOT NULL
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS $_opsTable (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        op_type TEXT NOT NULL,
+        resource_id TEXT NOT NULL,
+        payload TEXT NOT NULL,
+        created_at INTEGER NOT NULL
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS cached_incidents (
+        id TEXT PRIMARY KEY,
+        data TEXT NOT NULL,
+        updated_at INTEGER NOT NULL
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS pending_incident_operations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        op_type TEXT NOT NULL,
+        resource_id TEXT NOT NULL,
+        payload TEXT NOT NULL,
+        created_at INTEGER NOT NULL
+      )
+    ''');
   }
 }

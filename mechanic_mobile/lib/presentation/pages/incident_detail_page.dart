@@ -26,7 +26,7 @@ class IncidentDetailPage extends StatelessWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(
+        appBar: AppBar(
         leading: IconButton(
           tooltip: 'Volver atrás',
           onPressed: () async {
@@ -40,25 +40,6 @@ class IncidentDetailPage extends StatelessWidget {
         title: const Text('Detalle del incidente'),
         actions: [
           IconButton(
-            onPressed: vm.analysisLoading
-                ? null
-                : () async {
-                    final result = await context
-                        .read<IncidentsViewModel>()
-                        .runAiAnalysis(incidentId);
-                    if (!context.mounted || result == null) return;
-                    await showAiAnalysisDialog(context, result);
-                  },
-            icon: vm.analysisLoading
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.psychology_rounded),
-            tooltip: 'Ejecutar análisis IA',
-          ),
-          IconButton(
             onPressed: incident == null ? null : () => showIncidentForm(context, existing: incident),
             icon: const Icon(Icons.edit_rounded),
           ),
@@ -70,7 +51,7 @@ class IncidentDetailPage extends StatelessWidget {
             ? const Center(child: CircularProgressIndicator())
             : vm.error != null
                 ? ErrorBanner(message: vm.error!)
-                : incident == null
+                    : incident == null
                     ? const EmptyStatePanel(
                         title: 'Incidente no encontrado',
                         subtitle: 'Regresa al listado para cargar otro registro.',
@@ -78,6 +59,28 @@ class IncidentDetailPage extends StatelessWidget {
                       )
                     : ListView(
                         children: [
+                          if (incident.raw['offline_state'] != null) ...[
+                            SurfaceCard(
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.cloud_off_rounded,
+                                    color: Theme.of(context).colorScheme.error,
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      'Este incidente aún está pendiente de sincronización.',
+                                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                          ],
                           SurfaceCard(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -127,25 +130,6 @@ class IncidentDetailPage extends StatelessWidget {
                                   Text('Descripción', style: Theme.of(context).textTheme.titleLarge),
                                   const SizedBox(height: 10),
                                   Text(incident.description!, style: Theme.of(context).textTheme.bodyLarge),
-                                ],
-                              ),
-                            ),
-                          ],
-                          if (vm.aiAnalysis != null) ...[
-                            const SizedBox(height: 12),
-                            SurfaceCard(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Análisis IA',
-                                    style: Theme.of(context).textTheme.titleLarge,
-                                  ),
-                                  const SizedBox(height: 10),
-                                  Text(
-                                    _analysisSummary(vm.aiAnalysis!),
-                                    style: Theme.of(context).textTheme.bodyLarge,
-                                  ),
                                 ],
                               ),
                             ),

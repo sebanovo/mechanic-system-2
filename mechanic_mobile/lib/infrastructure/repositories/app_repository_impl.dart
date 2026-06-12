@@ -6,6 +6,7 @@ import '../../core/network/connectivity_service.dart';
 import '../../domain/entities/app_entities.dart';
 import '../../domain/repositories/app_repositories.dart';
 import '../datasources/client_remote_datasource.dart';
+import '../local/incident_offline_store.dart';
 import '../local/vehicle_offline_store.dart';
 import '../models/app_models.dart';
 
@@ -15,6 +16,7 @@ class ClientRepositoryImpl
     this._remoteDataSource,
     this._connectivityService,
     this._vehicleOfflineStore,
+    this._incidentOfflineStore,
   ) {
     _connectivityService.addListener(_handleConnectivityChanged);
     unawaited(_bootstrapOfflineQueue());
@@ -23,7 +25,9 @@ class ClientRepositoryImpl
   final ClientRemoteDataSource _remoteDataSource;
   final ConnectivityService _connectivityService;
   final VehicleOfflineStore _vehicleOfflineStore;
+  final IncidentOfflineStore _incidentOfflineStore;
   bool _syncingVehicles = false;
+  bool _syncingIncidents = false;
   bool _bootstrapped = false;
 
   Map<String, dynamic> _envelopeData(Map<String, dynamic> response) {
@@ -73,6 +77,22 @@ class ClientRepositoryImpl
 
   Future<void> _removeVehicleCache(String id) async {
     await _vehicleOfflineStore.deleteCachedVehicle(id);
+  }
+
+  Future<List<Map<String, dynamic>>> _cachedIncidentMaps() async {
+    return _incidentOfflineStore.loadCachedIncidents();
+  }
+
+  Future<void> _cacheIncidentsFromRemote(List<Map<String, dynamic>> incidents) async {
+    await _incidentOfflineStore.saveCachedIncidents(incidents);
+  }
+
+  Future<void> _cacheIncident(Map<String, dynamic> incident) async {
+    await _incidentOfflineStore.upsertCachedIncident(incident);
+  }
+
+  Future<void> _removeIncidentCache(String id) async {
+    await _incidentOfflineStore.deleteCachedIncident(id);
   }
 
   VehicleModel _vehicleFromInput(
@@ -169,6 +189,7 @@ class ClientRepositoryImpl
     if (_bootstrapped) return;
     _bootstrapped = true;
     await _vehicleOfflineStore.init();
+    await _incidentOfflineStore.init();
     if (_connectivityService.isOnline) {
       await syncOfflineQueue();
     }
@@ -430,22 +451,22 @@ class ClientRepositoryImpl
   Future<void> syncOfflineQueue() async {
     if (!_connectivityService.isOnline || _syncingVehicles) return;
     _syncingVehicles = true;
+    final vehicleIdMap = <String, String>{};
     try {
       final operations = await _vehicleOfflineStore.loadPendingOperations();
-      final idMap = <String, String>{};
       for (final operation in operations) {
         final opId = operation['id'] as int;
         final opType = operation['op_type']?.toString() ?? '';
         final resourceId = operation['resource_id']?.toString() ?? '';
         final payload = Map<String, dynamic>.from(operation['payload'] as Map);
-        final resolvedId = idMap[resourceId] ?? resourceId;
+        final resolvedId = vehicleIdMap[resourceId] ?? resourceId;
         try {
           switch (opType) {
             case 'create':
               final response = await _remoteDataSource.createVehicle(payload);
               final data = _envelopeData(response);
               final remoteId = data['id']?.toString() ?? resolvedId;
-              idMap[resourceId] = remoteId;
+              vehicleIdMap[resourceId] = remoteId;
               await _cacheVehicle({
                 ...data,
                 'id': remoteId,
@@ -483,6 +504,62 @@ class ClientRepositoryImpl
     } finally {
       _syncingVehicles = false;
     }
+
+    if (!_connectivityService.isOnline || _syncingIncidents) return;
+    _syncingIncidents = true;
+    try {
+      final operations = await _incidentOfflineStore.loadPendingOperations();
+      final idMap = <String, String>{};
+      for (final operation in operations) {
+        final opId = operation['id'] as int;
+        final opType = operation['op_type']?.toString() ?? '';
+        final resourceId = operation['resource_id']?.toString() ?? '';
+        final payload = Map<String, dynamic>.from(operation['payload'] as Map);
+        final mappedVehicleId = payload['vehicle_id']?.toString();
+        if (mappedVehicleId != null && vehicleIdMap.containsKey(mappedVehicleId)) {
+          payload['vehicle_id'] = vehicleIdMap[mappedVehicleId];
+        }
+        final resolvedId = idMap[resourceId] ?? resourceId;
+        try {
+          switch (opType) {
+            case 'create':
+              final response = await _remoteDataSource.createIncident(payload);
+              final data = _envelopeData(response);
+              final remoteId = data['id']?.toString() ?? resolvedId;
+              idMap[resourceId] = remoteId;
+              await _cacheIncident({
+                ...data,
+                'id': remoteId,
+              });
+              if (resourceId != remoteId) {
+                await _removeIncidentCache(resourceId);
+              }
+              break;
+            case 'update':
+              final response = await _remoteDataSource.updateIncident(
+                resolvedId,
+                payload,
+              );
+              await _cacheIncident(_envelopeData(response));
+              break;
+            case 'cancel':
+              final response = await _remoteDataSource.cancelIncident(
+                resolvedId,
+                payload,
+              );
+              await _cacheIncident(_envelopeData(response));
+              break;
+          }
+          await _incidentOfflineStore.deleteOperation(opId);
+        } catch (exception) {
+          if (_isNetworkFailure(exception)) {
+            break;
+          }
+        }
+      }
+    } finally {
+      _syncingIncidents = false;
+    }
   }
 
   @override
@@ -490,26 +567,96 @@ class ClientRepositoryImpl
     int? page,
     int? pageSize,
   }) async {
-    final response = await _remoteDataSource.listIncidents(
-      page: page,
-      pageSize: pageSize,
-    );
-    return _paged<IncidentEntity>(
-      response,
-      (json) => IncidentModel.fromJson(json),
+    if (_connectivityService.isOnline) {
+      try {
+        await syncOfflineQueue();
+        final response = await _remoteDataSource.listIncidents(
+          page: page,
+          pageSize: pageSize,
+        );
+        final data = _envelopeData(response);
+        final items = listMapOf(data['items']).map(IncidentModel.fromJson).toList();
+        await _cacheIncidentsFromRemote(listMapOf(data['items']));
+        return PagedResult<IncidentEntity>(
+          items: items,
+          pagination: _pagination(data),
+        );
+      } catch (exception) {
+        if (!_isNetworkFailure(exception)) rethrow;
+      }
+    }
+
+    final cached = await _cachedIncidentMaps();
+    final items = cached.map(IncidentModel.fromJson).toList();
+    return PagedResult<IncidentEntity>(
+      items: items,
+      pagination: _offlinePagination(items.length),
     );
   }
 
   @override
   Future<IncidentEntity> createIncident(IncidentUpsertInput input) async {
-    final response = await _remoteDataSource.createIncident(input.toJson());
-    return IncidentModel.fromJson(_envelopeData(response));
+    if (_connectivityService.isOnline) {
+      try {
+        final response = await _remoteDataSource.createIncident(input.toJson());
+        final data = _envelopeData(response);
+        await _cacheIncident(data);
+        return IncidentModel.fromJson(data);
+      } catch (exception) {
+        if (!_isNetworkFailure(exception)) rethrow;
+      }
+    }
+
+    final tempId = _tempId('local-incident');
+    final now = DateTime.now().toIso8601String();
+    final localMap = <String, dynamic>{
+      'id': tempId,
+      'customer_id': '',
+      'vehicle_id': input.vehicleId,
+      'incident_code': 'LOCAL-${DateTime.now().millisecondsSinceEpoch}',
+      'title': input.description?.trim().isNotEmpty == true
+          ? input.description!.trim()
+          : 'Incidente pendiente',
+      'description': input.description,
+      'latitude': input.latitude,
+      'longitude': input.longitude,
+      'priority': input.priority ?? 'MEDIUM',
+      'status': 'PENDING_SYNC',
+      'reported_at': now,
+      'created_at': now,
+      'updated_at': now,
+      'offline_state': 'pending_create',
+      'ai_state': 'pending_sync',
+    };
+    await _cacheIncident(localMap);
+    await _incidentOfflineStore.queueOperation(
+      opType: 'create',
+      resourceId: tempId,
+      payload: input.toJson(),
+    );
+    return IncidentModel.fromJson(localMap);
   }
 
   @override
   Future<IncidentEntity> getIncident(String incidentId) async {
-    final response = await _remoteDataSource.getIncident(incidentId);
-    return IncidentModel.fromJson(_envelopeData(response));
+    if (_connectivityService.isOnline) {
+      try {
+        final response = await _remoteDataSource.getIncident(incidentId);
+        return IncidentModel.fromJson(_envelopeData(response));
+      } catch (exception) {
+        if (!_isNetworkFailure(exception)) rethrow;
+      }
+    }
+
+    final cached = await _cachedIncidentMaps();
+    final local = cached.firstWhere(
+      (item) => item['id']?.toString() == incidentId,
+      orElse: () => <String, dynamic>{},
+    );
+    if (local.isNotEmpty) {
+      return IncidentModel.fromJson(local);
+    }
+    throw NetworkFailure('No hay conexión y el incidente no está en caché.');
   }
 
   @override
@@ -517,9 +664,43 @@ class ClientRepositoryImpl
     String incidentId,
     IncidentUpsertInput input,
   ) async {
-    final response =
-        await _remoteDataSource.updateIncident(incidentId, input.toJson());
-    return IncidentModel.fromJson(_envelopeData(response));
+    if (_connectivityService.isOnline) {
+      try {
+        final response =
+            await _remoteDataSource.updateIncident(incidentId, input.toJson());
+        final data = _envelopeData(response);
+        await _cacheIncident(data);
+        return IncidentModel.fromJson(data);
+      } catch (exception) {
+        if (!_isNetworkFailure(exception)) rethrow;
+      }
+    }
+
+    final cached = await _cachedIncidentMaps();
+    final existing = cached.firstWhere(
+      (item) => item['id']?.toString() == incidentId,
+      orElse: () => <String, dynamic>{},
+    );
+    final now = DateTime.now().toIso8601String();
+    final localMap = <String, dynamic>{
+      ...existing,
+      ...input.toJson(),
+      'id': incidentId,
+      'title': stringOf(existing['title']) ??
+          (input.description?.trim().isNotEmpty == true
+              ? input.description!.trim()
+              : 'Incidente pendiente'),
+      'status': existing['status'] ?? 'PENDING_SYNC',
+      'updated_at': now,
+      'offline_state': 'pending_update',
+    };
+    await _cacheIncident(localMap);
+    await _incidentOfflineStore.queueOperation(
+      opType: 'update',
+      resourceId: incidentId,
+      payload: input.toJson(),
+    );
+    return IncidentModel.fromJson(localMap);
   }
 
   @override
@@ -527,9 +708,39 @@ class ClientRepositoryImpl
     String incidentId,
     IncidentCancelInput input,
   ) async {
-    final response =
-        await _remoteDataSource.cancelIncident(incidentId, input.toJson());
-    return IncidentModel.fromJson(_envelopeData(response));
+    if (_connectivityService.isOnline) {
+      try {
+        final response =
+            await _remoteDataSource.cancelIncident(incidentId, input.toJson());
+        final data = _envelopeData(response);
+        await _cacheIncident(data);
+        return IncidentModel.fromJson(data);
+      } catch (exception) {
+        if (!_isNetworkFailure(exception)) rethrow;
+      }
+    }
+
+    final cached = await _cachedIncidentMaps();
+    final existing = cached.firstWhere(
+      (item) => item['id']?.toString() == incidentId,
+      orElse: () => <String, dynamic>{},
+    );
+    final now = DateTime.now().toIso8601String();
+    final localMap = <String, dynamic>{
+      ...existing,
+      'id': incidentId,
+      'status': 'CANCELLED',
+      'cancelled_at': now,
+      'updated_at': now,
+      'offline_state': 'pending_cancel',
+    };
+    await _cacheIncident(localMap);
+    await _incidentOfflineStore.queueOperation(
+      opType: 'cancel',
+      resourceId: incidentId,
+      payload: input.toJson(),
+    );
+    return IncidentModel.fromJson(localMap);
   }
 
   @override

@@ -35,7 +35,11 @@ class IncidentCard extends StatelessWidget {
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                 ),
-                StatusBadge(label: incidentStatusLabelFromApi(incident.status)),
+                StatusBadge(
+                  label: incident.raw['offline_state'] != null
+                      ? 'Pendiente'
+                      : incidentStatusLabelFromApi(incident.status),
+                ),
               ],
             ),
             const SizedBox(height: 8),

@@ -6,6 +6,8 @@ import 'package:skeletonizer/skeletonizer.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 
 import '../../constants/api_enums.dart';
+import '../../core/di/injection_container.dart';
+import '../../core/services/geolocation_service.dart';
 import '../../domain/entities/app_entities.dart';
 import '../viewmodels/app_viewmodels.dart';
 import '../widgets/app_widgets.dart';
@@ -39,12 +41,11 @@ class IncidentsPage extends StatelessWidget {
           const SizedBox(height: 12),
           Align(
             alignment: Alignment.centerRight,
-            child: OutlinedButton.icon(
+            child: IconButton.filledTonal(
               onPressed: vm.loading
                   ? null
                   : () => context.read<IncidentsViewModel>().loadIncidents(),
               icon: const Icon(Icons.refresh_rounded),
-              label: const Text('Refrescar'),
             ),
           ),
           const SizedBox(height: 12),
@@ -309,6 +310,10 @@ Future<void> showIncidentForm(
                               latController.text = position.latitude.toString();
                               lngController.text = position.longitude.toString();
                               setState(() {});
+                              showAppSnackBar(
+                                sheetContext,
+                                'GPS aplicado: ${position.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}',
+                              );
                             } catch (exception) {
                               formError = exception.toString().replaceFirst(
                                 'Exception: ',
@@ -379,9 +384,11 @@ Future<void> showIncidentForm(
   );
 
   if (saved == true && context.mounted) {
+    final feedback = context.read<IncidentsViewModel>().message;
     _toast(
       context,
-      existing == null ? 'Incidente creado' : 'Incidente actualizado',
+      feedback ??
+          (existing == null ? 'Incidente creado' : 'Incidente actualizado'),
     );
   }
 }
@@ -615,21 +622,7 @@ String? _validateCoordinate(String? value, num min, num max) {
 }
 
 Future<Position> _resolveCurrentPosition() async {
-  final enabled = await Geolocator.isLocationServiceEnabled();
-  if (!enabled) {
-    throw Exception('Activa la ubicación para usar coordenadas actuales.');
-  }
-  var permission = await Geolocator.checkPermission();
-  if (permission == LocationPermission.denied) {
-    permission = await Geolocator.requestPermission();
-  }
-  if (permission == LocationPermission.denied) {
-    throw Exception('Permiso de ubicación denegado.');
-  }
-  if (permission == LocationPermission.deniedForever) {
-    throw Exception('El permiso de ubicación está bloqueado en el sistema.');
-  }
-  return Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+  return sl<GeolocationService>().resolveCurrentPosition();
 }
 
 IncidentPriority? _incidentPriorityFromApi(String? value) {

@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../network/api_client.dart';
 import '../network/connectivity_service.dart';
+import '../services/geolocation_service.dart';
 import '../services/session_storage.dart';
 import '../../domain/repositories/app_repositories.dart';
 import '../../domain/repositories/auth_repository.dart';
@@ -13,6 +14,7 @@ import '../../infrastructure/datasources/auth_remote_datasource.dart';
 import '../../infrastructure/datasources/client_remote_datasource.dart';
 import '../../infrastructure/datasources/notification_remote_datasource.dart';
 import '../../infrastructure/datasources/tenant_remote_datasource.dart';
+import '../../infrastructure/local/incident_offline_store.dart';
 import '../../infrastructure/local/vehicle_offline_store.dart';
 import '../../infrastructure/repositories/auth_repository_impl.dart';
 import '../../infrastructure/repositories/app_repository_impl.dart';
@@ -49,8 +51,12 @@ Future<void> configureDependencies() async {
     () => TenantRemoteDataSource(sl<ApiClient>()),
   );
   sl.registerLazySingleton<NotificationService>(() => NotificationService());
+  sl.registerLazySingleton<GeolocationService>(() => GeolocationService());
   sl.registerLazySingleton<VehicleOfflineStore>(
     () => VehicleOfflineStore.instance,
+  );
+  sl.registerLazySingleton<IncidentOfflineStore>(
+    () => IncidentOfflineStore.instance,
   );
 
   sl.registerLazySingleton<AuthRepository>(
@@ -62,6 +68,7 @@ Future<void> configureDependencies() async {
       sl<ClientRemoteDataSource>(),
       sl<ConnectivityService>(),
       sl<VehicleOfflineStore>(),
+      sl<IncidentOfflineStore>(),
     ),
   );
   sl.registerLazySingleton<NotificationRepository>(
