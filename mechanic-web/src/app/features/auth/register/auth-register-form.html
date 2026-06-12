@@ -1,0 +1,137 @@
+<form class="space-y-5" [formGroup]="form" (ngSubmit)="submit()">
+	<div class="grid grid-cols-2 gap-2 rounded-lg bg-muted p-1">
+		<button
+			type="button"
+			hlmBtn
+			variant="ghost"
+			class="cursor-pointer"
+			[class.bg-background]="mode() === 'CLIENT'"
+			[class.shadow-sm]="mode() === 'CLIENT'"
+			(click)="setMode('CLIENT')"
+		>
+			Cliente
+		</button>
+
+		<button
+			type="button"
+			hlmBtn
+			variant="ghost"
+			class="cursor-pointer"
+			[class.bg-background]="mode() === 'TENANT'"
+			[class.shadow-sm]="mode() === 'TENANT'"
+			(click)="setMode('TENANT')"
+		>
+			Taller
+		</button>
+	</div>
+
+	<div class="grid gap-4 sm:grid-cols-2">
+		<hlm-field>
+			<label hlmFieldLabel for="first_name">Nombre</label>
+			<input
+				id="first_name"
+				type="text"
+				hlmInput
+				formControlName="first_name"
+				placeholder="Nombre"
+				autocomplete="given-name"
+			/>
+		</hlm-field>
+
+		<hlm-field>
+			<label hlmFieldLabel for="last_name">Apellido</label>
+			<input
+				id="last_name"
+				type="text"
+				hlmInput
+				formControlName="last_name"
+				placeholder="Apellido"
+				autocomplete="family-name"
+			/>
+		</hlm-field>
+	</div>
+
+	<hlm-field>
+		<label hlmFieldLabel for="email">Correo electrónico</label>
+		<input
+			id="email"
+			type="email"
+			hlmInput
+			formControlName="email"
+			placeholder="correo@ejemplo.com"
+			autocomplete="email"
+		/>
+	</hlm-field>
+
+	<hlm-field>
+		<label hlmFieldLabel for="password">Contraseña</label>
+		<input
+			id="password"
+			type="password"
+			hlmInput
+			formControlName="password"
+			placeholder="Mínimo 8 caracteres"
+			autocomplete="new-password"
+		/>
+	</hlm-field>
+
+	@if (mode() === 'TENANT') {
+		<div class="grid gap-4 sm:grid-cols-2">
+			<hlm-field>
+				<label hlmFieldLabel for="commercial_name">Nombre comercial</label>
+				<input
+					id="commercial_name"
+					type="text"
+					hlmInput
+					formControlName="commercial_name"
+					placeholder="Taller Speed Motors"
+					autocomplete="organization"
+				/>
+			</hlm-field>
+
+			<hlm-field>
+				<label hlmFieldLabel for="tenant_kind">Tipo de tenant</label>
+				<select
+					id="tenant_kind"
+					class="border-input bg-background h-10 w-full rounded-md border px-3 text-sm"
+					formControlName="tenant_kind"
+				>
+					<option value="WORKSHOP">Taller</option>
+					<option value="WORKSHOP_NETWORK">Red de talleres</option>
+					<option value="INDEPENDENT_TECHNICIAN">Técnico independiente</option>
+				</select>
+			</hlm-field>
+		</div>
+	}
+
+	@if (form.controls.email.touched && form.controls.email.hasError("required")) {
+		<p class="text-destructive text-sm">El correo electrónico es obligatorio.</p>
+	}
+
+	@if (form.controls.password.touched && form.controls.password.hasError("minlength")) {
+		<p class="text-destructive text-sm">La contraseña debe tener al menos 8 caracteres.</p>
+	}
+
+	@if (mode() === 'TENANT' && form.controls.commercial_name.touched && form.controls.commercial_name.hasError('required')) {
+		<p class="text-destructive text-sm">El nombre comercial es obligatorio para registrar un taller.</p>
+	}
+
+	@if (errorMessage()) {
+		<div class="border-destructive/40 bg-destructive/10 text-destructive rounded-md border px-3 py-2 text-sm">
+			{{ errorMessage() }}
+		</div>
+	}
+
+	<button
+		type="submit"
+		hlmBtn
+		class="w-full cursor-pointer"
+		[disabled]="isSubmitting()"
+	>
+		@if (isSubmitting()) {
+			Registrando...
+		} @else {
+			Crear cuenta
+		}
+	</button>
+</form>

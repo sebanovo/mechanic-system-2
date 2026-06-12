@@ -80,8 +80,7 @@ export class SessionStore {
 	}
 
 	setAnonymous(): void {
-		this.authContextState.set(null);
-		this.statusState.set("anonymous");
+		this.clear();
 	}
 
 	private setAccessToken(token: string | null): void {

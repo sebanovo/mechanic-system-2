@@ -1,6 +1,7 @@
 import {
 	ChangeDetectionStrategy,
 	Component,
+	inject,
 	input,
 	output,
 } from "@angular/core";
@@ -10,13 +11,14 @@ import { lucideMenu } from "@ng-icons/lucide";
 import { HlmButtonImports } from "@shared/ui/button";
 import { HlmIcon } from "@shared/ui/icon";
 
-import { NotificationButton } from "../notification-button/notification-button";
+import { NotificationActionBootstrapService } from "../../../features/notifications/notification-actions/notification-action-bootstrap.service";
+import { NotificationBell } from "../../notification/notification-bell/notification-bell";
 import { UserMenu } from "../user-menu/user-menu";
 
 @Component({
 	selector: "app-app-header",
 	standalone: true,
-	imports: [HlmButtonImports, HlmIcon, NgIcon, NotificationButton, UserMenu],
+	imports: [HlmButtonImports, HlmIcon, NgIcon, UserMenu, NotificationBell],
 	providers: [provideIcons({ lucideMenu })],
 	templateUrl: "./app-header.html",
 	changeDetection: ChangeDetectionStrategy.OnPush,
@@ -27,4 +29,11 @@ export class AppHeader {
 	readonly tenantName = input<string | null>(null);
 
 	readonly menuClicked = output<void>();
+	private readonly notificationActionBootstrap = inject(
+		NotificationActionBootstrapService
+	);
+
+	constructor() {
+		this.notificationActionBootstrap.initialize();
+	}
 }

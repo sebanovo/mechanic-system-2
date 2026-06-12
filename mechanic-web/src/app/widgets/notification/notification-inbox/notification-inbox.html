@@ -1,0 +1,564 @@
+<div class="space-y-5">
+	<div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+		<app-stat-card
+			label="Total"
+			[value]="summary().total"
+			description="Notificaciones recibidas"
+		/>
+
+		<app-stat-card
+			label="No leídas"
+			[value]="summary().unread"
+			description="Requieren revisión"
+			tone="warning"
+		/>
+
+		<app-stat-card
+			label="Leídas"
+			[value]="summary().read"
+			description="Ya revisadas"
+			tone="success"
+		/>
+
+		<app-stat-card
+			label="Push fallido"
+			[value]="summary().failed"
+			description="Persisten en la bandeja"
+			tone="destructive"
+		/>
+	</div>
+
+	<app-data-toolbar
+		searchPlaceholder="Buscar por título, mensaje, tipo o recurso..."
+		[showFilters]="false"
+		[showRefresh]="true"
+		(searchChanged)="onSearch($event)"
+		(refreshClicked)="load(); loadSummary()"
+	/>
+
+	<app-page-section [padded]="true">
+		<div
+			class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"
+		>
+			<label class="space-y-2 text-sm sm:min-w-64">
+				<span class="font-medium"> Estado </span>
+
+				<select
+					class="border-input bg-background h-10 w-full rounded-md border px-3 text-sm"
+					[value]="status()"
+					(change)="onStatusChange($event)"
+				>
+					@for (option of statusOptions; track option.value) {
+						<option [value]="option.value">
+							{{ option.label }}
+						</option>
+					}
+				</select>
+			</label>
+
+			<button
+				type="button"
+				hlmBtn
+				variant="outline"
+				class="cursor-pointer"
+				[disabled]="isMarkingAll() || summary().unread === 0"
+				(click)="markAllAsRead()"
+			>
+				<ng-icon name="lucideCheckCheck" class="mr-2 size-4" />
+
+				@if (isMarkingAll()) {
+					Marcando...
+				} @else {
+					Marcar todas como leídas
+				}
+			</button>
+		</div>
+	</app-page-section>
+
+	@if (isLoading()) {
+		<app-loading-state
+			title="Cargando notificaciones"
+			description="Estamos obteniendo tu bandeja de notificaciones."
+		/>
+	} @else if (errorMessage()) {
+		<app-error-state
+			title="No se pudieron cargar las notificaciones"
+			[description]="errorMessage()!"
+			(actionClicked)="load()"
+		/>
+	} @else if (filteredItems().length === 0) {
+		<app-page-section [padded]="true">
+			<div
+				class="flex min-h-72 flex-col items-center justify-center text-center"
+			>
+				<div
+					class="bg-muted text-muted-foreground flex size-12 items-center justify-center rounded-full"
+				>
+					<ng-icon name="lucideInbox" class="size-5" />
+				</div>
+
+				<h3 class="mt-4 text-base font-semibold">No hay notificaciones</h3>
+
+				<p class="text-muted-foreground mt-2 max-w-md text-sm leading-6">
+					No existen notificaciones que coincidan con el estado o la búsqueda
+					seleccionada.
+				</p>
+			</div>
+		</app-page-section>
+	} @else {
+		<div class="space-y-3">
+			@for (item of filteredItems(); track item.id) {
+				<article
+					class="bg-card text-card-foreground relative overflow-hidden rounded-xl border p-4 shadow-sm transition hover:shadow-md"
+					[class.border-primary/40]="isUnread(item)"
+					[class.bg-primary/5]="isUnread(item)"
+				>
+					@if (isUnread(item)) {
+						<div class="bg-primary absolute top-0 bottom-0 left-0 w-1"></div>
+					}
+
+					<div class="flex items-start justify-between gap-4">
+						<div class="flex min-w-0 items-start gap-3">
+							<div
+								class="flex size-10 shrink-0 items-center justify-center rounded-full"
+								[class.bg-primary/10]="isUnread(item)"
+								[class.text-primary]="isUnread(item)"
+								[class.bg-muted]="isRead(item)"
+								[class.text-muted-foreground]="isRead(item)"
+							>
+								@if (isUnread(item)) {
+									<ng-icon name="lucideBellRing" class="size-5" />
+								} @else {
+									<ng-icon name="lucideMailOpen" class="size-5" />
+								}
+							</div>
+
+							<div class="min-w-0 flex-1">
+								<div class="mb-2 flex flex-wrap items-center gap-2">
+									<app-notification-status-badge
+										[status]="item.notification_status"
+									/>
+
+									<span
+										class="bg-muted text-muted-foreground rounded-md px-2 py-0.5 text-xs font-medium"
+									>
+										{{ typeLabel(item) }}
+									</span>
+
+									@if (audienceLabel(item)) {
+										<span
+											class="bg-muted text-muted-foreground rounded-md px-2 py-0.5 text-xs font-medium"
+										>
+											{{ audienceLabel(item) }}
+										</span>
+									}
+								</div>
+
+								<h3
+									class="text-base"
+									[class.font-semibold]="isUnread(item)"
+									[class.font-medium]="isRead(item)"
+								>
+									{{ item.title }}
+								</h3>
+
+								<p
+									class="text-muted-foreground mt-1 line-clamp-3 text-sm leading-6"
+								>
+									{{ item.body }}
+								</p>
+
+								<div
+									class="text-muted-foreground mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs"
+								>
+									<span class="flex items-center gap-1.5">
+										<ng-icon name="lucideCalendar" class="size-3.5" />
+
+										{{ relativeDate(item) }}
+									</span>
+
+									<span class="flex items-center gap-1.5">
+										<ng-icon name="lucideTag" class="size-3.5" />
+
+										{{ resourceReference(item) }}
+									</span>
+								</div>
+							</div>
+						</div>
+
+						<app-resource-actions-menu
+							[actions]="actionsFor(item)"
+							(actionSelected)="onAction($event, item)"
+						/>
+					</div>
+
+					@if (item.notification_status === "FAILED") {
+						<div
+							class="border-destructive/30 bg-destructive/5 mt-4 rounded-lg border p-3"
+						>
+							<div class="text-destructive flex items-start gap-2">
+								<ng-icon
+									name="lucideCircleAlert"
+									class="mt-0.5 size-4 shrink-0"
+								/>
+
+								<div class="min-w-0">
+									<p class="text-xs font-medium">El envío push falló</p>
+
+									<p class="mt-1 line-clamp-2 text-xs leading-5">
+										{{
+											item.error_message ||
+												"La notificación permanece disponible en la bandeja."
+										}}
+									</p>
+								</div>
+							</div>
+						</div>
+					}
+
+					<div
+						class="mt-4 flex flex-col gap-2 border-t pt-4 sm:flex-row sm:flex-wrap sm:justify-end"
+					>
+						@if (isUnread(item)) {
+							<button
+								type="button"
+								hlmBtn
+								variant="outline"
+								class="cursor-pointer"
+								[disabled]="markingNotificationId() === item.id"
+								(click)="markAsRead(item)"
+							>
+								<ng-icon name="lucideCheck" class="mr-2 size-4" />
+
+								@if (markingNotificationId() === item.id) {
+									Marcando...
+								} @else {
+									Marcar como leída
+								}
+							</button>
+						}
+
+						@for (action of actionsForNotification(item); track action.key) {
+							<button
+								type="button"
+								hlmBtn
+								[variant]="
+									action.key === 'reject'
+										? 'destructive'
+										: action.key === 'accept' || action.key === 'start_route'
+											? 'default'
+											: 'outline'
+								"
+								class="cursor-pointer"
+								[disabled]="actionIsExecuting(action)"
+								(click)="executeNotificationAction(item, action)"
+							>
+								@if (actionIsExecuting(action)) {
+									<ng-icon
+										name="lucideLoaderCircle"
+										class="mr-2 size-4 animate-spin"
+									/>
+
+									Procesando...
+								} @else {
+									@if (action.key === "accept") {
+										<ng-icon name="lucideCheck" class="mr-2 size-4" />
+									} @else if (action.key === "reject") {
+										<ng-icon name="lucideX" class="mr-2 size-4" />
+									} @else if (action.key === "start_route") {
+										<ng-icon name="lucideNavigation" class="mr-2 size-4" />
+									} @else {
+										<ng-icon name="lucideExternalLink" class="mr-2 size-4" />
+									}
+
+									{{ action.label }}
+								}
+							</button>
+						}
+
+						<button
+							type="button"
+							hlmBtn
+							variant="outline"
+							class="cursor-pointer"
+							(click)="openDetail(item)"
+						>
+							<ng-icon name="lucideInfo" class="mr-2 size-4" />
+
+							Ver detalle
+						</button>
+					</div>
+				</article>
+			}
+		</div>
+
+		<app-pagination
+			[page]="pagination().page"
+			[pageSize]="pagination().page_size"
+			[total]="pagination().total"
+			[totalPages]="pagination().total_pages"
+			[disabled]="isLoading()"
+			(pageChanged)="onPageChange($event)"
+			(pageSizeChanged)="onPageSizeChange($event)"
+		/>
+	}
+
+	<app-side-drawer
+		[open]="isDetailOpen()"
+		title="Detalle de notificación"
+		description="Información completa de la notificación seleccionada."
+		widthClass="sm:max-w-2xl"
+		(closed)="closeDetail()"
+	>
+		@if (selectedNotification()) {
+			@let detail = selectedNotification()!;
+
+			<div class="space-y-5">
+				<section
+					class="bg-card text-card-foreground rounded-xl border p-4"
+					[class.border-primary/40]="isUnread(detail)"
+					[class.bg-primary/5]="isUnread(detail)"
+				>
+					<div class="flex flex-wrap items-center gap-2">
+						<app-notification-status-badge
+							[status]="detail.notification_status"
+						/>
+
+						<span
+							class="bg-muted text-muted-foreground rounded-md px-2 py-0.5 text-xs font-medium"
+						>
+							{{ typeLabel(detail) }}
+						</span>
+
+						@if (audienceLabel(detail)) {
+							<span
+								class="bg-muted text-muted-foreground rounded-md px-2 py-0.5 text-xs font-medium"
+							>
+								{{ audienceLabel(detail) }}
+							</span>
+						}
+					</div>
+
+					<h3 class="mt-3 text-lg font-semibold">
+						{{ detail.title }}
+					</h3>
+
+					<p class="text-muted-foreground mt-2 text-sm leading-6">
+						{{ detail.body }}
+					</p>
+				</section>
+
+				<section class="bg-card text-card-foreground rounded-xl border p-4">
+					<h4 class="font-semibold">Información</h4>
+
+					<div class="mt-4 grid gap-4 sm:grid-cols-2">
+						<div class="space-y-1">
+							<p class="text-muted-foreground flex items-center gap-2 text-xs">
+								<ng-icon name="lucideCalendar" class="size-4" />
+
+								Recibida
+							</p>
+
+							<p class="text-sm font-medium">
+								{{ fullDate(detail.created_at) }}
+							</p>
+						</div>
+
+						<div class="space-y-1">
+							<p class="text-muted-foreground flex items-center gap-2 text-xs">
+								<ng-icon name="lucideMailOpen" class="size-4" />
+
+								Leída
+							</p>
+
+							<p class="text-sm font-medium">
+								{{ fullDate(detail.read_at) }}
+							</p>
+						</div>
+
+						<div class="space-y-1">
+							<p class="text-muted-foreground flex items-center gap-2 text-xs">
+								<ng-icon name="lucideUserRound" class="size-4" />
+
+								Audiencia
+							</p>
+
+							<p class="text-sm font-medium">
+								{{ audienceLabel(detail) }}
+							</p>
+						</div>
+
+						<div class="space-y-1">
+							<p class="text-muted-foreground flex items-center gap-2 text-xs">
+								<ng-icon name="lucideTag" class="size-4" />
+
+								Recurso
+							</p>
+
+							<p class="text-sm font-medium break-all">
+								{{ resourceReference(detail) }}
+							</p>
+						</div>
+
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Estado de entrega</p>
+
+							<p class="text-sm font-medium">
+								{{ detail.notification_status }}
+							</p>
+						</div>
+
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Enviada</p>
+
+							<p class="text-sm font-medium">
+								{{ fullDate(detail.sent_at) }}
+							</p>
+						</div>
+
+						<div class="space-y-1 sm:col-span-2">
+							<p class="text-muted-foreground text-xs">Notification ID</p>
+
+							<p class="text-sm font-medium break-all">
+								{{ detail.id }}
+							</p>
+						</div>
+
+						@if (detail.provider_message_id) {
+							<div class="space-y-1 sm:col-span-2">
+								<p class="text-muted-foreground text-xs">Provider message ID</p>
+
+								<p class="text-sm font-medium break-all">
+									{{ detail.provider_message_id }}
+								</p>
+							</div>
+						}
+					</div>
+				</section>
+
+				@if (detail.notification_status === "FAILED") {
+					<section
+						class="border-destructive/40 bg-destructive/10 rounded-xl border p-4"
+					>
+						<div class="text-destructive flex items-start gap-3">
+							<ng-icon
+								name="lucideCircleAlert"
+								class="mt-0.5 size-5 shrink-0"
+							/>
+
+							<div>
+								<h4 class="font-semibold">El envío push falló</h4>
+
+								<p class="mt-1 text-sm leading-6">
+									{{
+										detail.error_message ||
+											"El push no pudo enviarse, pero la notificación fue guardada en la bandeja."
+									}}
+								</p>
+							</div>
+						</div>
+					</section>
+				}
+
+				<section class="bg-card text-card-foreground rounded-xl border p-4">
+					<h4 class="font-semibold">Acciones disponibles</h4>
+
+					@if (actionsForNotification(detail).length === 0) {
+						<p class="text-muted-foreground mt-3 text-sm">
+							Esta notificación no contiene acciones disponibles.
+						</p>
+					} @else {
+						<div class="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+							@for (
+								action of actionsForNotification(detail);
+								track action.key
+							) {
+								<button
+									type="button"
+									hlmBtn
+									[variant]="
+										action.key === 'reject'
+											? 'destructive'
+											: action.key === 'accept' || action.key === 'start_route'
+												? 'default'
+												: 'outline'
+									"
+									class="cursor-pointer"
+									[disabled]="actionIsExecuting(action)"
+									(click)="executeNotificationAction(detail, action)"
+								>
+									@if (actionIsExecuting(action)) {
+										<ng-icon
+											name="lucideLoaderCircle"
+											class="mr-2 size-4 animate-spin"
+										/>
+
+										Procesando...
+									} @else {
+										@if (action.key === "accept") {
+											<ng-icon name="lucideCheck" class="mr-2 size-4" />
+										} @else if (action.key === "reject") {
+											<ng-icon name="lucideX" class="mr-2 size-4" />
+										} @else if (action.key === "start_route") {
+											<ng-icon name="lucideNavigation" class="mr-2 size-4" />
+										} @else {
+											<ng-icon name="lucideExternalLink" class="mr-2 size-4" />
+										}
+
+										{{ action.label }}
+									}
+								</button>
+							}
+						</div>
+					}
+				</section>
+
+				<section class="bg-card text-card-foreground rounded-xl border p-4">
+					<h4 class="font-semibold">Datos asociados</h4>
+
+					@if (hasData(detail)) {
+						<pre
+							class="bg-muted/40 mt-4 max-h-96 overflow-auto rounded-lg border p-4 text-xs leading-6"
+							>{{ dataLabel(detail) }}</pre
+						>
+					} @else {
+						<p class="text-muted-foreground mt-3 text-sm">
+							La notificación no contiene datos adicionales.
+						</p>
+					}
+				</section>
+
+				<div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+					@if (isUnread(detail)) {
+						<button
+							type="button"
+							hlmBtn
+							variant="outline"
+							class="cursor-pointer"
+							[disabled]="markingNotificationId() === detail.id"
+							(click)="markAsRead(detail)"
+						>
+							<ng-icon name="lucideCheck" class="mr-2 size-4" />
+
+							@if (markingNotificationId() === detail.id) {
+								Marcando...
+							} @else {
+								Marcar como leída
+							}
+						</button>
+					}
+
+					<button
+						type="button"
+						hlmBtn
+						variant="outline"
+						class="cursor-pointer"
+						(click)="closeDetail()"
+					>
+						Cerrar
+					</button>
+				</div>
+			</div>
+		}
+	</app-side-drawer>
+</div>

@@ -14,6 +14,7 @@ import {
 })
 export class IncidentOfferApi {
 	private readonly apiClient = inject(ApiClient);
+	private readonly platformBasePath = "/platform/incident-offers";
 	private readonly tenantBasePath = "/tenants/current/offers";
 
 	listCurrentTenantOffers(
@@ -28,6 +29,23 @@ export class IncidentOfferApi {
 	getCurrentTenantOfferById(offerId: string): Observable<IncidentOfferDetail> {
 		return this.apiClient.get<IncidentOfferDetail>(
 			`${this.tenantBasePath}/${offerId}`
+		);
+	}
+
+	listPlatformIncidentOffers(
+		query?: IncidentOfferListQuery
+	): Observable<IncidentOfferListData> {
+		return this.apiClient.get<IncidentOfferListData>(
+			this.platformBasePath,
+			query
+		);
+	}
+
+	getPlatformIncidentOfferById(
+		offerId: string
+	): Observable<IncidentOfferDetail> {
+		return this.apiClient.get<IncidentOfferDetail>(
+			`${this.platformBasePath}/${offerId}`
 		);
 	}
 

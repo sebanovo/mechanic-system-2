@@ -1,0 +1,231 @@
+<div class="space-y-5">
+	<app-page-section [padded]="true">
+		<div class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+			<div>
+				<div class="flex items-center gap-2">
+					<ng-icon name="lucideCalendarDays" class="text-primary size-5" />
+
+					<h2 class="font-semibold">Periodo de análisis</h2>
+				</div>
+
+				<p class="text-muted-foreground mt-1 text-sm">
+					{{ appliedRangeLabel() }}
+				</p>
+			</div>
+
+			<div class="grid gap-3 sm:grid-cols-2 xl:flex xl:items-end">
+				<label class="space-y-2 text-sm">
+					<span class="font-medium">Desde</span>
+
+					<input
+						hlmInput
+						type="date"
+						[value]="filters().date_from"
+						[disabled]="isLoading()"
+						(input)="updateFilter('date_from', $any($event.target).value)"
+					/>
+				</label>
+
+				<label class="space-y-2 text-sm">
+					<span class="font-medium">Hasta</span>
+
+					<input
+						hlmInput
+						type="date"
+						[value]="filters().date_to"
+						[disabled]="isLoading()"
+						(input)="updateFilter('date_to', $any($event.target).value)"
+					/>
+				</label>
+
+				<div class="flex gap-2 sm:col-span-2">
+					<button
+						type="button"
+						hlmBtn
+						variant="outline"
+						class="cursor-pointer"
+						[disabled]="isLoading()"
+						(click)="resetRange()"
+					>
+						Últimos 30 días
+					</button>
+
+					<button
+						type="button"
+						hlmBtn
+						class="cursor-pointer"
+						[disabled]="isLoading()"
+						(click)="load()"
+					>
+						<ng-icon
+							name="lucideRefreshCw"
+							class="mr-2 size-4"
+							[class.animate-spin]="isLoading()"
+						/>
+
+						Actualizar
+					</button>
+				</div>
+			</div>
+		</div>
+	</app-page-section>
+
+	@if (isLoading() && !hasData()) {
+		<app-loading-state
+			title="Cargando dashboard"
+			description="Estamos obteniendo tus métricas operativas."
+		/>
+	} @else if (errorMessage() && !hasData()) {
+		<app-error-state
+			title="No se pudo cargar el dashboard"
+			[description]="errorMessage()!"
+			(actionClicked)="load()"
+		/>
+	} @else if (dashboard()) {
+		<app-current-assignment-card
+			[assignment]="dashboard()!.kpis.current_assignment"
+		/>
+
+		<section
+			aria-label="Indicadores del técnico"
+			class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4"
+		>
+			@for (kpi of metricKpis(); track kpi.id) {
+				<app-dashboard-kpi-card [kpi]="kpi" />
+			}
+		</section>
+
+		@if (complianceKpi()) {
+			@let compliance = complianceKpi()!;
+
+			<section class="bg-card text-card-foreground rounded-xl border p-4 shadow-sm">
+				<div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+					<div>
+						<div class="flex items-center gap-2">
+							<div class="bg-violet-50 text-violet-600 dark:bg-violet-950/40 dark:text-violet-400 flex size-10 items-center justify-center rounded-xl">
+								<ng-icon name="lucideShieldCheck" class="size-5" />
+							</div>
+
+							<div>
+								<p class="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+									{{ compliance.title }}
+								</p>
+
+								<p class="mt-1 text-3xl font-bold">
+									{{ compliance.percentage }}
+								</p>
+							</div>
+						</div>
+
+						<p class="text-muted-foreground mt-3 text-sm">
+							{{ compliance.description }}
+						</p>
+					</div>
+
+					<div class="grid gap-3 sm:grid-cols-2 lg:min-w-80">
+						<div class="bg-muted/40 rounded-lg border p-3">
+							<p class="text-muted-foreground text-xs">
+								En tiempo
+							</p>
+
+							<p class="mt-1 text-xl font-semibold">
+								{{ compliance.completed }}
+							</p>
+						</div>
+
+						<div class="bg-muted/40 rounded-lg border p-3">
+							<p class="text-muted-foreground text-xs">
+								Fuera de tiempo
+							</p>
+
+							<p class="mt-1 text-xl font-semibold">
+								{{ compliance.outOfTime }}
+							</p>
+						</div>
+					</div>
+				</div>
+			</section>
+		}
+
+		@if (charts()) {
+			@let chartData = charts()!;
+
+			<section
+				aria-label="Gráficos del técnico"
+				class="grid grid-cols-1 gap-4 xl:grid-cols-2"
+			>
+				<app-dashboard-chart-card
+					title="Servicios por tipo"
+					description="Distribución de los servicios atendidos según su categoría."
+				>
+					@if (hasServicesByType()) {
+						<canvas
+							baseChart
+							type="bar"
+							[data]="chartData.servicesByType"
+							[options]="verticalBarOptions"
+						></canvas>
+					} @else {
+						<div class="text-muted-foreground flex h-full items-center justify-center text-sm">
+							Sin servicios registrados.
+						</div>
+					}
+				</app-dashboard-chart-card>
+
+				<app-dashboard-chart-card
+					title="Servicios completados"
+					description="Evolución de los servicios finalizados durante el periodo."
+				>
+					@if (hasCompletedTrend()) {
+						<canvas
+							baseChart
+							type="line"
+							[data]="chartData.completedTrend"
+							[options]="lineOptions"
+						></canvas>
+					} @else {
+						<div class="text-muted-foreground flex h-full items-center justify-center text-sm">
+							Sin evolución disponible.
+						</div>
+					}
+				</app-dashboard-chart-card>
+
+				<app-dashboard-chart-card
+					title="Cumplimiento por servicio"
+					description="Porcentaje de servicios completados dentro del tiempo estimado."
+				>
+					@if (hasCompliance()) {
+						<canvas
+							baseChart
+							type="bar"
+							[data]="chartData.serviceCompliance"
+							[options]="percentageOptions"
+						></canvas>
+					} @else {
+						<div class="text-muted-foreground flex h-full items-center justify-center text-sm">
+							Sin datos de cumplimiento.
+						</div>
+					}
+				</app-dashboard-chart-card>
+
+				<app-dashboard-chart-card
+					title="Zonas más atendidas"
+					description="Zonas donde realizaste la mayor cantidad de servicios."
+				>
+					@if (hasTopZones()) {
+						<canvas
+							baseChart
+							type="bar"
+							[data]="chartData.topZones"
+							[options]="horizontalBarOptions"
+						></canvas>
+					} @else {
+						<div class="text-muted-foreground flex h-full items-center justify-center text-sm">
+							Sin zonas registradas.
+						</div>
+					}
+				</app-dashboard-chart-card>
+			</section>
+		}
+	}
+</div>

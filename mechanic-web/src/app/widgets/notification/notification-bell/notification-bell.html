@@ -1,0 +1,210 @@
+<div class="relative">
+	<button
+		type="button"
+		hlmBtn
+		variant="ghost"
+		size="icon"
+		class="relative cursor-pointer"
+		aria-label="Abrir notificaciones"
+		(click)="toggle()"
+	>
+		@if (notificationStore.hasUnread()) {
+			<ng-icon name="lucideBellRing" class="size-5" />
+		} @else {
+			<ng-icon name="lucideBell" class="size-5" />
+		}
+
+		@if (notificationStore.unreadCount() > 0) {
+			<span
+				class="bg-destructive text-destructive-foreground absolute -top-1 -right-1 flex min-h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-semibold"
+			>
+				{{
+					notificationStore.unreadCount() > 99
+						? "99+"
+						: notificationStore.unreadCount()
+				}}
+			</span>
+		}
+	</button>
+
+	@if (isOpen()) {
+		<button
+			type="button"
+			class="fixed inset-0 z-40 cursor-default"
+			aria-label="Cerrar notificaciones"
+			(click)="close()"
+		></button>
+
+		<section
+			class="bg-popover text-popover-foreground absolute top-12 right-0 z-50 w-[min(24rem,calc(100vw-2rem))] overflow-hidden rounded-xl border shadow-xl"
+		>
+			<header class="flex items-center justify-between gap-3 border-b p-4">
+				<div>
+					<h2 class="font-semibold">Notificaciones</h2>
+
+					<p class="text-muted-foreground mt-0.5 text-xs">
+						{{ notificationStore.unreadCount() }}
+						sin leer
+					</p>
+				</div>
+
+				<button
+					type="button"
+					hlmBtn
+					variant="ghost"
+					size="sm"
+					class="cursor-pointer"
+					[disabled]="isMarkingAll() || notificationStore.unreadCount() === 0"
+					(click)="markAllAsRead()"
+				>
+					<ng-icon name="lucideCheckCheck" class="mr-2 size-4" />
+					Marcar leídas
+				</button>
+			</header>
+
+			<div class="border-b p-3">
+				@if (notificationPush.permissionState() === "DEFAULT") {
+					<div class="bg-muted/40 rounded-lg border p-3">
+						<p class="text-sm font-medium">Activa las notificaciones push</p>
+
+						<p class="text-muted-foreground mt-1 text-xs leading-5">
+							Recibe avisos aunque no estés viendo esta página.
+						</p>
+
+						<button
+							type="button"
+							hlmBtn
+							size="sm"
+							class="mt-3 cursor-pointer"
+							[disabled]="notificationPush.isEnabling()"
+							(click)="enablePush()"
+						>
+							@if (notificationPush.isEnabling()) {
+								<ng-icon
+									name="lucideLoaderCircle"
+									class="mr-2 size-4 animate-spin"
+								/>
+								Activando...
+							} @else {
+								<ng-icon name="lucideBellRing" class="mr-2 size-4" />
+								Activar push
+							}
+						</button>
+					</div>
+				} @else if (notificationPush.permissionState() === "DENIED") {
+					<div
+						class="border-destructive/30 bg-destructive/5 rounded-lg border p-3"
+					>
+						<div class="text-destructive flex items-start gap-2">
+							<ng-icon name="lucideBellOff" class="mt-0.5 size-4 shrink-0" />
+
+							<div>
+								<p class="text-sm font-medium">Notificaciones bloqueadas</p>
+
+								<p class="mt-1 text-xs leading-5">
+									Habilítalas desde los permisos del navegador.
+								</p>
+							</div>
+						</div>
+					</div>
+				} @else if (notificationPush.isEnabled()) {
+					<div
+						class="flex items-center justify-between gap-3 rounded-lg border p-3"
+					>
+						<div>
+							<p class="text-sm font-medium">Push activado</p>
+
+							<p class="text-muted-foreground mt-1 text-xs">
+								Este navegador está registrado.
+							</p>
+						</div>
+
+						<button
+							type="button"
+							hlmBtn
+							variant="ghost"
+							size="sm"
+							class="cursor-pointer"
+							(click)="disablePush()"
+						>
+							Desactivar
+						</button>
+					</div>
+				}
+			</div>
+
+			<div class="max-h-96 overflow-y-auto">
+				@if (notificationStore.isLoading()) {
+					<div class="flex min-h-40 items-center justify-center">
+						<ng-icon
+							name="lucideLoaderCircle"
+							class="text-muted-foreground size-5 animate-spin"
+						/>
+					</div>
+				} @else if (notificationStore.latest().length === 0) {
+					<div
+						class="flex min-h-40 flex-col items-center justify-center px-6 text-center"
+					>
+						<ng-icon name="lucideBell" class="text-muted-foreground size-6" />
+
+						<p class="mt-3 text-sm font-medium">Sin notificaciones</p>
+
+						<p class="text-muted-foreground mt-1 text-xs">
+							Los nuevos avisos aparecerán aquí.
+						</p>
+					</div>
+				} @else {
+					@for (item of notificationStore.latest(); track item.id) {
+						<button
+							type="button"
+							class="hover:bg-muted/50 relative block w-full border-b px-4 py-3 text-left transition last:border-b-0"
+							[class.bg-primary/5]="item.notification_status !== 'READ'"
+							(click)="openNotification(item)"
+						>
+							@if (item.notification_status !== "READ") {
+								<span
+									class="bg-primary absolute top-4 left-2 size-2 rounded-full"
+								></span>
+							}
+
+							<div class="pl-2">
+								<div class="flex items-start justify-between gap-3">
+									<p
+										class="line-clamp-1 text-sm"
+										[class.font-semibold]="item.notification_status !== 'READ'"
+									>
+										{{ item.title }}
+									</p>
+
+									<span class="text-muted-foreground shrink-0 text-[11px]">
+										{{ relativeDate(item) }}
+									</span>
+								</div>
+
+								<p
+									class="text-muted-foreground mt-1 line-clamp-2 text-xs leading-5"
+								>
+									{{ item.body }}
+								</p>
+							</div>
+						</button>
+					}
+				}
+			</div>
+
+			<footer class="border-t p-3">
+				<button
+					type="button"
+					hlmBtn
+					variant="ghost"
+					class="w-full cursor-pointer"
+					(click)="openInbox()"
+				>
+					Ver todas las notificaciones
+
+					<ng-icon name="lucideExternalLink" class="ml-2 size-4" />
+				</button>
+			</footer>
+		</section>
+	}
+</div>

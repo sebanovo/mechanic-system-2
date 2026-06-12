@@ -23,10 +23,45 @@ export const PLATFORM_ROUTES: Routes = [
 					),
 			},
 			{
+				path: "users",
+				loadComponent: () =>
+					import("../../pages/platform/users/platform-users.page").then(
+						m => m.PlatformUsersPage
+					),
+			},
+			{
 				path: "service-catalog",
 				loadComponent: () =>
 					import("../../pages/platform/service-catalog/platform-service-catalog.page").then(
 						m => m.PlatformServiceCatalogPage
+					),
+			},
+			{
+				path: "incident-ai-analyses",
+				loadComponent: () =>
+					import("../../pages/platform/incident-ai-analyses/platform-incident-ai-analyses.page").then(
+						m => m.PlatformIncidentAiAnalysesPage
+					),
+			},
+			{
+				path: "incidents",
+				loadComponent: () =>
+					import("../../pages/platform/incidents/platform-incidents.page").then(
+						m => m.PlatformIncidentsPage
+					),
+			},
+			{
+				path: "incident-offers",
+				loadComponent: () =>
+					import("../../pages/platform/incident-offers/platform-incident-offers.page").then(
+						m => m.PlatformIncidentOffersPage
+					),
+			},
+			{
+				path: "audit",
+				loadComponent: () =>
+					import("../../pages/platform/audit/platform-audit.page").then(
+						m => m.PlatformAuditPage
 					),
 			},
 		],

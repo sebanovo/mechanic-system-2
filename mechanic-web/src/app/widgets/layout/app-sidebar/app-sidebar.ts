@@ -16,6 +16,7 @@ import {
 	lucideListChecks,
 	lucideMap,
 	lucideRoute,
+	lucideSatellite,
 	lucideSettings,
 	lucideShield,
 	lucideUsers,
@@ -48,6 +49,7 @@ import { NavigationGroup, NavigationIcon } from "../../../core/navigation";
 			lucideDatabase,
 			lucideClock,
 			lucideRoute,
+			lucideSatellite,
 		}),
 	],
 	templateUrl: "./app-sidebar.html",
@@ -78,6 +80,7 @@ export class AppSidebar {
 			database: "lucideDatabase",
 			clock: "lucideClock",
 			route: "lucideRoute",
+			satellite: "lucideSatellite",
 		};
 
 		return icons[icon ?? "dashboard"];

@@ -1,6 +1,14 @@
 import { Component } from "@angular/core";
+import { NgIcon, provideIcons } from "@ng-icons/core";
+import {
+	lucideCircleDot,
+	lucideSatellite,
+	lucideSparkles,
+	lucideWorkflow,
+} from "@ng-icons/lucide";
 
 type StepItem = {
+	icon: string;
 	number: string;
 	title: string;
 	description: string;
@@ -9,32 +17,42 @@ type StepItem = {
 @Component({
 	selector: "app-public-how-it-works",
 	standalone: true,
+	imports: [NgIcon],
+	providers: [
+		provideIcons({
+			lucideCircleDot,
+			lucideSatellite,
+			lucideSparkles,
+			lucideWorkflow,
+		}),
+	],
 	templateUrl: "./public-how-it-works.html",
 })
 export class PublicHowItWorks {
 	protected readonly steps: StepItem[] = [
 		{
+			icon: "circle-dot",
 			number: "01",
-			title: "El cliente reporta un incidente",
-			description:
-				"Indica el problema, vehículo y ubicación desde la aplicación.",
+			title: "Se registra el incidente",
+			description: "Cliente, QR o panel interno capturan síntoma, ubicación y contexto del caso.",
 		},
 		{
+			icon: "sparkles",
 			number: "02",
-			title: "El sistema busca talleres disponibles",
-			description:
-				"Se generan candidatos según servicio, disponibilidad y cercanía.",
+			title: "La IA sugiere prioridad y diagnóstico",
+			description: "El sistema propone servicio probable, prioridad y notas de análisis.",
 		},
 		{
+			icon: "workflow",
 			number: "03",
-			title: "El taller acepta la solicitud",
-			description: "El taller revisa el caso y confirma si puede atenderlo.",
+			title: "Se asigna taller y técnico",
+			description: "La operación confirma disponibilidad, oferta y seguimiento operativo.",
 		},
 		{
+			icon: "satellite",
 			number: "04",
-			title: "Se asigna un técnico",
-			description:
-				"El cliente recibe información del técnico y seguimiento de la atención.",
+			title: "Se monitorea hasta el cierre",
+			description: "Queda trazabilidad de ruta, tiempos, auditoría y resultado final.",
 		},
 	];
 }

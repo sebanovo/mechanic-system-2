@@ -5,6 +5,8 @@ import { map, Observable } from "rxjs";
 import {
 	AuthContext,
 	LoginRequest,
+	RegisterClientRequest,
+	RegisterTenantRequest,
 	SelectTenantRequest,
 } from "../../../entities/session/model";
 import { API_CONFIG } from "../../../shared/api/api.config";
@@ -16,6 +18,22 @@ import { ApiResponse } from "../../../shared/api/api.types";
 export class AuthApi {
 	private readonly http = inject(HttpClient);
 	private readonly baseUrl = `${API_CONFIG.baseUrl}/auth`;
+
+	registerClient(payload: RegisterClientRequest): Observable<AuthContext> {
+		return this.http
+			.post<ApiResponse<AuthContext>>(`${this.baseUrl}/register-client`, payload, {
+				withCredentials: API_CONFIG.withCredentials,
+			})
+			.pipe(map(response => response.data));
+	}
+
+	registerTenant(payload: RegisterTenantRequest): Observable<AuthContext> {
+		return this.http
+			.post<ApiResponse<AuthContext>>(`${this.baseUrl}/register-tenant`, payload, {
+				withCredentials: API_CONFIG.withCredentials,
+			})
+			.pipe(map(response => response.data));
+	}
 
 	login(payload: LoginRequest): Observable<AuthContext> {
 		return this.http

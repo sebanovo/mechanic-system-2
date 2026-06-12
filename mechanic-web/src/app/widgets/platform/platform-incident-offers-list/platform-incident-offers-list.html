@@ -1,0 +1,339 @@
+<div class="space-y-5">
+	<app-data-toolbar
+		[showSearch]="false"
+		[showFilters]="false"
+		[showRefresh]="true"
+		searchPlaceholder="Ofertas de incidentes"
+		(refreshClicked)="refresh()"
+	/>
+
+	<app-page-section [padded]="true">
+		<div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+			<label class="space-y-2 text-sm">
+				<span class="font-medium">Estado</span>
+				<select
+					class="border-input bg-background h-10 w-full rounded-md border px-3 text-sm"
+					[value]="filters().offer_status"
+					(change)="onStatusChange($event)"
+				>
+					@for (option of statusOptions; track option.value) {
+						<option [value]="option.value">{{ option.label }}</option>
+					}
+				</select>
+			</label>
+		</div>
+
+		<div class="mt-5 flex justify-end">
+			<button
+				type="button"
+				hlmBtn
+				variant="outline"
+				class="cursor-pointer"
+				[disabled]="isLoading()"
+				(click)="clearFilters()"
+			>
+				Limpiar filtros
+			</button>
+		</div>
+	</app-page-section>
+
+	@if (isLoading()) {
+		<app-loading-state
+			title="Cargando ofertas"
+			description="Estamos obteniendo las ofertas de incidentes de plataforma."
+		/>
+	} @else if (errorMessage()) {
+		<app-error-state
+			title="No se pudieron cargar las ofertas"
+			[description]="errorMessage()!"
+			(actionClicked)="refresh()"
+		/>
+	} @else if (filteredItems().length === 0) {
+		<app-page-section [padded]="true">
+			<div class="flex min-h-64 flex-col items-center justify-center text-center">
+				<div class="bg-muted text-muted-foreground flex size-12 items-center justify-center rounded-full">
+					<ng-icon name="lucideSearch" class="size-5" />
+				</div>
+				<h3 class="mt-4 text-base font-semibold">No hay ofertas para mostrar</h3>
+				<p class="text-muted-foreground mt-2 max-w-md text-sm">
+					No existen ofertas que coincidan con el filtro seleccionado.
+				</p>
+			</div>
+		</app-page-section>
+	} @else {
+		<div class="space-y-3">
+			@for (item of filteredItems(); track item.id) {
+				<article class="bg-card text-card-foreground rounded-xl border p-4 shadow-sm transition hover:shadow-md">
+					<div class="flex items-start justify-between gap-4">
+						<div class="min-w-0">
+							<div class="mb-2 flex flex-wrap items-center gap-2">
+								<app-incident-offer-status-badge [status]="offerStatus(item)" />
+								<app-incident-status-badge [status]="item.incident_status" />
+								<span class="bg-muted text-muted-foreground rounded-md px-2 py-0.5 text-xs font-medium">
+									{{ incidentPriorityLabel(item) }}
+								</span>
+							</div>
+
+							<h3 class="text-base font-semibold">
+								{{ incidentCode(item) }}
+							</h3>
+
+							<p class="text-muted-foreground mt-1 line-clamp-2 text-sm leading-6">
+								{{ incidentDescription(item) }}
+							</p>
+
+							<p class="text-muted-foreground mt-2 text-xs">
+								{{ serviceName(item) }} · {{ serviceCategory(item) }}
+							</p>
+
+							<div class="text-muted-foreground mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
+								<span class="flex items-center gap-1.5">
+									<ng-icon name="lucideCalendar" class="size-3.5" />
+									{{ createdAtLabel(item) }}
+								</span>
+
+								<span class="flex items-center gap-1.5">
+									<ng-icon name="lucideMapPinned" class="size-3.5" />
+									{{ locationLabel(item) }}
+								</span>
+							</div>
+						</div>
+
+						<div class="flex shrink-0 gap-2">
+							<button
+								type="button"
+								hlmBtn
+								variant="outline"
+								class="cursor-pointer"
+								(click)="openDetail(item)"
+							>
+								Ver detalle
+							</button>
+						</div>
+					</div>
+				</article>
+			}
+		</div>
+
+		<app-pagination
+			[page]="pagination().page"
+			[pageSize]="pagination().page_size"
+			[total]="pagination().total"
+			[totalPages]="pagination().total_pages"
+			[disabled]="isLoading()"
+			(pageChanged)="onPageChange($event)"
+			(pageSizeChanged)="onPageSizeChange($event)"
+		/>
+	}
+
+	<app-side-drawer
+		[open]="isDetailOpen()"
+		title="Detalle de la oferta"
+		description="Vista de solo lectura de la oferta de incidente."
+		widthClass="sm:max-w-5xl"
+		(closed)="closeDetail()"
+	>
+		@if (isDetailLoading()) {
+			<app-loading-state
+				title="Cargando oferta"
+				description="Estamos obteniendo el detalle de la oferta."
+				minHeight="min-h-52"
+			/>
+		} @else if (detailErrorMessage()) {
+			<app-error-state
+				title="No se pudo cargar el detalle"
+				[description]="detailErrorMessage()!"
+				(actionClicked)="closeDetail()"
+			/>
+		} @else if (selectedOffer()) {
+			@let detail = selectedOffer()!;
+
+			<div class="space-y-5">
+				<section class="bg-card text-card-foreground rounded-xl border p-4">
+					<div class="flex items-start justify-between gap-4">
+						<div class="min-w-0">
+							<div class="mb-2 flex flex-wrap items-center gap-2">
+								<app-incident-offer-status-badge [status]="offerStatus(detail)" />
+								<app-incident-status-badge [status]="detail.incident.status" />
+							</div>
+
+							<h3 class="text-lg font-semibold">
+								{{ incidentCode(detail) }}
+							</h3>
+
+							<p class="text-muted-foreground mt-1 text-sm">
+								{{ incidentDescription(detail) }}
+							</p>
+						</div>
+
+						<div class="bg-muted text-muted-foreground flex size-14 shrink-0 items-center justify-center rounded-full">
+							<ng-icon name="lucideInfo" class="size-6" />
+						</div>
+					</div>
+				</section>
+
+				<section class="bg-card text-card-foreground rounded-xl border p-4">
+					<h4 class="font-semibold">Oferta</h4>
+					<div class="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">ID</p>
+							<p class="text-sm font-medium break-all">{{ detail.offer.id }}</p>
+						</div>
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Estado</p>
+							<app-incident-offer-status-badge [status]="offerStatus(detail)" />
+						</div>
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Enviada</p>
+							<p class="text-sm font-medium">{{ sentAtLabel(detail) }}</p>
+						</div>
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Respondida</p>
+							<p class="text-sm font-medium">{{ respondedAtLabel(detail) }}</p>
+						</div>
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Expira</p>
+							<p class="text-sm font-medium">{{ expirationLabel(detail) }}</p>
+						</div>
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Mensaje</p>
+							<p class="text-sm font-medium">{{ detail.offer.message || "Sin mensaje" }}</p>
+						</div>
+					</div>
+				</section>
+
+				<section class="bg-card text-card-foreground rounded-xl border p-4">
+					<h4 class="font-semibold">Incidente</h4>
+					<div class="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Código</p>
+							<p class="text-sm font-medium break-all">{{ incidentCode(detail) }}</p>
+						</div>
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Estado</p>
+							<app-incident-status-badge [status]="detail.incident.status" />
+						</div>
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Prioridad</p>
+							<p class="text-sm font-medium">{{ incidentPriority(detail) }}</p>
+						</div>
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Título</p>
+							<p class="text-sm font-medium">{{ detail.incident.title }}</p>
+						</div>
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Descripción</p>
+							<p class="text-sm font-medium">{{ incidentDescription(detail) }}</p>
+						</div>
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Reportado</p>
+							<p class="text-sm font-medium">{{ formatDate(detail.incident.reported_at) }}</p>
+						</div>
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Dirección</p>
+							<p class="text-sm font-medium">{{ detail.incident.address_text || "Sin dirección registrada" }}</p>
+						</div>
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Latitud</p>
+							<p class="text-sm font-medium">{{ detail.incident.latitude }}</p>
+						</div>
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Longitud</p>
+							<p class="text-sm font-medium">{{ detail.incident.longitude }}</p>
+						</div>
+					</div>
+				</section>
+
+				<section class="bg-card text-card-foreground rounded-xl border p-4">
+					<h4 class="font-semibold">Servicio y análisis</h4>
+					<div class="mt-4 grid gap-4 sm:grid-cols-2">
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Servicio</p>
+							<p class="text-sm font-medium">{{ serviceName(detail) }}</p>
+						</div>
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Categoría</p>
+							<p class="text-sm font-medium">{{ serviceCategory(detail) }}</p>
+						</div>
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Código del servicio</p>
+							<p class="text-sm font-medium">{{ detail.service?.service_code || "Sin código" }}</p>
+						</div>
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Análisis IA</p>
+							<p class="text-sm font-medium">{{ aiSummary(detail) }}</p>
+						</div>
+					</div>
+				</section>
+
+				<section class="bg-card text-card-foreground rounded-xl border p-4">
+					<h4 class="font-semibold">Cliente, vehículo y proveedor</h4>
+					<div class="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Cliente</p>
+							<p class="text-sm font-medium">{{ detail.customer?.full_name || "Sin cliente" }}</p>
+						</div>
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Teléfono</p>
+							<p class="text-sm font-medium">{{ detail.customer?.phone || "Sin teléfono" }}</p>
+						</div>
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Vehículo</p>
+							<p class="text-sm font-medium">{{ detail.vehicle?.label || detail.vehicle?.plate_number || "Sin vehículo" }}</p>
+						</div>
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Proveedor</p>
+							<p class="text-sm font-medium">{{ detail.provider_profile?.provider_type || "Sin proveedor" }}</p>
+						</div>
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Estado operacional</p>
+							<p class="text-sm font-medium">{{ detail.provider_profile?.operational_status || "Sin estado" }}</p>
+						</div>
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Acepta emergencias</p>
+							<p class="text-sm font-medium">{{ detail.provider_profile?.accepts_emergency_requests ? "Sí" : "No" }}</p>
+						</div>
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Rating promedio</p>
+							<p class="text-sm font-medium">{{ detail.provider_profile?.average_rating ?? "Sin rating" }}</p>
+						</div>
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Reseñas</p>
+							<p class="text-sm font-medium">{{ detail.provider_profile?.total_reviews ?? 0 }}</p>
+						</div>
+					</div>
+				</section>
+
+				<section class="bg-card text-card-foreground rounded-xl border p-4">
+					<h4 class="font-semibold">Tiempos</h4>
+					<div class="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Creada</p>
+							<p class="text-sm font-medium">{{ createdAtLabel(detail) }}</p>
+						</div>
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Enviada</p>
+							<p class="text-sm font-medium">{{ sentAtLabel(detail) }}</p>
+						</div>
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Respondida</p>
+							<p class="text-sm font-medium">{{ respondedAtLabel(detail) }}</p>
+						</div>
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Expira</p>
+							<p class="text-sm font-medium">{{ expirationLabel(detail) }}</p>
+						</div>
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Tiempo de respuesta</p>
+							<p class="text-sm font-medium">{{ responseTimeLabel(detail) }}</p>
+						</div>
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Contenido operativo</p>
+							<p class="text-sm font-medium">{{ operationalText(detail) }}</p>
+						</div>
+					</div>
+				</section>
+			</div>
+		}
+	</app-side-drawer>
+</div>

@@ -129,17 +129,35 @@
 		</hlm-field>
 	</div>
 
+	<div class="flex justify-end">
+		<button
+			type="button"
+			hlmBtn
+			variant="outline"
+			class="cursor-pointer"
+			[disabled]="isLocating() || isSubmitting()"
+			(click)="useCurrentLocation()"
+		>
+			@if (isLocating()) {
+				Obteniendo ubicación...
+			} @else {
+				Usar ubicación actual
+			}
+		</button>
+	</div>
+
 	<div class="grid gap-4 sm:grid-cols-2">
 		<hlm-field>
 			<label hlmFieldLabel for="latitude">Latitud</label>
 
 			<input
 				id="latitude"
-				type="number"
+				type="text"
+				inputmode="decimal"
 				hlmInput
 				formControlName="latitude"
 				placeholder="-16.500000"
-				step="0.000001"
+				autocomplete="off"
 			/>
 		</hlm-field>
 
@@ -148,11 +166,12 @@
 
 			<input
 				id="longitude"
-				type="number"
+				type="text"
+				inputmode="decimal"
 				hlmInput
 				formControlName="longitude"
 				placeholder="-68.150000"
-				step="0.000001"
+				autocomplete="off"
 			/>
 		</hlm-field>
 	</div>

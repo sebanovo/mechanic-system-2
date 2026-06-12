@@ -9,7 +9,7 @@ import {
 	provideAppInitializer,
 	provideBrowserGlobalErrorListeners,
 } from "@angular/core";
-import { provideRouter } from "@angular/router";
+import { provideRouter, withInMemoryScrolling } from "@angular/router";
 
 import { routes } from "./app.routes";
 import { authTokenInterceptor } from "./core/interceptors/auth-token.interceptor";
@@ -19,7 +19,13 @@ import { SessionService } from "./core/session/session.service";
 export const appConfig: ApplicationConfig = {
 	providers: [
 		provideBrowserGlobalErrorListeners(),
-		provideRouter(routes),
+		provideRouter(
+			routes,
+			withInMemoryScrolling({
+				anchorScrolling: "enabled",
+				scrollPositionRestoration: "enabled",
+			})
+		),
 
 		provideHttpClient(
 			withFetch(),

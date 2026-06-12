@@ -1,6 +1,16 @@
 import { Component } from "@angular/core";
+import { NgIcon, provideIcons } from "@ng-icons/core";
+import {
+	lucideBot,
+	lucideClipboard,
+	lucideDatabase,
+	lucideRoute,
+	lucideShield,
+	lucideSparkles,
+} from "@ng-icons/lucide";
 
 type ServiceItem = {
+	icon: string;
 	title: string;
 	description: string;
 };
@@ -8,35 +18,50 @@ type ServiceItem = {
 @Component({
 	selector: "app-public-services",
 	standalone: true,
+	imports: [NgIcon],
+	providers: [
+		provideIcons({
+			lucideBot,
+			lucideClipboard,
+			lucideDatabase,
+			lucideRoute,
+			lucideShield,
+			lucideSparkles,
+		}),
+	],
 	templateUrl: "./public-services.html",
 })
 export class PublicServices {
 	protected readonly services: ServiceItem[] = [
 		{
-			title: "Batería descargada",
-			description: "Paso de corriente, revisión inicial o cambio de batería.",
+			icon: "clipboard",
+			title: "Recepción de incidentes",
+			description: "Captura casos desde web, QR o panel interno con contexto desde el primer minuto.",
 		},
 		{
-			title: "Cambio de llanta",
-			description: "Asistencia para neumáticos dañados o desinflados.",
+			icon: "sparkles",
+			title: "Análisis IA",
+			description: "Genera prioridad sugerida, hipótesis y siguiente acción a partir del síntoma.",
 		},
 		{
-			title: "Remolque",
-			description: "Traslado del vehículo a taller, domicilio o concesionario.",
+			icon: "route",
+			title: "Asignación y tracking",
+			description: "Coordina talleres, técnicos y tiempos de llegada con visibilidad completa.",
 		},
 		{
-			title: "Sobrecalentamiento",
-			description:
-				"Atención por temperatura alta, fuga o falta de refrigerante.",
+			icon: "shield",
+			title: "Auditoría y control",
+			description: "Cada cambio queda registrado para superadmin, taller y operación.",
 		},
 		{
-			title: "Apertura de vehículo",
-			description: "Ayuda cuando las llaves quedan dentro o hay bloqueo.",
+			icon: "bot",
+			title: "Operación multirol",
+			description: "Clientes, talleres, técnicos y superadmin trabajan sobre la misma fuente de verdad.",
 		},
 		{
-			title: "Fallas menores",
-			description:
-				"Revisión rápida de fusibles, luces o terminales de batería.",
+			icon: "database",
+			title: "Historial unificado",
+			description: "Incidentes, ofertas, sesiones y análisis viven bajo un mismo ecosistema.",
 		},
 	];
 }

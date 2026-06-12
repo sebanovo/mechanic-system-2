@@ -1,0 +1,159 @@
+<div class="space-y-6">
+	<app-page-section [padded]="true">
+		<div class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+			<div>
+				<div class="flex items-center gap-2">
+					<ng-icon name="lucideCalendarDays" class="text-primary size-5" />
+
+					<h2 class="font-semibold">Periodo de análisis</h2>
+				</div>
+
+				<p class="text-muted-foreground mt-1 text-sm">
+					{{ appliedRangeLabel() }}
+				</p>
+			</div>
+
+			<div class="grid gap-3 sm:grid-cols-2 xl:flex xl:items-end">
+				<label class="space-y-2 text-sm">
+					<span class="font-medium">Desde</span>
+
+					<input
+						hlmInput
+						type="date"
+						[value]="filters().date_from"
+						[disabled]="isLoading()"
+						(input)="updateFilter('date_from', $any($event.target).value)"
+					/>
+				</label>
+
+				<label class="space-y-2 text-sm">
+					<span class="font-medium">Hasta</span>
+
+					<input
+						hlmInput
+						type="date"
+						[value]="filters().date_to"
+						[disabled]="isLoading()"
+						(input)="updateFilter('date_to', $any($event.target).value)"
+					/>
+				</label>
+
+				<div class="flex gap-2 sm:col-span-2">
+					<button
+						type="button"
+						hlmBtn
+						variant="outline"
+						class="cursor-pointer"
+						[disabled]="isLoading()"
+						(click)="resetRange()"
+					>
+						Últimos 30 días
+					</button>
+
+					<button
+						type="button"
+						hlmBtn
+						class="cursor-pointer"
+						[disabled]="isLoading()"
+						(click)="load()"
+					>
+						<ng-icon
+							name="lucideRefreshCw"
+							class="mr-2 size-4"
+							[class.animate-spin]="isLoading()"
+						/>
+
+						Actualizar
+					</button>
+				</div>
+			</div>
+		</div>
+	</app-page-section>
+
+	@if (isLoading()) {
+		<app-loading-state
+			title="Cargando dashboard"
+			description="Estamos obteniendo las métricas operativas del taller."
+		/>
+	} @else if (errorMessage()) {
+		<app-error-state
+			title="No se pudo cargar el dashboard"
+			[description]="errorMessage()!"
+			(actionClicked)="load()"
+		/>
+	} @else if (dashboard()) {
+		<div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+			@for (kpi of metricKpis(); track kpi.id) {
+				<app-dashboard-kpi-card [kpi]="kpi" />
+			}
+		</div>
+
+		<div class="grid gap-4 lg:grid-cols-2">
+			@for (kpi of listKpis(); track kpi.id) {
+				<app-dashboard-kpi-card [kpi]="kpi" />
+			}
+		</div>
+
+		<div class="grid gap-5 xl:grid-cols-2">
+			<app-dashboard-chart-card
+				title="Incidentes por servicio"
+				description="Cantidad de incidentes agrupados por servicio."
+			>
+				<canvas
+					baseChart
+					[type]="'bar'"
+					[data]="charts()!.incidentsByService"
+					[options]="barOptions"
+				></canvas>
+			</app-dashboard-chart-card>
+
+			<app-dashboard-chart-card
+				title="Evolución operativa"
+				description="Servicios completados, cancelados y no atendidos."
+			>
+				<canvas
+					baseChart
+					[type]="'line'"
+					[data]="charts()!.operationalTrend"
+					[options]="lineOptions"
+				></canvas>
+			</app-dashboard-chart-card>
+
+			<app-dashboard-chart-card
+				title="Rendimiento de técnicos"
+				description="Servicios completados por técnico."
+			>
+				<canvas
+					baseChart
+					[type]="'bar'"
+					[data]="charts()!.technicianPerformance"
+					[options]="barOptions"
+				></canvas>
+			</app-dashboard-chart-card>
+
+			<app-dashboard-chart-card
+				title="Zonas con mayor demanda"
+				description="Incidentes agrupados por zona."
+			>
+				<canvas
+					baseChart
+					[type]="'bar'"
+					[data]="charts()!.topZones"
+					[options]="horizontalBarOptions"
+				></canvas>
+			</app-dashboard-chart-card>
+
+			<app-dashboard-chart-card
+				title="Cumplimiento de tiempo estimado"
+				description="Porcentaje de servicios completados dentro del tiempo esperado."
+			>
+				<canvas
+					baseChart
+					[type]="'bar'"
+					[data]="charts()!.serviceCompliance"
+					[options]="percentageOptions"
+				></canvas>
+			</app-dashboard-chart-card>
+		</div>
+	}
+</div>

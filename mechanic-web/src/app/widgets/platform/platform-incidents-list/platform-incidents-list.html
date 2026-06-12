@@ -1,0 +1,351 @@
+<div class="space-y-5">
+	<app-data-toolbar
+		searchPlaceholder="Buscar por código, título o descripción..."
+		[showFilters]="false"
+		[showRefresh]="true"
+		(searchChanged)="onSearch($event)"
+		(refreshClicked)="load()"
+	/>
+
+	<app-page-section [padded]="true">
+		<div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+			<label class="space-y-2 text-sm">
+				<span class="font-medium">Estado</span>
+				<select
+					class="border-input bg-background h-10 w-full rounded-md border px-3 text-sm"
+					[value]="filters().status"
+					(change)="onStatusChange($event)"
+				>
+					@for (option of statusOptions; track option.value) {
+						<option [value]="option.value">{{ option.label }}</option>
+					}
+				</select>
+			</label>
+
+			<label class="space-y-2 text-sm">
+				<span class="font-medium">Prioridad</span>
+				<select
+					class="border-input bg-background h-10 w-full rounded-md border px-3 text-sm"
+					[value]="filters().priority"
+					(change)="onPriorityChange($event)"
+				>
+					@for (option of priorityOptions; track option.value) {
+						<option [value]="option.value">{{ option.label }}</option>
+					}
+				</select>
+			</label>
+
+			<label class="space-y-2 text-sm">
+				<span class="font-medium">Catálogo</span>
+				<input
+					hlmInput
+					type="text"
+					[value]="filters().service_catalog_id"
+					(input)="onServiceCatalogChange($event)"
+					placeholder="UUID del catálogo"
+				/>
+			</label>
+
+			<label class="space-y-2 text-sm">
+				<span class="font-medium">Cliente</span>
+				<input
+					hlmInput
+					type="text"
+					[value]="filters().customer_id"
+					(input)="onCustomerChange($event)"
+					placeholder="UUID del cliente"
+				/>
+			</label>
+
+			<label class="space-y-2 text-sm">
+				<span class="font-medium">Vehículo</span>
+				<input
+					hlmInput
+					type="text"
+					[value]="filters().vehicle_id"
+					(input)="onVehicleChange($event)"
+					placeholder="UUID del vehículo"
+				/>
+			</label>
+
+			<label class="space-y-2 text-sm">
+				<span class="font-medium">Desde</span>
+				<input
+					hlmInput
+					type="date"
+					[value]="filters().reported_from"
+					(input)="onReportedFromChange($event)"
+				/>
+			</label>
+
+			<label class="space-y-2 text-sm">
+				<span class="font-medium">Hasta</span>
+				<input
+					hlmInput
+					type="date"
+					[value]="filters().reported_to"
+					(input)="onReportedToChange($event)"
+				/>
+			</label>
+		</div>
+
+		<div class="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+			<button
+				type="button"
+				hlmBtn
+				variant="outline"
+				class="cursor-pointer"
+				[disabled]="isLoading()"
+				(click)="clearFilters()"
+			>
+				Limpiar filtros
+			</button>
+
+			<button
+				type="button"
+				hlmBtn
+				class="cursor-pointer"
+				[disabled]="isLoading()"
+				(click)="applyFilters()"
+			>
+				Aplicar filtros
+			</button>
+		</div>
+	</app-page-section>
+
+	@if (isLoading()) {
+		<app-loading-state
+			title="Cargando incidentes"
+			description="Estamos obteniendo los incidentes de plataforma."
+		/>
+	} @else if (errorMessage()) {
+		<app-error-state
+			title="No se pudieron cargar los incidentes"
+			[description]="errorMessage()!"
+			(actionClicked)="load()"
+		/>
+	} @else if (filteredItems().length === 0) {
+		<app-page-section [padded]="true">
+			<div class="flex min-h-72 flex-col items-center justify-center text-center">
+				<div class="bg-muted text-muted-foreground flex size-12 items-center justify-center rounded-full">
+					<ng-icon name="lucideSearch" class="size-5" />
+				</div>
+
+				<h3 class="mt-4 text-base font-semibold">No hay incidentes para mostrar</h3>
+				<p class="text-muted-foreground mt-2 max-w-md text-sm leading-6">
+					No existen incidentes que coincidan con los filtros seleccionados.
+				</p>
+			</div>
+		</app-page-section>
+	} @else {
+		<div class="space-y-3">
+			@for (item of filteredItems(); track item.id) {
+				<article class="bg-card text-card-foreground rounded-xl border p-4 shadow-sm transition hover:shadow-md">
+					<div class="flex items-start justify-between gap-4">
+						<div class="min-w-0">
+							<div class="mb-2 flex flex-wrap items-center gap-2">
+								<app-incident-status-badge [status]="item.status" />
+
+								<span class="bg-muted text-muted-foreground rounded-md px-2 py-0.5 text-xs font-medium">
+									{{ priorityLabel(item) }}
+								</span>
+							</div>
+
+							<h3 class="text-base font-semibold">
+								{{ item.title || item.incident_code }}
+							</h3>
+
+							<p class="text-muted-foreground mt-1 line-clamp-2 text-sm leading-6">
+								{{ item.description || "Sin descripción registrada" }}
+							</p>
+
+							<div class="text-muted-foreground mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
+								<span class="flex items-center gap-1.5">
+									<ng-icon name="lucideCalendar" class="size-3.5" />
+									{{ dateLabel(item.reported_at) }}
+								</span>
+
+								<span class="flex items-center gap-1.5">
+									<ng-icon name="lucideMapPinned" class="size-3.5" />
+									{{ locationLabel(item) }}
+								</span>
+							</div>
+						</div>
+
+						<div class="flex shrink-0 gap-2">
+							<button
+								type="button"
+								hlmBtn
+								variant="outline"
+								class="cursor-pointer"
+								(click)="openDetail(item)"
+							>
+								Ver detalle
+							</button>
+						</div>
+					</div>
+				</article>
+			}
+		</div>
+
+		<app-pagination
+			[page]="pagination().page"
+			[pageSize]="pagination().page_size"
+			[total]="pagination().total"
+			[totalPages]="pagination().total_pages"
+			[disabled]="isLoading()"
+			(pageChanged)="onPageChange($event)"
+			(pageSizeChanged)="onPageSizeChange($event)"
+		/>
+	}
+
+	<app-side-drawer
+		[open]="isDetailOpen()"
+		title="Detalle del incidente"
+		description="Vista de solo lectura del incidente de plataforma."
+		widthClass="sm:max-w-4xl"
+		(closed)="closeDetail()"
+	>
+		@if (isDetailLoading()) {
+			<app-loading-state
+				title="Cargando incidente"
+				description="Estamos obteniendo el detalle del incidente."
+				minHeight="min-h-52"
+			/>
+		} @else if (selectedIncident()) {
+			@let detail = selectedIncident()!;
+
+			<div class="space-y-5">
+				<section class="bg-card text-card-foreground rounded-xl border p-4">
+					<div class="flex items-start justify-between gap-4">
+						<div class="min-w-0">
+							<div class="mb-2 flex flex-wrap items-center gap-2">
+								<app-incident-status-badge [status]="detail.status" />
+
+								<span class="bg-muted text-muted-foreground rounded-md px-2 py-0.5 text-xs font-medium">
+									{{ priorityLabel(detail) }}
+								</span>
+							</div>
+
+							<h3 class="text-lg font-semibold">
+								{{ detail.title }}
+							</h3>
+
+							<p class="text-muted-foreground mt-1 text-sm">
+								{{ detail.description || "Sin descripción registrada" }}
+							</p>
+						</div>
+
+						<div class="bg-muted text-muted-foreground flex size-14 shrink-0 items-center justify-center rounded-full">
+							<ng-icon name="lucideInfo" class="size-6" />
+						</div>
+					</div>
+				</section>
+
+				<section class="bg-card text-card-foreground rounded-xl border p-4">
+					<h4 class="font-semibold">Datos del incidente</h4>
+					<div class="mt-4 grid gap-4 sm:grid-cols-2">
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Código</p>
+							<p class="text-sm font-medium break-all">{{ detail.incident_code }}</p>
+						</div>
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Estado</p>
+							<app-incident-status-badge [status]="detail.status" />
+						</div>
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Prioridad</p>
+							<p class="text-sm font-medium">{{ priorityLabel(detail) }}</p>
+						</div>
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Fecha reportado</p>
+							<p class="text-sm font-medium">{{ dateLabel(detail.reported_at) }}</p>
+						</div>
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Cliente ID</p>
+							<p class="text-sm font-medium break-all">{{ detail.customer_id || "Sin cliente" }}</p>
+						</div>
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Vehículo ID</p>
+							<p class="text-sm font-medium break-all">{{ detail.vehicle_id || "Sin vehículo" }}</p>
+						</div>
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Catálogo ID</p>
+							<p class="text-sm font-medium break-all">{{ detail.service_catalog_id || "Sin catálogo" }}</p>
+						</div>
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Título</p>
+							<p class="text-sm font-medium">{{ detail.title }}</p>
+						</div>
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Dirección</p>
+							<p class="text-sm font-medium">{{ detail.address_text || "Sin dirección registrada" }}</p>
+						</div>
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Latitud</p>
+							<p class="text-sm font-medium">{{ detail.latitude ?? "Sin latitud" }}</p>
+						</div>
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Longitud</p>
+							<p class="text-sm font-medium">{{ detail.longitude ?? "Sin longitud" }}</p>
+						</div>
+					</div>
+				</section>
+
+				<section class="bg-card text-card-foreground rounded-xl border p-4">
+					<h4 class="font-semibold">Tiempos y cierre</h4>
+					<div class="mt-4 grid gap-4 sm:grid-cols-2">
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Completado</p>
+							<p class="text-sm font-medium">{{ dateLabel(detail.completed_at) }}</p>
+						</div>
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Cancelado</p>
+							<p class="text-sm font-medium">{{ dateLabel(detail.cancelled_at) }}</p>
+						</div>
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Sin atención</p>
+							<p class="text-sm font-medium">{{ dateLabel(detail.unattended_at) }}</p>
+						</div>
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Motivo sin atención</p>
+							<p class="text-sm font-medium">{{ detail.unattended_reason || "Sin registro" }}</p>
+						</div>
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Eliminado</p>
+							<p class="text-sm font-medium">{{ dateLabel(detail.deleted_at) }}</p>
+						</div>
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Creado</p>
+							<p class="text-sm font-medium">{{ dateLabel(detail.created_at) }}</p>
+						</div>
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Actualizado</p>
+							<p class="text-sm font-medium">{{ dateLabel(detail.updated_at) }}</p>
+						</div>
+					</div>
+				</section>
+
+				<div class="flex flex-wrap justify-end gap-2">
+					<button type="button" hlmBtn variant="outline" class="cursor-pointer" (click)="openAnalysis(detail)">Análisis IA</button>
+				</div>
+			</div>
+		}
+	</app-side-drawer>
+
+	<app-side-drawer
+		[open]="isAnalysisOpen()"
+		title="Análisis IA del incidente"
+		description="Consulta y crea análisis IA para el incidente seleccionado."
+		widthClass="sm:max-w-5xl"
+		(closed)="closeAnalysis()"
+	>
+		@if (selectedAnalysisIncident()) {
+			<app-incident-ai-analyses-panel
+				scope="platform"
+				[incident]="selectedAnalysisIncident()"
+				[allowCreate]="true"
+			/>
+		}
+	</app-side-drawer>
+</div>

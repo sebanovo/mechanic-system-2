@@ -114,6 +114,9 @@ export type IncidentOfferListData = {
 export type IncidentOfferListQuery = {
 	page?: number;
 	page_size?: number;
+	incident_id?: string;
+	candidate_provider_id?: string;
+	provider_profile_id?: string;
 	offer_status?: IncidentOfferStatus | "";
 };
 

@@ -22,6 +22,13 @@ export const CLIENT_ROUTES: Routes = [
 						m => m.ClientDashboardPage
 					),
 			},
+			{
+				path: "profile",
+				loadComponent: () =>
+					import("../../pages/client/profile/client-profile.page").then(
+						m => m.ClientProfilePage
+					),
+			},
 		],
 	},
 ];

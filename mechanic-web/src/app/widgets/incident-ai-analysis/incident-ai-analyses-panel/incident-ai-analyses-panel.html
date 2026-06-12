@@ -1,0 +1,226 @@
+<div class="space-y-5">
+	<app-data-toolbar
+		searchPlaceholder="Buscar por versión..."
+		[showFilters]="false"
+		[showRefresh]="true"
+		(searchChanged)="onSearch($event)"
+		(refreshClicked)="load()"
+	/>
+
+	<app-page-section [padded]="true">
+		<div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+			@if (showIncidentFilter()) {
+				<label class="space-y-2 text-sm">
+					<span class="font-medium">Incidente ID</span>
+					<input
+						hlmInput
+						type="text"
+						[value]="filters().incident_id"
+						(input)="onIncidentIdChange($event)"
+						placeholder="UUID del incidente"
+					/>
+				</label>
+			}
+
+			@if (scope() === "platform") {
+				<label class="space-y-2 text-sm">
+					<span class="font-medium">Código de servicio</span>
+					<input
+						hlmInput
+						type="text"
+						[value]="filters().probable_service_code"
+						(input)="onServiceCodeChange($event)"
+						placeholder="BATTERY_ASSISTANCE"
+					/>
+				</label>
+
+				<label class="space-y-2 text-sm">
+					<span class="font-medium">Prioridad recomendada</span>
+					<select
+						class="border-input bg-background h-10 w-full rounded-md border px-3 text-sm"
+						[value]="filters().recommended_priority"
+						(change)="onPriorityChange($event)"
+					>
+						@for (option of priorityOptions; track option.value) {
+							<option [value]="option.value">{{ option.label }}</option>
+						}
+					</select>
+				</label>
+			}
+		</div>
+
+		<div class="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+			<button
+				type="button"
+				hlmBtn
+				variant="outline"
+				class="cursor-pointer"
+				[disabled]="isLoading()"
+				(click)="clearFilters()"
+			>
+				Limpiar filtros
+			</button>
+
+			<button
+				type="button"
+				hlmBtn
+				class="cursor-pointer"
+				[disabled]="isLoading()"
+				(click)="applyFilters()"
+			>
+				Aplicar filtros
+			</button>
+
+			@if (canCreateAnalysis()) {
+				<button
+					type="button"
+					hlmBtn
+					variant="outline"
+					class="cursor-pointer"
+					(click)="openCreate()"
+				>
+					Nuevo análisis
+				</button>
+			}
+		</div>
+	</app-page-section>
+
+	@if (isLoading()) {
+		<app-loading-state title="Cargando análisis IA" description="Estamos obteniendo los análisis del backend." />
+	} @else if (errorMessage()) {
+		<app-error-state title="No se pudieron cargar los análisis IA" [description]="errorMessage()!" (actionClicked)="load()" />
+	} @else if (items().length === 0) {
+		<app-page-section [padded]="true">
+			<div class="flex min-h-72 flex-col items-center justify-center text-center">
+				<div class="bg-muted text-muted-foreground flex size-12 items-center justify-center rounded-full">
+					<ng-icon name="lucideSparkles" class="size-5" />
+				</div>
+
+				<h3 class="mt-4 text-base font-semibold">No hay análisis IA para mostrar</h3>
+				<p class="text-muted-foreground mt-2 max-w-md text-sm leading-6">
+					{{ canCreateAnalysis() ? 'Crea un análisis nuevo para el incidente seleccionado.' : 'Ajusta los filtros o revisa más tarde.' }}
+				</p>
+			</div>
+		</app-page-section>
+	} @else {
+		<div class="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+			@for (item of items(); track trackAnalysis($index, item)) {
+				<article class="bg-card text-card-foreground rounded-xl border p-4 shadow-sm transition hover:shadow-md">
+					<div class="flex items-start justify-between gap-3">
+						<div class="min-w-0">
+							<h3 class="truncate text-base font-semibold">Versión {{ item.analysis_version }}</h3>
+							<p class="text-muted-foreground mt-1 truncate text-xs">{{ item.probable_service_code || 'Sin servicio probable' }}</p>
+						</div>
+						<app-resource-actions-menu [actions]="actionsFor(item)" (actionSelected)="onAction($event, item)" />
+					</div>
+
+					<div class="mt-4 flex items-center justify-between gap-3">
+						<app-incident-ai-analysis-priority-badge [priority]="item.recommended_priority" />
+						<span class="bg-muted text-muted-foreground rounded-md px-2 py-0.5 text-xs font-medium">{{ scoreLabel(item.confidence_score) }}</span>
+					</div>
+
+					<div class="mt-4 space-y-2 text-sm">
+						<div class="text-muted-foreground flex min-w-0 items-center gap-2">
+							<ng-icon name="lucideTag" class="size-4 shrink-0" />
+							<span class="truncate">{{ item.probable_problem || 'Sin problema probable' }}</span>
+						</div>
+
+						<div class="text-muted-foreground flex min-w-0 items-center gap-2">
+							<ng-icon name="lucideCalendar" class="size-4 shrink-0" />
+							<span class="truncate">Creado: {{ dateLabel(item.created_at) }}</span>
+						</div>
+
+						<div class="text-muted-foreground flex min-w-0 items-center gap-2">
+							<ng-icon name="lucideTimerReset" class="size-4 shrink-0" />
+							<span class="truncate">Duración: {{ item.estimated_min_duration_minutes ?? 'N/D' }} - {{ item.estimated_max_duration_minutes ?? 'N/D' }} min</span>
+						</div>
+					</div>
+
+					<div class="mt-5">
+						<button type="button" hlmBtn variant="outline" class="w-full cursor-pointer" (click)="openDetail(item)">Ver detalle</button>
+					</div>
+				</article>
+			}
+		</div>
+
+		<app-pagination
+			[page]="pagination().page"
+			[pageSize]="pagination().page_size"
+			[total]="pagination().total"
+			[totalPages]="pagination().total_pages"
+			[disabled]="isLoading()"
+			(pageChanged)="onPageChange($event)"
+			(pageSizeChanged)="onPageSizeChange($event)"
+		/>
+	}
+
+	<app-side-drawer [open]="isDetailOpen()" title="Detalle del análisis IA" description="Información completa del análisis de incidentes." widthClass="sm:max-w-4xl" (closed)="closeDetail()">
+		@if (isDetailLoading()) {
+			<app-loading-state title="Cargando análisis IA" description="Estamos obteniendo el detalle del análisis." minHeight="min-h-52" />
+		} @else if (selectedAnalysis()) {
+			@let detail = selectedAnalysis()!;
+			<div class="space-y-5">
+				<section class="bg-card text-card-foreground rounded-xl border p-4">
+					<div class="flex items-start justify-between gap-4">
+						<div class="min-w-0">
+							<div class="mb-2 flex flex-wrap items-center gap-2">
+								<app-incident-ai-analysis-priority-badge [priority]="detail.recommended_priority" />
+								<span class="bg-muted text-muted-foreground rounded-md px-2 py-0.5 text-xs font-medium">Score: {{ scoreLabel(detail.confidence_score) }}</span>
+							</div>
+							<h3 class="truncate text-lg font-semibold">Versión {{ detail.analysis_version }}</h3>
+							<p class="text-muted-foreground mt-1 truncate text-sm">{{ detail.probable_service_code || 'Sin servicio probable' }}</p>
+						</div>
+						<div class="bg-muted text-muted-foreground flex size-14 shrink-0 items-center justify-center rounded-full">
+							<ng-icon name="lucideSparkles" class="size-6" />
+						</div>
+					</div>
+				</section>
+
+				<section class="bg-card text-card-foreground rounded-xl border p-4">
+					<h4 class="font-semibold">Resumen</h4>
+					<div class="mt-4 grid gap-4 sm:grid-cols-2">
+						<div class="space-y-1"><p class="text-muted-foreground text-xs">Incidente ID</p><p class="text-sm font-medium break-all">{{ detail.incident_id }}</p></div>
+						<div class="space-y-1"><p class="text-muted-foreground text-xs">Versión</p><p class="text-sm font-medium">{{ detail.analysis_version }}</p></div>
+						<div class="space-y-1"><p class="text-muted-foreground text-xs">Problema probable</p><p class="text-sm font-medium break-words">{{ detail.probable_problem || 'Sin registro' }}</p></div>
+						<div class="space-y-1"><p class="text-muted-foreground text-xs">Servicio probable</p><p class="text-sm font-medium break-all">{{ detail.probable_service_code || 'Sin registro' }}</p></div>
+						<div class="space-y-1"><p class="text-muted-foreground text-xs">Prioridad recomendada</p><p class="text-sm font-medium">{{ analysisPriorityLabel(detail.recommended_priority) }}</p></div>
+						<div class="space-y-1"><p class="text-muted-foreground text-xs">Score</p><p class="text-sm font-medium">{{ scoreLabel(detail.confidence_score) }}</p></div>
+					</div>
+				</section>
+
+				<section class="bg-card text-card-foreground rounded-xl border p-4">
+					<h4 class="font-semibold">Estimaciones</h4>
+					<div class="mt-4 grid gap-4 sm:grid-cols-2">
+						<div class="space-y-1"><p class="text-muted-foreground text-xs">Precio mínimo</p><p class="text-sm font-medium">{{ detail.estimated_min_price ?? 'Sin registro' }}</p></div>
+						<div class="space-y-1"><p class="text-muted-foreground text-xs">Precio máximo</p><p class="text-sm font-medium">{{ detail.estimated_max_price ?? 'Sin registro' }}</p></div>
+						<div class="space-y-1"><p class="text-muted-foreground text-xs">Duración mínima</p><p class="text-sm font-medium">{{ detail.estimated_min_duration_minutes ?? 'Sin registro' }}</p></div>
+						<div class="space-y-1"><p class="text-muted-foreground text-xs">Duración máxima</p><p class="text-sm font-medium">{{ detail.estimated_max_duration_minutes ?? 'Sin registro' }}</p></div>
+					</div>
+				</section>
+
+				<section class="bg-card text-card-foreground rounded-xl border p-4">
+					<h4 class="font-semibold">Resultado bruto</h4>
+					<pre class="bg-muted mt-4 max-h-80 overflow-auto rounded-lg p-4 text-xs leading-6 whitespace-pre-wrap">{{ resultLabel(detail.analysis_result) }}</pre>
+				</section>
+
+				<div class="flex items-center justify-end gap-2">
+					<button type="button" hlmBtn variant="outline" class="cursor-pointer" (click)="closeDetail()">Cerrar</button>
+					@if (canCreateAnalysis()) {
+						<button type="button" hlmBtn class="cursor-pointer" (click)="openCreate()">Crear nuevo análisis</button>
+					}
+				</div>
+			</div>
+		}
+	</app-side-drawer>
+
+	<app-side-drawer [open]="isCreateOpen()" title="Crear análisis IA" description="Registra un nuevo análisis manual para el incidente seleccionado." widthClass="sm:max-w-3xl" (closed)="closeCreate()">
+		@if (incident()) {
+			<app-create-incident-ai-analysis-form
+				[incidentId]="incident()!.id"
+				[scope]="scope()"
+				(created)="onCreated($event)"
+				(cancelled)="closeCreate()"
+			/>
+		}
+	</app-side-drawer>
+</div>
