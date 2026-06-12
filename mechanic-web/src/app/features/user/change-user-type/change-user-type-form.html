@@ -1,0 +1,25 @@
+<form class="space-y-5" [formGroup]="form" (ngSubmit)="submit()">
+	<hlm-field>
+		<label hlmFieldLabel for="user_type">Tipo de usuario</label>
+		<select
+			id="user_type"
+			class="border-input bg-background h-10 w-full rounded-md border px-3 text-sm"
+			formControlName="user_type"
+		>
+			@for (option of userTypeOptions; track option.value) {
+				<option [value]="option.value">{{ option.label }}</option>
+			}
+		</select>
+	</hlm-field>
+
+	@if (errorMessage()) {
+		<div class="border-destructive/40 bg-destructive/10 text-destructive rounded-md border px-3 py-2 text-sm">
+			{{ errorMessage() }}
+		</div>
+	}
+
+	<div class="flex items-center justify-end gap-2">
+		<button type="button" hlmBtn variant="outline" (click)="cancel()">Cancelar</button>
+		<button type="submit" hlmBtn [disabled]="isSubmitting()">Actualizar tipo</button>
+	</div>
+</form>

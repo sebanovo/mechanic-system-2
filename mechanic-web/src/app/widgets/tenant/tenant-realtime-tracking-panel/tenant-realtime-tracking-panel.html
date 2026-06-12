@@ -1,0 +1,375 @@
+<div class="grid gap-6 xl:grid-cols-[380px_1fr]">
+	<section class="space-y-5">
+		<app-data-toolbar
+			searchPlaceholder="Buscar asignación activa..."
+			[showFilters]="false"
+			[showRefresh]="true"
+			(searchChanged)="onSearch($event)"
+			(refreshClicked)="loadAssignments()"
+		/>
+
+		<app-page-section [padded]="true">
+			<label class="space-y-2 text-sm">
+				<span class="font-medium">Estado de asignación</span>
+
+				<select
+					class="border-input bg-background h-10 w-full rounded-md border px-3 text-sm"
+					[value]="assignmentStatus()"
+					(change)="onAssignmentStatusChange($event)"
+				>
+					<option value="">Activas</option>
+					<option value="ASSIGNED">Asignadas</option>
+					<option value="EN_ROUTE">En camino</option>
+					<option value="ARRIVED">Llegó</option>
+					<option value="IN_SERVICE">En servicio</option>
+				</select>
+			</label>
+		</app-page-section>
+
+		@if (isLoadingAssignments()) {
+			<app-loading-state
+				title="Cargando asignaciones"
+				description="Estamos obteniendo asignaciones activas para tracking."
+				minHeight="min-h-52"
+			/>
+		} @else if (filteredAssignments().length === 0) {
+			<app-page-section [padded]="true">
+				<div
+					class="flex min-h-52 flex-col items-center justify-center text-center"
+				>
+					<ng-icon name="lucideRadar" class="text-muted-foreground size-6" />
+
+					<h3 class="mt-3 text-base font-semibold">Sin asignaciones activas</h3>
+
+					<p class="text-muted-foreground mt-2 text-sm">
+						El tracking en vivo solo aplica a asignaciones no finalizadas.
+					</p>
+				</div>
+			</app-page-section>
+		} @else {
+			<div class="space-y-3">
+				@for (item of filteredAssignments(); track item.assignment.id) {
+					<button
+						type="button"
+						class="bg-card text-card-foreground hover:bg-muted/40 w-full rounded-xl border p-4 text-left shadow-sm transition"
+						[class.ring-2]="
+							selectedAssignment()?.assignment?.id === item.assignment.id
+						"
+						[class.ring-primary]="
+							selectedAssignment()?.assignment?.id === item.assignment.id
+						"
+						(click)="selectAssignment(item)"
+					>
+						<div class="flex items-start justify-between gap-3">
+							<div class="min-w-0">
+								<p class="truncate text-sm font-semibold">
+									{{ assignmentCode(item) }}
+								</p>
+
+								<p class="text-muted-foreground mt-1 line-clamp-2 text-xs">
+									{{ assignmentDescription(item) }}
+								</p>
+							</div>
+
+							<app-assignment-status-badge
+								[status]="item.assignment.assignment_status"
+							/>
+						</div>
+
+						<div class="text-muted-foreground mt-3 grid gap-2 text-xs">
+							<p class="flex min-w-0 items-center gap-2">
+								<ng-icon name="lucideUser" class="size-4 shrink-0" />
+								<span class="truncate">
+									{{ technicianLabel(item) }}
+								</span>
+							</p>
+
+							<p class="flex min-w-0 items-center gap-2">
+								<ng-icon name="lucideMapPin" class="size-4 shrink-0" />
+								<span class="truncate">
+									{{ assignmentLocation(item) }}
+								</span>
+							</p>
+						</div>
+					</button>
+				}
+			</div>
+		}
+	</section>
+
+	<section class="space-y-5">
+		<div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+			<app-stat-card
+				label="Conexión"
+				[value]="connectionStatus()"
+				description="Estado WebSocket"
+				tone="info"
+			/>
+
+			<app-stat-card
+				label="Técnico"
+				[value]="technicianConnected() ? 'Conectado' : 'Sin señal'"
+				description="Presencia en vivo"
+				[tone]="technicianConnected() ? 'success' : 'muted'"
+			/>
+
+			<app-stat-card
+				label="Velocidad"
+				[value]="speedLabel()"
+				description="Último dato recibido"
+				tone="info"
+			/>
+
+			<app-stat-card
+				label="Dirección"
+				[value]="headingLabel()"
+				description="Heading del técnico"
+				tone="muted"
+			/>
+		</div>
+
+		<app-page-section [padded]="true">
+			<div
+				class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between"
+			>
+				<div class="min-w-0">
+					<p class="text-muted-foreground text-xs">Asignación seleccionada</p>
+
+					<h2 class="mt-1 truncate text-lg font-semibold">
+						{{ selectedAssignmentCode() }}
+					</h2>
+
+					<p class="text-muted-foreground mt-1 line-clamp-2 text-sm">
+						{{ selectedAssignmentDescription() }}
+					</p>
+
+					<div class="mt-3 flex flex-wrap items-center gap-2">
+						@if (trackingSession()) {
+							<app-assignment-status-badge
+								[status]="trackingSession()!.assignment_status"
+							/>
+						}
+
+						<app-realtime-connection-status-badge
+							[status]="connectionStatus()"
+						/>
+					</div>
+				</div>
+
+				<div class="flex flex-col gap-2 sm:flex-row">
+					<button
+						type="button"
+						hlmBtn
+						variant="outline"
+						class="cursor-pointer"
+						[disabled]="!trackingSession()"
+						(click)="reconnect()"
+					>
+						<ng-icon name="lucideWifi" class="mr-2 size-4" />
+						Reconectar
+					</button>
+
+					<button
+						type="button"
+						hlmBtn
+						variant="outline"
+						class="cursor-pointer"
+						[disabled]="!trackingSession()"
+						(click)="disconnect()"
+					>
+						<ng-icon name="lucideWifiOff" class="mr-2 size-4" />
+						Desconectar
+					</button>
+				</div>
+			</div>
+		</app-page-section>
+
+		@if (errorMessage()) {
+			<app-error-state
+				title="Problema con tracking"
+				[description]="errorMessage()!"
+				(actionClicked)="
+					selectedAssignment() &&
+						loadTrackingSession(selectedAssignment()!.assignment.id)
+				"
+			/>
+		}
+
+		@if (!selectedAssignment()) {
+			<app-page-section [padded]="true">
+				<div
+					class="flex min-h-80 flex-col items-center justify-center text-center"
+				>
+					<ng-icon
+						name="lucideSatellite"
+						class="text-muted-foreground size-8"
+					/>
+
+					<h3 class="mt-4 text-base font-semibold">
+						Selecciona una asignación
+					</h3>
+
+					<p class="text-muted-foreground mt-2 max-w-md text-sm">
+						Elige una asignación activa para abrir la sesión de seguimiento.
+					</p>
+				</div>
+			</app-page-section>
+		} @else if (isLoadingSession()) {
+			<app-loading-state
+				title="Cargando sesión"
+				description="Estamos obteniendo origen, destino y contrato WebSocket."
+			/>
+		}
+		@if (trackingSession()) {
+			<div class="grid gap-5 lg:grid-cols-2">
+				<app-page-section
+					title="Técnico"
+					description="Actor operativo enviado por el backend."
+				>
+					<div class="space-y-4">
+						<div class="flex items-start gap-3">
+							<div
+								class="bg-muted text-muted-foreground flex size-11 shrink-0 items-center justify-center rounded-full"
+							>
+								<ng-icon name="lucideUser" class="size-5" />
+							</div>
+
+							<div class="min-w-0">
+								<p class="truncate text-sm font-semibold">
+									{{ trackingSession()!.technician.name }}
+								</p>
+
+								<p
+									class="text-muted-foreground mt-1 flex items-center gap-2 text-sm"
+								>
+									<ng-icon name="lucidePhone" class="size-4" />
+									{{ trackingSession()!.technician.phone || "Sin teléfono" }}
+								</p>
+							</div>
+						</div>
+
+						<div class="bg-muted/40 rounded-lg border p-4">
+							<p class="text-muted-foreground text-xs">Última ubicación</p>
+
+							<p class="mt-1 text-sm font-medium break-all">
+								{{ formatPoint(originPoint()) }}
+							</p>
+
+							<p class="text-muted-foreground mt-2 text-xs">
+								{{ formatPointDate(originPoint()) }}
+							</p>
+						</div>
+					</div>
+				</app-page-section>
+
+				<app-page-section
+					title="Cliente"
+					description="Cliente asociado al incidente."
+				>
+					<div class="space-y-4">
+						<div class="flex items-start gap-3">
+							<div
+								class="bg-muted text-muted-foreground flex size-11 shrink-0 items-center justify-center rounded-full"
+							>
+								<ng-icon name="lucideUser" class="size-5" />
+							</div>
+
+							<div class="min-w-0">
+								<p class="truncate text-sm font-semibold">
+									{{ trackingSession()!.customer.name }}
+								</p>
+
+								<p
+									class="text-muted-foreground mt-1 flex items-center gap-2 text-sm"
+								>
+									<ng-icon name="lucidePhone" class="size-4" />
+									{{ trackingSession()!.customer.phone || "Sin teléfono" }}
+								</p>
+							</div>
+						</div>
+
+						<div class="bg-muted/40 rounded-lg border p-4">
+							<p class="text-muted-foreground text-xs">Destino del incidente</p>
+
+							<p class="mt-1 text-sm font-medium break-all">
+								{{ formatPoint(destinationPoint()) }}
+							</p>
+
+							<p class="text-muted-foreground mt-2 text-xs">
+								{{
+									destinationPoint()?.address_text || "Sin dirección textual"
+								}}
+							</p>
+						</div>
+					</div>
+				</app-page-section>
+			</div>
+
+			<app-realtime-google-map
+				[origin]="originPoint()"
+				[destination]="destinationPoint()"
+				[connectionStatus]="connectionStatus()"
+				[technicianConnected]="technicianConnected()"
+			/>
+
+			<app-page-section
+				title="Eventos WebSocket"
+				description="Últimos mensajes recibidos desde el backend."
+			>
+				@if (logs().length === 0) {
+					<div
+						class="flex min-h-40 flex-col items-center justify-center text-center"
+					>
+						<ng-icon
+							name="lucideMessageSquare"
+							class="text-muted-foreground size-6"
+						/>
+
+						<p class="text-muted-foreground mt-3 text-sm">
+							Aún no se recibieron eventos.
+						</p>
+					</div>
+				} @else {
+					<div class="space-y-3">
+						@for (item of logs(); track item.id) {
+							<article class="bg-muted/30 rounded-lg border p-4">
+								<div class="flex items-start justify-between gap-3">
+									<div class="min-w-0">
+										<p class="text-sm font-semibold">
+											{{ item.title }}
+										</p>
+
+										<p class="text-muted-foreground mt-1 text-sm break-words">
+											{{ item.description }}
+										</p>
+									</div>
+
+									<span
+										class="bg-background text-muted-foreground rounded-md px-2 py-1 text-xs"
+									>
+										{{ item.type }}
+									</span>
+								</div>
+
+								<p
+									class="text-muted-foreground mt-3 flex items-center gap-2 text-xs"
+								>
+									<ng-icon name="lucideCalendar" class="size-4" />
+									{{
+										formatPointDate({
+											type: "TECHNICIAN_CURRENT_LOCATION",
+											latitude: null,
+											longitude: null,
+											address_text: null,
+											occurred_at: item.occurred_at,
+										})
+									}}
+								</p>
+							</article>
+						}
+					</div>
+				}
+			</app-page-section>
+		}
+	</section>
+</div>

@@ -1,0 +1,536 @@
+<div class="space-y-5">
+	<div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+		<app-stat-card
+			label="Eventos registrados"
+			[value]="pagination().total"
+			description="Total con los filtros actuales"
+		/>
+
+		<app-stat-card
+			label="Eventos del sistema"
+			[value]="pageStats().system"
+			description="En la página actual"
+			tone="muted"
+		/>
+
+		<app-stat-card
+			label="Acciones superadmin"
+			[value]="pageStats().superadmins"
+			description="En la página actual"
+			tone="destructive"
+		/>
+
+		<app-stat-card
+			label="Acciones owner"
+			[value]="pageStats().owners"
+			description="En la página actual"
+			tone="warning"
+		/>
+	</div>
+
+	<app-data-toolbar
+		searchPlaceholder="Buscar evento, recurso, actor, IP o identificador..."
+		[showFilters]="false"
+		[showRefresh]="true"
+		(searchChanged)="onSearch($event)"
+		(refreshClicked)="load()"
+	/>
+
+	<app-page-section
+		title="Filtros de auditoría"
+		description="Los filtros se aplican directamente sobre el backend."
+		[padded]="true"
+	>
+		<div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+			<label class="space-y-2 text-sm">
+				<span class="font-medium"> Scope </span>
+
+				<input
+					hlmInput
+					type="text"
+					[value]="filters().scope"
+					(input)="updateFilter('scope', $any($event.target).value)"
+					placeholder="PLATFORM o TENANT"
+				/>
+			</label>
+
+			<label class="space-y-2 text-sm">
+				<span class="font-medium"> ID del tenant </span>
+
+				<input
+					hlmInput
+					type="text"
+					[value]="filters().tenant_id"
+					(input)="updateFilter('tenant_id', $any($event.target).value)"
+					placeholder="UUID del tenant"
+				/>
+			</label>
+
+			<label class="space-y-2 text-sm">
+				<span class="font-medium"> ID del actor </span>
+
+				<input
+					hlmInput
+					type="text"
+					[value]="filters().actor_id"
+					(input)="updateFilter('actor_id', $any($event.target).value)"
+					placeholder="UUID del usuario"
+				/>
+			</label>
+
+			<label class="space-y-2 text-sm">
+				<span class="font-medium"> Tipo de evento </span>
+
+				<input
+					hlmInput
+					type="text"
+					[value]="filters().event_type"
+					(input)="updateFilter('event_type', $any($event.target).value)"
+					placeholder="Ej. INCIDENT_CREATED"
+				/>
+			</label>
+
+			<label class="space-y-2 text-sm">
+				<span class="font-medium"> Tipo de recurso </span>
+
+				<input
+					hlmInput
+					type="text"
+					[value]="filters().resource_type"
+					(input)="updateFilter('resource_type', $any($event.target).value)"
+					placeholder="Ej. INCIDENT"
+				/>
+			</label>
+
+			<label class="space-y-2 text-sm">
+				<span class="font-medium"> ID del recurso </span>
+
+				<input
+					hlmInput
+					type="text"
+					[value]="filters().resource_id"
+					(input)="updateFilter('resource_id', $any($event.target).value)"
+					placeholder="UUID del recurso"
+				/>
+			</label>
+
+			<label class="space-y-2 text-sm">
+				<span class="font-medium"> Desde </span>
+
+				<input
+					hlmInput
+					type="date"
+					[value]="filters().created_from"
+					(input)="updateFilter('created_from', $any($event.target).value)"
+				/>
+			</label>
+
+			<label class="space-y-2 text-sm">
+				<span class="font-medium"> Hasta </span>
+
+				<input
+					hlmInput
+					type="date"
+					[value]="filters().created_to"
+					(input)="updateFilter('created_to', $any($event.target).value)"
+				/>
+			</label>
+		</div>
+
+		<div class="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+			<button
+				type="button"
+				hlmBtn
+				variant="outline"
+				class="cursor-pointer"
+				[disabled]="isLoading()"
+				(click)="clearFilters()"
+			>
+				Limpiar filtros
+			</button>
+
+			<button
+				type="button"
+				hlmBtn
+				class="cursor-pointer"
+				[disabled]="isLoading()"
+				(click)="applyFilters()"
+			>
+				Aplicar filtros
+			</button>
+		</div>
+	</app-page-section>
+
+	@if (isLoading()) {
+		<app-loading-state
+			title="Cargando auditoría"
+			description="Estamos obteniendo los eventos de plataforma."
+		/>
+	} @else if (errorMessage()) {
+		<app-error-state
+			title="No se pudo cargar la auditoría"
+			[description]="errorMessage()!"
+			(actionClicked)="load()"
+		/>
+	} @else if (filteredItems().length === 0) {
+		<app-page-section [padded]="true">
+			<div
+				class="flex min-h-64 flex-col items-center justify-center text-center"
+			>
+				<div
+					class="bg-muted text-muted-foreground flex size-12 items-center justify-center rounded-full"
+				>
+					<ng-icon name="lucideShield" class="size-5" />
+				</div>
+
+				<h3 class="mt-4 text-base font-semibold">
+					No hay eventos para mostrar
+				</h3>
+
+				<p class="text-muted-foreground mt-2 max-w-md text-sm">
+					No existen eventos que coincidan con la búsqueda o los filtros
+					seleccionados.
+				</p>
+			</div>
+		</app-page-section>
+	} @else {
+		<div class="space-y-3">
+			@for (item of filteredItems(); track item.id) {
+				<article
+					class="bg-card text-card-foreground rounded-xl border p-4 shadow-sm"
+				>
+					<div class="flex items-start justify-between gap-4">
+						<div class="min-w-0">
+							<div class="mb-2 flex flex-wrap items-center gap-2">
+								<app-audit-actor-badge [actorType]="item.actor_type" />
+
+								<span
+									class="bg-muted text-muted-foreground rounded-md px-2 py-0.5 text-xs font-medium"
+								>
+									{{ item.scope }}
+								</span>
+							</div>
+
+							<h3 class="text-base font-semibold">
+								{{ eventTypeLabel(item) }}
+							</h3>
+
+							<p class="text-muted-foreground mt-1 text-sm">
+								{{ resourceLabel(item) }}
+							</p>
+						</div>
+
+						<app-resource-actions-menu
+							[actions]="actionsFor(item)"
+							(actionSelected)="onAction($event, item)"
+						/>
+					</div>
+
+					<div
+						class="text-muted-foreground mt-4 grid gap-3 text-sm md:grid-cols-2 xl:grid-cols-4"
+					>
+						<div class="flex min-w-0 items-center gap-2">
+							<ng-icon name="lucideCalendar" class="size-4 shrink-0" />
+
+							<span class="truncate">
+								{{ dateLabel(item.created_at) }}
+							</span>
+						</div>
+
+						<div class="flex min-w-0 items-center gap-2">
+							<ng-icon name="lucideUser" class="size-4 shrink-0" />
+
+							<span class="truncate">
+								{{ actorReference(item) }}
+							</span>
+						</div>
+
+						<div class="flex min-w-0 items-center gap-2">
+							<ng-icon name="lucideDatabase" class="size-4 shrink-0" />
+
+							<span class="truncate">
+								{{ resourceTypeLabel(item) }}
+							</span>
+						</div>
+
+						<div class="flex min-w-0 items-center gap-2">
+							<ng-icon name="lucideGlobe" class="size-4 shrink-0" />
+
+							<span class="truncate">
+								{{ item.ip_address || "Sin IP" }}
+							</span>
+						</div>
+					</div>
+
+					@if (hasEventData(item)) {
+						<div class="bg-muted/30 mt-4 rounded-lg border p-3">
+							<p class="text-muted-foreground flex items-center gap-2 text-xs">
+								<ng-icon name="lucideCode2" class="size-4" />
+
+								El evento contiene datos adicionales.
+							</p>
+						</div>
+					}
+
+					<div class="mt-4 flex justify-end">
+						<button
+							type="button"
+							hlmBtn
+							variant="outline"
+							class="cursor-pointer"
+							(click)="openDetail(item)"
+						>
+							Ver detalle
+						</button>
+					</div>
+				</article>
+			}
+		</div>
+
+		<app-pagination
+			[page]="pagination().page"
+			[pageSize]="pagination().page_size"
+			[total]="pagination().total"
+			[totalPages]="pagination().total_pages"
+			[disabled]="isLoading()"
+			(pageChanged)="onPageChange($event)"
+			(pageSizeChanged)="onPageSizeChange($event)"
+		/>
+	}
+
+	<app-side-drawer
+		[open]="isDetailOpen()"
+		title="Detalle de auditoría"
+		description="Información completa del evento registrado."
+		widthClass="sm:max-w-3xl"
+		(closed)="closeDetail()"
+	>
+		@if (isDetailLoading()) {
+			<app-loading-state
+				title="Cargando evento"
+				description="Estamos obteniendo el detalle de auditoría."
+				minHeight="min-h-52"
+			/>
+		} @else if (selectedEvent()) {
+			@let detail = selectedEvent()!;
+
+			<div class="space-y-5">
+				<section class="bg-card text-card-foreground rounded-xl border p-4">
+					<div class="flex flex-wrap items-center gap-2">
+						<app-audit-actor-badge [actorType]="detail.actor_type" />
+
+						<span
+							class="bg-muted text-muted-foreground rounded-md px-2 py-0.5 text-xs font-medium"
+						>
+							{{ detail.scope }}
+						</span>
+					</div>
+
+					<h3 class="mt-3 text-lg font-semibold">
+						{{ eventTypeLabel(detail) }}
+					</h3>
+
+					<p class="text-muted-foreground mt-1 text-sm">
+						{{ resourceLabel(detail) }}
+					</p>
+				</section>
+
+				<section class="bg-card text-card-foreground rounded-xl border p-4">
+					<h4 class="font-semibold">Identificación</h4>
+
+					<div class="mt-4 grid gap-4 sm:grid-cols-2">
+						<div class="space-y-1">
+							<p class="text-muted-foreground flex items-center gap-2 text-xs">
+								<ng-icon name="lucideFingerprint" class="size-4" />
+								Event ID
+							</p>
+
+							<p class="text-sm font-medium break-all">
+								{{ detail.id }}
+							</p>
+						</div>
+
+						<div class="space-y-1">
+							<p class="text-muted-foreground flex items-center gap-2 text-xs">
+								<ng-icon name="lucideUser" class="size-4" />
+								User ID
+							</p>
+
+							<p class="text-sm font-medium break-all">
+								{{ actorReference(detail) }}
+							</p>
+						</div>
+
+						<div class="space-y-1">
+							<p class="text-muted-foreground flex items-center gap-2 text-xs">
+								<ng-icon name="lucideDatabase" class="size-4" />
+								Tipo de recurso
+							</p>
+
+							<p class="text-sm font-medium">
+								{{ resourceTypeLabel(detail) }}
+							</p>
+						</div>
+
+						<div class="space-y-1">
+							<p class="text-muted-foreground flex items-center gap-2 text-xs">
+								<ng-icon name="lucideFingerprint" class="size-4" />
+								Resource ID
+							</p>
+
+							<p class="text-sm font-medium break-all">
+								{{ detail.resource_id || "Sin identificador" }}
+							</p>
+						</div>
+					</div>
+				</section>
+
+				<section class="bg-card text-card-foreground rounded-xl border p-4">
+					<h4 class="font-semibold">Origen de la solicitud</h4>
+
+					<div class="mt-4 grid gap-4 sm:grid-cols-2">
+						<div class="space-y-1">
+							<p class="text-muted-foreground flex items-center gap-2 text-xs">
+								<ng-icon name="lucideGlobe" class="size-4" />
+								Dirección IP
+							</p>
+
+							<p class="text-sm font-medium break-all">
+								{{ detail.ip_address || "Sin IP registrada" }}
+							</p>
+						</div>
+
+						<div class="space-y-1">
+							<p class="text-muted-foreground flex items-center gap-2 text-xs">
+								<ng-icon name="lucideCalendar" class="size-4" />
+								Fecha del evento
+							</p>
+
+							<p class="text-sm font-medium">
+								{{ dateLabel(detail.created_at) }}
+							</p>
+						</div>
+
+						<div class="space-y-1 sm:col-span-2">
+							<p class="text-muted-foreground flex items-center gap-2 text-xs">
+								<ng-icon name="lucideMonitor" class="size-4" />
+								User agent
+							</p>
+
+							<p class="text-sm leading-6 font-medium break-all">
+								{{ detail.user_agent || "Sin user agent registrado" }}
+							</p>
+						</div>
+					</div>
+				</section>
+
+				<section class="bg-card text-card-foreground rounded-xl border p-4">
+					<h4 class="font-semibold">Datos del evento</h4>
+
+					@if (hasEventData(detail)) {
+						<pre
+							class="bg-muted/40 text-foreground mt-4 max-h-96 overflow-auto rounded-lg border p-4 text-xs leading-6"
+							>{{ eventDataLabel(detail) }}</pre
+						>
+					} @else {
+						<p class="text-muted-foreground mt-3 text-sm">
+							Este evento no contiene datos adicionales.
+						</p>
+					}
+				</section>
+
+				@if (detail.resource_id && detail.resource_type) {
+					<div class="flex justify-end">
+						<button
+							type="button"
+							hlmBtn
+							variant="outline"
+							class="cursor-pointer"
+							(click)="openHistory(detail)"
+						>
+							<ng-icon name="lucideHistory" class="mr-2 size-4" />
+							Ver historial del recurso
+						</button>
+					</div>
+				}
+			</div>
+		}
+	</app-side-drawer>
+
+	<app-side-drawer
+		[open]="isHistoryOpen()"
+		title="Historial del recurso"
+		[description]="historyResourceLabel()"
+		widthClass="sm:max-w-3xl"
+		(closed)="closeHistory()"
+	>
+		@if (isHistoryLoading()) {
+			<app-loading-state
+				title="Cargando historial"
+				description="Estamos obteniendo todos los eventos asociados al recurso."
+				minHeight="min-h-52"
+			/>
+		} @else if (historyItems().length === 0) {
+			<div
+				class="flex min-h-52 flex-col items-center justify-center text-center"
+			>
+				<ng-icon name="lucideFileClock" class="text-muted-foreground size-7" />
+
+				<h3 class="mt-3 text-base font-semibold">Sin historial</h3>
+
+				<p class="text-muted-foreground mt-2 text-sm">
+					No existen eventos asociados a este recurso.
+				</p>
+			</div>
+		} @else {
+			<div class="relative space-y-4 pl-6">
+				<div class="bg-border absolute top-2 bottom-2 left-2 w-px"></div>
+
+				@for (item of historyItems(); track item.id) {
+					<article
+						class="bg-card text-card-foreground relative rounded-xl border p-4"
+					>
+						<div
+							class="bg-primary border-background absolute top-5 -left-[1.32rem] size-3 rounded-full border-2"
+						></div>
+
+						<div class="flex flex-wrap items-center gap-2">
+							<app-audit-actor-badge [actorType]="item.actor_type" />
+
+							<span class="text-muted-foreground text-xs">
+								{{ dateLabel(item.created_at) }}
+							</span>
+						</div>
+
+						<h4 class="mt-3 text-sm font-semibold">
+							{{ eventTypeLabel(item) }}
+						</h4>
+
+						<p class="text-muted-foreground mt-1 text-xs">
+							{{ actorReference(item) }}
+						</p>
+
+						@if (hasEventData(item)) {
+							<pre
+								class="bg-muted/40 mt-3 max-h-56 overflow-auto rounded-lg border p-3 text-xs leading-5"
+								>{{ eventDataLabel(item) }}</pre
+							>
+						}
+
+						<div class="mt-3 flex justify-end">
+							<button
+								type="button"
+								hlmBtn
+								variant="outline"
+								class="cursor-pointer"
+								(click)="openDetail(item)"
+							>
+								Ver evento
+							</button>
+						</div>
+					</article>
+				}
+			</div>
+		}
+	</app-side-drawer>
+</div>

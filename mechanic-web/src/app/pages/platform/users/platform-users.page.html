@@ -1,0 +1,25 @@
+<app-admin-page-shell>
+	<app-page-header
+		eyebrow="Superadmin"
+		title="Usuarios de plataforma"
+		description="Administra cuentas, tipos, estados, contraseñas y eliminación lógica."
+		[showPrimaryAction]="true"
+		primaryActionLabel="Nuevo usuario"
+		(primaryActionClicked)="openCreateDrawer()"
+	/>
+
+	<app-platform-users-list />
+
+	<app-side-drawer
+		[open]="showCreateDrawer()"
+		title="Crear usuario"
+		description="Registra una nueva cuenta dentro de la plataforma."
+		widthClass="sm:max-w-xl"
+		(closed)="closeCreateDrawer()"
+	>
+		<app-create-user-form
+			(created)="onCreated($event)"
+			(cancelled)="closeCreateDrawer()"
+		/>
+	</app-side-drawer>
+</app-admin-page-shell>

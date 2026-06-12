@@ -7,6 +7,9 @@ COPY package*.json ./
 RUN npm ci
 
 COPY . .
+COPY docker-entrypoint.sh /usr/local/bin/mechanic-web-entrypoint.sh
+RUN chmod +x /usr/local/bin/mechanic-web-entrypoint.sh
+ENTRYPOINT ["mechanic-web-entrypoint.sh"]
 
 EXPOSE 4200
 

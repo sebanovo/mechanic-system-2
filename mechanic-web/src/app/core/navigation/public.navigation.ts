@@ -19,8 +19,14 @@ export const PUBLIC_NAVIGATION: NavigationGroup[] = [
 			},
 			{
 				id: "services",
-				label: "Servicios",
+				label: "Capacidades",
 				fragment: "services",
+				context: ["PUBLIC"],
+			},
+			{
+				id: "app",
+				label: "QR móvil",
+				fragment: "app",
 				context: ["PUBLIC"],
 			},
 			{

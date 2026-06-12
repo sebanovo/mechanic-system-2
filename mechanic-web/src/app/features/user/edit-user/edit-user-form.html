@@ -1,0 +1,36 @@
+<form class="space-y-5" [formGroup]="form" (ngSubmit)="submit()">
+	<div class="grid gap-4 md:grid-cols-2">
+		<hlm-field>
+			<label hlmFieldLabel for="first_name">Nombre</label>
+			<input id="first_name" hlmInput formControlName="first_name" />
+		</hlm-field>
+
+		<hlm-field>
+			<label hlmFieldLabel for="last_name">Apellido</label>
+			<input id="last_name" hlmInput formControlName="last_name" />
+		</hlm-field>
+	</div>
+
+	<div class="grid gap-4 md:grid-cols-2">
+		<hlm-field>
+			<label hlmFieldLabel for="phone">Teléfono</label>
+			<input id="phone" hlmInput formControlName="phone" />
+		</hlm-field>
+
+		<hlm-field>
+			<label hlmFieldLabel for="avatar_url">Avatar URL</label>
+			<input id="avatar_url" hlmInput formControlName="avatar_url" />
+		</hlm-field>
+	</div>
+
+	@if (errorMessage()) {
+		<div class="border-destructive/40 bg-destructive/10 text-destructive rounded-md border px-3 py-2 text-sm">
+			{{ errorMessage() }}
+		</div>
+	}
+
+	<div class="flex items-center justify-end gap-2">
+		<button type="button" hlmBtn variant="outline" (click)="cancel()">Cancelar</button>
+		<button type="submit" hlmBtn [disabled]="isSubmitting()">Guardar cambios</button>
+	</div>
+</form>

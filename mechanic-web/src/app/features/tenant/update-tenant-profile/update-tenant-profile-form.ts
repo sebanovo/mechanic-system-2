@@ -47,6 +47,7 @@ export class UpdateTenantProfileForm {
 	readonly cancelled = output<void>();
 
 	protected readonly isSubmitting = signal(false);
+	protected readonly isLocating = signal(false);
 	protected readonly errorMessage = signal<string | null>(null);
 
 	protected readonly form = this.formBuilder.group({
@@ -65,33 +66,12 @@ export class UpdateTenantProfileForm {
 
 	constructor() {
 		effect(() => {
-			const profile = this.profile();
-
-			this.form.patchValue({
-				legal_name: profile?.legal_name ?? "",
-				tax_identifier: profile?.tax_identifier ?? "",
-				business_email: profile?.business_email ?? "",
-				business_phone: profile?.business_phone ?? "",
-				website_url: profile?.website_url ?? "",
-				address_line: profile?.address_line ?? "",
-				city: profile?.city ?? "",
-				state: profile?.state ?? "",
-				country: profile?.country ?? "",
-				latitude:
-					profile?.latitude === null || profile?.latitude === undefined
-						? ""
-						: String(profile.latitude),
-				longitude:
-					profile?.longitude === null || profile?.longitude === undefined
-						? ""
-						: String(profile.longitude),
-			});
+			this.applyProfile(this.profile());
 		});
 	}
 
 	protected submit(): void {
-		if (this.form.invalid || this.isSubmitting()) {
-			this.form.markAllAsTouched();
+		if (this.isSubmitting()) {
 			return;
 		}
 
@@ -135,6 +115,54 @@ export class UpdateTenantProfileForm {
 		});
 	}
 
+	protected useCurrentLocation(): void {
+		if (!navigator.geolocation) {
+			const message = "Tu navegador no permite obtener ubicación.";
+
+			this.errorMessage.set(message);
+
+			toast.error("Ubicación no disponible", {
+				description: message,
+			});
+
+			return;
+		}
+
+		this.isLocating.set(true);
+		this.errorMessage.set(null);
+
+		navigator.geolocation.getCurrentPosition(
+			position => {
+				this.form.patchValue({
+					latitude: String(position.coords.latitude),
+					longitude: String(position.coords.longitude),
+				});
+
+				this.isLocating.set(false);
+
+				toast.success("Ubicación obtenida", {
+					description: "Se cargaron las coordenadas actuales.",
+				});
+			},
+			error => {
+				const message =
+					error.message || "No se pudo obtener la ubicación actual.";
+
+				this.errorMessage.set(message);
+				this.isLocating.set(false);
+
+				toast.error("No se pudo obtener ubicación", {
+					description: message,
+				});
+			},
+			{
+				enableHighAccuracy: true,
+				timeout: 10000,
+				maximumAge: 30000,
+			}
+		);
+	}
+
 	protected cancel(): void {
 		this.cancelled.emit();
 	}
@@ -155,6 +183,32 @@ export class UpdateTenantProfileForm {
 			latitude: this.numberOrNull(raw.latitude),
 			longitude: this.numberOrNull(raw.longitude),
 		};
+	}
+
+	private applyProfile(profile: TenantProfile | null): void {
+		this.patchTenantTextFields(profile);
+		this.patchTenantCoordinateFields(profile);
+	}
+
+	private patchTenantTextFields(profile: TenantProfile | null): void {
+		this.form.patchValue({
+			legal_name: this.textOrEmpty(profile?.legal_name),
+			tax_identifier: this.textOrEmpty(profile?.tax_identifier),
+			business_email: this.textOrEmpty(profile?.business_email),
+			business_phone: this.textOrEmpty(profile?.business_phone),
+			website_url: this.textOrEmpty(profile?.website_url),
+			address_line: this.textOrEmpty(profile?.address_line),
+			city: this.textOrEmpty(profile?.city),
+			state: this.textOrEmpty(profile?.state),
+			country: this.textOrEmpty(profile?.country),
+		});
+	}
+
+	private patchTenantCoordinateFields(profile: TenantProfile | null): void {
+		this.form.patchValue({
+			latitude: this.coordinateToString(profile?.latitude),
+			longitude: this.coordinateToString(profile?.longitude),
+		});
 	}
 
 	private validateCoordinates(
@@ -185,8 +239,12 @@ export class UpdateTenantProfileForm {
 		return trimmed || null;
 	}
 
-	private numberOrNull(value: string): number | null {
-		const trimmed = value.trim();
+	private numberOrNull(value: string | number | null | undefined): number | null {
+		if (value === null || value === undefined) {
+			return null;
+		}
+
+		const trimmed = String(value).trim();
 
 		if (!trimmed) {
 			return null;
@@ -195,5 +253,17 @@ export class UpdateTenantProfileForm {
 		const parsed = Number(trimmed);
 
 		return Number.isNaN(parsed) ? null : parsed;
+	}
+
+	private coordinateToString(value: number | string | null | undefined): string {
+		if (value === null || value === undefined) {
+			return "";
+		}
+
+		return String(value);
+	}
+
+	private textOrEmpty(value: string | null | undefined): string {
+		return value ?? "";
 	}
 }

@@ -1,6 +1,7 @@
 import { Routes } from "@angular/router";
 
 import { authGuard } from "../guards/auth.guard";
+import { tenantDashboardRedirectGuard } from "../guards/tenant-dashboard-redirect.guard";
 import { tenantSelectedGuard } from "../guards/tenant-selected.guard";
 import { userTypeGuard } from "../guards/user-type.guard";
 import { PrivateLayout } from "../layouts/private-layout/private-layout";
@@ -18,13 +19,29 @@ export const TENANT_ROUTES: Routes = [
 			{
 				path: "",
 				pathMatch: "full",
-				redirectTo: "dashboard",
+				canActivate: [tenantDashboardRedirectGuard],
+				children: [
+					{
+						path: "",
+						pathMatch: "full",
+						redirectTo: "dashboard",
+					},
+				],
 			},
 			{
 				path: "dashboard",
+				canActivate: [userTypeGuard(["TENANT_OWNER"])],
 				loadComponent: () =>
 					import("../../pages/tenant/dashboard/tenant-dashboard.page").then(
 						m => m.TenantDashboardPage
+					),
+			},
+			{
+				path: "technician-dashboard",
+				canActivate: [userTypeGuard(["TECHNICIAN"])],
+				loadComponent: () =>
+					import("../../pages/tenant/technician-dashboard/technician-dashboard.page").then(
+						m => m.TechnicianDashboardPage
 					),
 			},
 			{
@@ -44,6 +61,14 @@ export const TENANT_ROUTES: Routes = [
 					),
 			},
 			{
+				path: "incidents",
+				canActivate: [userTypeGuard(["TENANT_OWNER", "TECHNICIAN"])],
+				loadComponent: () =>
+					import("../../pages/tenant/incidents/tenant-incidents.page").then(
+						m => m.TenantIncidentsPage
+					),
+			},
+			{
 				path: "assignments",
 				canActivate: [userTypeGuard(["TENANT_OWNER", "TECHNICIAN"])],
 				loadComponent: () =>
@@ -57,6 +82,14 @@ export const TENANT_ROUTES: Routes = [
 				loadComponent: () =>
 					import("../../pages/tenant/tracking-events/tenant-tracking-events.page").then(
 						m => m.TenantTrackingEventsPage
+					),
+			},
+			{
+				path: "realtime-tracking",
+				canActivate: [userTypeGuard(["TENANT_OWNER", "TECHNICIAN"])],
+				loadComponent: () =>
+					import("../../pages/tenant/realtime-tracking/tenant-realtime-tracking.page").then(
+						m => m.TenantRealtimeTrackingPage
 					),
 			},
 			{
@@ -105,6 +138,30 @@ export const TENANT_ROUTES: Routes = [
 				loadComponent: () =>
 					import("../../pages/tenant/catalog/tenant-catalog.page").then(
 						m => m.TenantCatalogPage
+					),
+			},
+			{
+				path: "audit",
+				canActivate: [userTypeGuard(["TENANT_OWNER"])],
+				loadComponent: () =>
+					import("../../pages/tenant/audit/tenant-audit.page").then(
+						module => module.TenantAuditPage
+					),
+			},
+			{
+				path: "notifications",
+				canActivate: [userTypeGuard(["TENANT_OWNER", "TECHNICIAN"])],
+				loadComponent: () =>
+					import("../../pages/tenant/notifications/tenant-notifications.page").then(
+						module => module.TenantNotificationsPage
+					),
+			},
+			{
+				path: "sessions",
+				canActivate: [userTypeGuard(["TENANT_OWNER", "TECHNICIAN"])],
+				loadComponent: () =>
+					import("../../pages/tenant/sessions/tenant-sessions.page").then(
+						m => m.TenantSessionsPage
 					),
 			},
 			{

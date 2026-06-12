@@ -1,0 +1,126 @@
+<div class="bg-card overflow-hidden rounded-xl border">
+	<div class="border-b p-4">
+		<div
+			class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between"
+		>
+			<div class="min-w-0">
+				<h3 class="text-base font-semibold">Mapa de seguimiento</h3>
+
+				<p class="text-muted-foreground mt-1 text-sm">
+					Ubicación del técnico, destino del incidente, ruta y ETA calculada en
+					frontend.
+				</p>
+			</div>
+
+			<div class="grid gap-2 text-sm sm:grid-cols-2 lg:min-w-96">
+				<div class="bg-muted/40 rounded-lg border p-3">
+					<p class="text-muted-foreground flex items-center gap-2 text-xs">
+						<ng-icon name="lucideRoute" class="size-4" />
+						Distancia
+					</p>
+
+					<p class="mt-1 font-medium">
+						{{ distanceLabel() }}
+					</p>
+				</div>
+
+				<div class="bg-muted/40 rounded-lg border p-3">
+					<p class="text-muted-foreground flex items-center gap-2 text-xs">
+						<ng-icon name="lucideClock" class="size-4" />
+						ETA
+					</p>
+
+					<p class="mt-1 font-medium">
+						{{ etaLabel() }}
+					</p>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="relative min-h-[520px]">
+		<div
+			#mapContainer
+			class="absolute inset-0"
+			aria-label="Mapa de seguimiento en tiempo real"
+		></div>
+
+		@if (isLoading()) {
+			<div class="bg-background/80 absolute inset-0 z-10 backdrop-blur-sm">
+				<app-loading-state
+					title="Cargando Google Maps"
+					description="Preparando mapa, marcadores y ruta."
+					minHeight="min-h-[520px]"
+				/>
+			</div>
+		}
+
+		@if (errorMessage()) {
+			<div
+				class="bg-background/90 absolute inset-0 z-10 flex items-center justify-center p-6"
+			>
+				<div
+					class="bg-card max-w-md rounded-xl border p-5 text-center shadow-sm"
+				>
+					<ng-icon
+						name="lucideMapPin"
+						class="text-destructive mx-auto size-8"
+					/>
+
+					<h3 class="mt-4 text-base font-semibold">
+						No se pudo cargar Google Maps
+					</h3>
+
+					<p class="text-muted-foreground mt-2 text-sm leading-6">
+						{{ errorMessage() }}
+					</p>
+				</div>
+			</div>
+		}
+	</div>
+
+	<div class="grid gap-3 border-t p-4 text-sm lg:grid-cols-3">
+		<div class="bg-muted/40 rounded-lg border p-3">
+			<p class="text-muted-foreground flex items-center gap-2 text-xs">
+				<ng-icon name="lucideNavigation" class="size-4" />
+				Técnico
+			</p>
+
+			<p class="mt-1 font-medium break-all">
+				{{ originLabel() }}
+			</p>
+
+			<p class="text-muted-foreground mt-1 text-xs">
+				{{ lastOriginDateLabel() }}
+			</p>
+		</div>
+
+		<div class="bg-muted/40 rounded-lg border p-3">
+			<p class="text-muted-foreground flex items-center gap-2 text-xs">
+				<ng-icon name="lucideMapPin" class="size-4" />
+				Destino
+			</p>
+
+			<p class="mt-1 font-medium break-all">
+				{{ destinationLabel() }}
+			</p>
+		</div>
+
+		<div class="bg-muted/40 rounded-lg border p-3">
+			<p class="text-muted-foreground text-xs">Último cálculo de ruta</p>
+
+			<p class="mt-1 font-medium">
+				@if (lastRouteCalculatedAt()) {
+					{{ lastRouteCalculatedAt() | date: "medium" }}
+				} @else {
+					Sin cálculo
+				}
+			</p>
+
+			<p class="text-muted-foreground mt-1 text-xs">
+				Recalcula cada 30 segundos o cuando el técnico se mueve más de 100
+				metros.
+			</p>
+		</div>
+	</div>
+</div>

@@ -20,7 +20,8 @@ export type NavigationIcon =
 	| "bot"
 	| "database"
 	| "clock"
-	| "route";
+	| "route"
+	| "satellite";
 
 export type NavigationUserContext = {
 	isAuthenticated: boolean;
