@@ -1,0 +1,30 @@
+<app-admin-page-shell>
+	<app-page-header
+		title="Disponibilidad"
+		description="Controla qué técnicos están disponibles para recibir nuevas asignaciones."
+		eyebrow="Operación"
+		[showRefresh]="false"
+		[showPrimaryAction]="false"
+	/>
+
+	<app-tenant-technician-availability-list
+		(editClicked)="openEditDrawer($event)"
+	/>
+
+	<app-side-drawer
+		[open]="!!editingItem()"
+		title="Editar disponibilidad"
+		description="Actualiza el estado operativo y la ventana horaria del técnico."
+		widthClass="sm:max-w-2xl"
+		(closed)="closeEditDrawer()"
+	>
+		@if (editingItem()) {
+			<app-update-technician-availability-form
+				[technician]="editingItem()!.technician"
+				[availability]="editingItem()!.availability"
+				(updated)="onUpdated()"
+				(cancelled)="closeEditDrawer()"
+			/>
+		}
+	</app-side-drawer>
+</app-admin-page-shell>

@@ -1,0 +1,80 @@
+<form class="space-y-5" [formGroup]="form" (ngSubmit)="submit()">
+	<hlm-field>
+		<label hlmFieldLabel for="email">Correo electrónico</label>
+
+		<input
+			id="email"
+			type="email"
+			hlmInput
+			formControlName="email"
+			placeholder="correo@ejemplo.com"
+			autocomplete="email"
+		/>
+
+		@if (
+			form.controls.email.touched && form.controls.email.hasError("required")
+		) {
+			<hlm-field-error forceShow>
+				El correo electrónico es obligatorio.
+			</hlm-field-error>
+		}
+
+		@if (form.controls.email.touched && form.controls.email.hasError("email")) {
+			<hlm-field-error forceShow>
+				Ingresa un correo electrónico válido.
+			</hlm-field-error>
+		}
+	</hlm-field>
+
+	<hlm-field>
+		<label hlmFieldLabel for="password">Contraseña</label>
+
+		<input
+			id="password"
+			type="password"
+			hlmInput
+			formControlName="password"
+			placeholder="********"
+			autocomplete="current-password"
+		/>
+
+		@if (
+			form.controls.password.touched &&
+			form.controls.password.hasError("required")
+		) {
+			<hlm-field-error forceShow>
+				La contraseña es obligatoria.
+			</hlm-field-error>
+		}
+
+		@if (
+			form.controls.password.touched &&
+			form.controls.password.hasError("minlength")
+		) {
+			<hlm-field-error forceShow>
+				La contraseña debe tener al menos 8 caracteres.
+			</hlm-field-error>
+		}
+	</hlm-field>
+
+	@if (errorMessage()) {
+		<div
+			class="border-destructive/40 bg-destructive/10 text-destructive rounded-md border px-3 py-2 text-sm"
+		>
+			{{ errorMessage() }}
+		</div>
+	}
+
+	<button
+		type="submit"
+		hlmBtn
+		class="w-full cursor-pointer"
+		[disabled]="isSubmitting()"
+	>
+		@if (isSubmitting()) {
+			Ingresando...
+		} @else {
+			Iniciar sesión
+		}
+	</button>
+</form>

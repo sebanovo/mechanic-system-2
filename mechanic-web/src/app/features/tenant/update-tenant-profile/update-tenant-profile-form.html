@@ -1,0 +1,193 @@
+<form class="space-y-5" [formGroup]="form" (ngSubmit)="submit()">
+	<hlm-field>
+		<label hlmFieldLabel for="legal_name">Razón social / nombre legal</label>
+
+		<input
+			id="legal_name"
+			type="text"
+			hlmInput
+			formControlName="legal_name"
+			placeholder="Speed Motors SRL"
+			autocomplete="organization"
+		/>
+	</hlm-field>
+
+	<div class="grid gap-4 sm:grid-cols-2">
+		<hlm-field>
+			<label hlmFieldLabel for="tax_identifier"
+				>NIT / Identificador fiscal</label
+			>
+
+			<input
+				id="tax_identifier"
+				type="text"
+				hlmInput
+				formControlName="tax_identifier"
+				placeholder="123456789"
+				autocomplete="off"
+			/>
+		</hlm-field>
+
+		<hlm-field>
+			<label hlmFieldLabel for="business_phone">Teléfono comercial</label>
+
+			<input
+				id="business_phone"
+				type="tel"
+				hlmInput
+				formControlName="business_phone"
+				placeholder="70000000"
+				autocomplete="tel"
+			/>
+		</hlm-field>
+	</div>
+
+	<hlm-field>
+		<label hlmFieldLabel for="business_email">Correo comercial</label>
+
+		<input
+			id="business_email"
+			type="email"
+			hlmInput
+			formControlName="business_email"
+			placeholder="contacto@taller.com"
+			autocomplete="email"
+		/>
+
+		@if (
+			form.controls.business_email.touched &&
+			form.controls.business_email.hasError("email")
+		) {
+			<hlm-field-error forceShow> Ingresa un correo válido. </hlm-field-error>
+		}
+	</hlm-field>
+
+	<hlm-field>
+		<label hlmFieldLabel for="website_url">Sitio web</label>
+
+		<input
+			id="website_url"
+			type="url"
+			hlmInput
+			formControlName="website_url"
+			placeholder="https://taller.com"
+			autocomplete="url"
+		/>
+	</hlm-field>
+
+	<hlm-field>
+		<label hlmFieldLabel for="address_line">Dirección</label>
+
+		<input
+			id="address_line"
+			type="text"
+			hlmInput
+			formControlName="address_line"
+			placeholder="Av. Principal #123"
+			autocomplete="street-address"
+		/>
+	</hlm-field>
+
+	<div class="grid gap-4 sm:grid-cols-3">
+		<hlm-field>
+			<label hlmFieldLabel for="city">Ciudad</label>
+
+			<input
+				id="city"
+				type="text"
+				hlmInput
+				formControlName="city"
+				placeholder="La Paz"
+				autocomplete="address-level2"
+			/>
+		</hlm-field>
+
+		<hlm-field>
+			<label hlmFieldLabel for="state">Departamento / Estado</label>
+
+			<input
+				id="state"
+				type="text"
+				hlmInput
+				formControlName="state"
+				placeholder="La Paz"
+				autocomplete="address-level1"
+			/>
+		</hlm-field>
+
+		<hlm-field>
+			<label hlmFieldLabel for="country">País</label>
+
+			<input
+				id="country"
+				type="text"
+				hlmInput
+				formControlName="country"
+				placeholder="Bolivia"
+				autocomplete="country-name"
+			/>
+		</hlm-field>
+	</div>
+
+	<div class="grid gap-4 sm:grid-cols-2">
+		<hlm-field>
+			<label hlmFieldLabel for="latitude">Latitud</label>
+
+			<input
+				id="latitude"
+				type="number"
+				hlmInput
+				formControlName="latitude"
+				placeholder="-16.500000"
+				step="0.000001"
+			/>
+		</hlm-field>
+
+		<hlm-field>
+			<label hlmFieldLabel for="longitude">Longitud</label>
+
+			<input
+				id="longitude"
+				type="number"
+				hlmInput
+				formControlName="longitude"
+				placeholder="-68.150000"
+				step="0.000001"
+			/>
+		</hlm-field>
+	</div>
+
+	@if (errorMessage()) {
+		<div
+			class="border-destructive/40 bg-destructive/10 text-destructive rounded-md border px-3 py-2 text-sm"
+		>
+			{{ errorMessage() }}
+		</div>
+	}
+
+	<div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+		<button
+			type="button"
+			hlmBtn
+			variant="outline"
+			class="cursor-pointer"
+			[disabled]="isSubmitting()"
+			(click)="cancel()"
+		>
+			Cancelar
+		</button>
+
+		<button
+			type="submit"
+			hlmBtn
+			class="cursor-pointer"
+			[disabled]="isSubmitting()"
+		>
+			@if (isSubmitting()) {
+				Guardando...
+			} @else {
+				Guardar perfil
+			}
+		</button>
+	</div>
+</form>

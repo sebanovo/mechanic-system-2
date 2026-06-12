@@ -1,0 +1,307 @@
+@if (isLoading()) {
+	<app-loading-state
+		title="Cargando configuración"
+		description="Estamos obteniendo el tenant, perfil y operación del taller."
+	/>
+} @else if (errorMessage()) {
+	<app-error-state
+		title="No se pudo cargar la configuración"
+		[description]="errorMessage()!"
+		(actionClicked)="load()"
+	/>
+} @else if (tenant()) {
+	<div class="space-y-6">
+		<div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+			<app-stat-card
+				label="Tipo de tenant"
+				[value]="tenantKindLabel()"
+				description="Contexto operativo"
+				tone="info"
+			/>
+
+			<app-stat-card
+				label="Estado tenant"
+				[value]="tenant()!.status"
+				description="Controlado por plataforma"
+				tone="success"
+			/>
+
+			<app-stat-card
+				label="Estado proveedor"
+				[value]="provider()?.operational_status ?? 'Sin perfil'"
+				description="Control operativo del taller"
+				tone="success"
+			/>
+
+			<app-stat-card
+				label="Emergencias"
+				[value]="providerEmergencyLabel()"
+				description="Participación en incidentes"
+				tone="warning"
+			/>
+		</div>
+
+		<app-page-section
+			title="Tenant actual"
+			description="Identidad principal del tenant seleccionado."
+		>
+			<div class="space-y-5">
+				<div
+					class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
+				>
+					<div class="min-w-0">
+						<div class="flex flex-wrap items-center gap-2">
+							<h2 class="truncate text-xl font-semibold">
+								{{ tenant()!.commercial_name }}
+							</h2>
+
+							<app-tenant-status-badge [status]="tenant()!.status" />
+							<app-tenant-kind-badge [kind]="tenant()!.tenant_kind" />
+						</div>
+
+						<p class="text-muted-foreground mt-2 text-sm">
+							Slug: {{ tenant()!.slug }}
+						</p>
+					</div>
+
+					<button
+						type="button"
+						hlmBtn
+						variant="outline"
+						class="cursor-pointer"
+						(click)="createNetworkClicked.emit()"
+					>
+						Crear red
+					</button>
+				</div>
+
+				<div class="grid gap-4 sm:grid-cols-2">
+					<div class="bg-muted/40 rounded-lg border p-4">
+						<p class="text-muted-foreground flex items-center gap-2 text-xs">
+							<ng-icon name="lucideCalendar" class="size-4" />
+							Creado
+						</p>
+						<p class="mt-1 text-sm font-medium">
+							{{ tenantCreatedAtLabel() }}
+						</p>
+					</div>
+
+					<div class="bg-muted/40 rounded-lg border p-4">
+						<p class="text-muted-foreground flex items-center gap-2 text-xs">
+							<ng-icon name="lucideCalendar" class="size-4" />
+							Actualizado
+						</p>
+						<p class="mt-1 text-sm font-medium">
+							{{ tenantUpdatedAtLabel() }}
+						</p>
+					</div>
+				</div>
+			</div>
+		</app-page-section>
+
+		<div class="grid gap-6 xl:grid-cols-2">
+			<app-page-section
+				title="Perfil comercial"
+				description="Datos visibles y de contacto del tenant."
+			>
+				<div class="space-y-5">
+					<div class="flex justify-end">
+						<button
+							type="button"
+							hlmBtn
+							variant="outline"
+							class="cursor-pointer"
+							(click)="editProfileClicked.emit()"
+						>
+							Editar perfil
+						</button>
+					</div>
+
+					<div class="space-y-4">
+						<div class="flex gap-3">
+							<ng-icon
+								name="lucideBuilding"
+								class="text-muted-foreground mt-0.5 size-4 shrink-0"
+							/>
+
+							<div class="min-w-0">
+								<p class="text-sm font-medium">Nombre legal</p>
+								<p class="text-muted-foreground mt-1 text-sm wrap-break-word">
+									{{ profile()?.legal_name || "Sin nombre legal configurado" }}
+								</p>
+							</div>
+						</div>
+
+						<div class="flex gap-3">
+							<ng-icon
+								name="lucideMail"
+								class="text-muted-foreground mt-0.5 size-4 shrink-0"
+							/>
+
+							<div class="min-w-0">
+								<p class="text-sm font-medium">Contacto</p>
+								<p class="text-muted-foreground mt-1 text-sm wrap-break-word">
+									{{ profileContactLabel() }}
+								</p>
+							</div>
+						</div>
+
+						<div class="flex gap-3">
+							<ng-icon
+								name="lucideMapPin"
+								class="text-muted-foreground mt-0.5 size-4 shrink-0"
+							/>
+
+							<div class="min-w-0">
+								<p class="text-sm font-medium">Ubicación</p>
+								<p class="text-muted-foreground mt-1 text-sm wrap-break-word">
+									{{ profileLocationLabel() }}
+								</p>
+							</div>
+						</div>
+
+						<div class="flex gap-3">
+							<ng-icon
+								name="lucideGlobe"
+								class="text-muted-foreground mt-0.5 size-4 shrink-0"
+							/>
+
+							<div class="min-w-0">
+								<p class="text-sm font-medium">Sitio web</p>
+								<p class="text-muted-foreground mt-1 text-sm wrap-break-word">
+									{{ profile()?.website_url || "Sin sitio web configurado" }}
+								</p>
+							</div>
+						</div>
+					</div>
+				</div>
+			</app-page-section>
+
+			<app-page-section
+				title="Configuración"
+				description="Valores por defecto usados por el tenant."
+			>
+				<div class="space-y-5">
+					<div class="flex justify-end">
+						<button
+							type="button"
+							hlmBtn
+							variant="outline"
+							class="cursor-pointer"
+							(click)="editSettingsClicked.emit()"
+						>
+							Editar configuración
+						</button>
+					</div>
+
+					<div class="grid gap-4 sm:grid-cols-3 xl:grid-cols-1">
+						<div class="bg-muted/40 rounded-lg border p-4">
+							<p class="text-muted-foreground text-xs">Moneda</p>
+							<p class="mt-1 text-sm font-medium">
+								{{ settings()?.default_currency || "BOB" }}
+							</p>
+						</div>
+
+						<div class="bg-muted/40 rounded-lg border p-4">
+							<p class="text-muted-foreground flex items-center gap-2 text-xs">
+								<ng-icon name="lucideClock" class="size-4" />
+								Zona horaria
+							</p>
+							<p class="mt-1 text-sm font-medium">
+								{{ settings()?.default_timezone || "America/La_Paz" }}
+							</p>
+						</div>
+
+						<div class="bg-muted/40 rounded-lg border p-4">
+							<p class="text-muted-foreground text-xs">Idioma</p>
+							<p class="mt-1 text-sm font-medium">
+								{{ settings()?.default_language || "es" }}
+							</p>
+						</div>
+					</div>
+				</div>
+			</app-page-section>
+		</div>
+
+		<app-page-section
+			title="Perfil operativo del proveedor"
+			description="Controla si el taller puede operar y aceptar solicitudes de emergencia."
+		>
+			<div class="space-y-5">
+				<div
+					class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
+				>
+					<div class="min-w-0">
+						<div class="flex flex-wrap items-center gap-2">
+							<h3 class="text-lg font-semibold">
+								{{ providerTypeLabel() }}
+							</h3>
+
+							@if (provider()) {
+								<app-provider-operational-status-badge
+									[status]="provider()!.operational_status"
+								/>
+							}
+						</div>
+
+						<p class="text-muted-foreground mt-2 text-sm">
+							{{ providerOperationalText() }}
+						</p>
+					</div>
+
+					<button
+						type="button"
+						hlmBtn
+						variant="outline"
+						class="cursor-pointer"
+						(click)="editProviderClicked.emit()"
+					>
+						Editar operación
+					</button>
+				</div>
+
+				<div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+					<div class="bg-muted/40 rounded-lg border p-4">
+						<p class="text-muted-foreground flex items-center gap-2 text-xs">
+							<ng-icon name="lucideShieldCheck" class="size-4" />
+							Emergencias
+						</p>
+						<p class="mt-1 text-sm font-medium">
+							{{ providerEmergencyLabel() }}
+						</p>
+					</div>
+
+					<div class="bg-muted/40 rounded-lg border p-4">
+						<p class="text-muted-foreground flex items-center gap-2 text-xs">
+							<ng-icon name="lucideStar" class="size-4" />
+							Calificación
+						</p>
+						<p class="mt-1 text-sm font-medium">
+							{{ providerRatingLabel() }}
+						</p>
+					</div>
+
+					<div class="bg-muted/40 rounded-lg border p-4">
+						<p class="text-muted-foreground flex items-center gap-2 text-xs">
+							<ng-icon name="lucideWrench" class="size-4" />
+							Score de respuesta
+						</p>
+						<p class="mt-1 text-sm font-medium">
+							{{ providerResponseScoreLabel() }}
+						</p>
+					</div>
+
+					<div class="bg-muted/40 rounded-lg border p-4">
+						<p class="text-muted-foreground flex items-center gap-2 text-xs">
+							<ng-icon name="lucideSettings" class="size-4" />
+							Provider ID
+						</p>
+						<p class="mt-1 truncate text-sm font-medium">
+							{{ provider()?.id || "Sin perfil" }}
+						</p>
+					</div>
+				</div>
+			</div>
+		</app-page-section>
+	</div>
+}

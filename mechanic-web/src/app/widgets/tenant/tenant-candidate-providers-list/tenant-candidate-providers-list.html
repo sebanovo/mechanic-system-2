@@ -1,0 +1,412 @@
+<div class="space-y-5">
+	<div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+		<app-stat-card
+			label="Total candidatos"
+			[value]="stats().total"
+			description="Incidentes donde participa el taller"
+		/>
+
+		<app-stat-card
+			label="Solicitados / sugeridos"
+			[value]="stats().requested + stats().suggested"
+			description="Pendientes de evaluación"
+			tone="warning"
+		/>
+
+		<app-stat-card
+			label="Seleccionados"
+			[value]="stats().selected"
+			description="Candidaturas ganadas"
+			tone="success"
+		/>
+
+		<app-stat-card
+			label="Cerrados"
+			[value]="stats().discarded + stats().expired"
+			description="Descartados o expirados"
+			tone="muted"
+		/>
+	</div>
+
+	<app-data-toolbar
+		searchPlaceholder="Buscar por incidente, dirección, descripción o estado..."
+		[showFilters]="false"
+		[showRefresh]="true"
+		(searchChanged)="onSearch($event)"
+		(refreshClicked)="load(); loadStats()"
+	/>
+
+	<app-page-section [padded]="true">
+		<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+			<label class="space-y-2 text-sm">
+				<span class="font-medium">Estado de candidatura</span>
+
+				<select
+					class="border-input bg-background h-10 w-full rounded-md border px-3 text-sm"
+					[value]="status()"
+					(change)="onStatusFilterChange($event)"
+				>
+					@for (option of statusOptions; track option.value) {
+						<option [value]="option.value">
+							{{ option.label }}
+						</option>
+					}
+				</select>
+			</label>
+		</div>
+	</app-page-section>
+
+	@if (isLoading()) {
+		<app-loading-state
+			title="Cargando candidatos"
+			description="Estamos obteniendo las candidaturas del taller actual."
+		/>
+	} @else if (errorMessage()) {
+		<app-error-state
+			title="No se pudieron cargar los candidatos"
+			[description]="errorMessage()!"
+			(actionClicked)="load()"
+		/>
+	} @else if (filteredItems().length === 0) {
+		<app-page-section [padded]="true">
+			<div
+				class="flex min-h-64 flex-col items-center justify-center text-center"
+			>
+				<div
+					class="bg-muted text-muted-foreground mb-4 flex size-12 items-center justify-center rounded-full"
+				>
+					<ng-icon name="lucideWrench" class="size-5" />
+				</div>
+
+				<h3 class="text-base font-semibold">No hay candidatos para mostrar</h3>
+
+				<p class="text-muted-foreground mt-2 max-w-md text-sm">
+					El taller aparecerá aquí cuando el dispatch lo considere candidato
+					para un incidente.
+				</p>
+			</div>
+		</app-page-section>
+	} @else {
+		<div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+			@for (item of filteredItems(); track item.candidate.id) {
+				<article
+					class="bg-card text-card-foreground rounded-xl border p-4 shadow-sm transition hover:shadow-md"
+				>
+					<div class="flex items-start justify-between gap-3">
+						<div class="min-w-0">
+							<div class="mb-2 flex flex-wrap items-center gap-2">
+								<span
+									class="bg-muted text-muted-foreground rounded-md px-2 py-0.5 text-xs font-medium"
+								>
+									{{ incidentCode(item) }}
+								</span>
+
+								<app-candidate-provider-status-badge
+									[status]="item.candidate.candidate_status"
+								/>
+							</div>
+
+							<h3 class="truncate text-base font-semibold">
+								{{ incidentDescription(item) }}
+							</h3>
+
+							<p class="text-muted-foreground mt-1 truncate text-sm">
+								{{ incidentLocation(item) }}
+							</p>
+						</div>
+
+						<app-resource-actions-menu
+							[actions]="actionsFor(item)"
+							(actionSelected)="onAction($event, item)"
+						/>
+					</div>
+
+					<div class="mt-4 space-y-2 text-sm">
+						<div class="text-muted-foreground flex min-w-0 items-center gap-2">
+							<ng-icon name="lucideRoute" class="size-4 shrink-0" />
+							<span class="truncate">
+								Distancia: {{ distanceLabel(item) }}
+							</span>
+						</div>
+
+						<div class="text-muted-foreground flex min-w-0 items-center gap-2">
+							<ng-icon name="lucideClock" class="size-4 shrink-0" />
+							<span class="truncate"> ETA: {{ etaLabel(item) }} </span>
+						</div>
+
+						<div class="text-muted-foreground flex min-w-0 items-center gap-2">
+							<ng-icon name="lucideStar" class="size-4 shrink-0" />
+							<span class="truncate"> Match: {{ matchScoreLabel(item) }} </span>
+						</div>
+
+						<div class="text-muted-foreground flex min-w-0 items-center gap-2">
+							<ng-icon name="lucideInfo" class="size-4 shrink-0" />
+							<span class="truncate">
+								{{ operationalText(item) }}
+							</span>
+						</div>
+					</div>
+
+					<div class="mt-5">
+						<button
+							type="button"
+							hlmBtn
+							variant="outline"
+							class="w-full cursor-pointer"
+							(click)="openDetail(item)"
+						>
+							Ver detalle
+						</button>
+					</div>
+				</article>
+			}
+		</div>
+
+		<app-pagination
+			[page]="pagination().page"
+			[pageSize]="pagination().page_size"
+			[total]="pagination().total"
+			[totalPages]="pagination().total_pages"
+			[disabled]="isLoading()"
+			(pageChanged)="onPageChange($event)"
+			(pageSizeChanged)="onPageSizeChange($event)"
+		/>
+	}
+
+	<app-side-drawer
+		[open]="isDetailDrawerOpen()"
+		title="Detalle del candidato"
+		description="Información del incidente, puntuación del match y estado de la candidatura."
+		widthClass="sm:max-w-2xl"
+		(closed)="closeDetail()"
+	>
+		@if (isDetailLoading()) {
+			<app-loading-state
+				title="Cargando candidato"
+				description="Estamos obteniendo el detalle de la candidatura."
+				minHeight="min-h-52"
+			/>
+		} @else if (detailErrorMessage()) {
+			<app-error-state
+				title="No se pudo cargar el detalle"
+				[description]="detailErrorMessage()!"
+				(actionClicked)="closeDetail()"
+			/>
+		} @else if (selectedItem()) {
+			@let detail = selectedItem()!;
+
+			<div class="space-y-5">
+				<section class="bg-card text-card-foreground rounded-xl border p-4">
+					<div class="mb-2 flex flex-wrap items-center gap-2">
+						<span
+							class="bg-muted text-muted-foreground rounded-md px-2 py-0.5 text-xs font-medium"
+						>
+							{{ incidentCode(detail) }}
+						</span>
+
+						<app-candidate-provider-status-badge
+							[status]="detail.candidate.candidate_status"
+						/>
+					</div>
+
+					<h3 class="text-lg font-semibold">
+						{{ incidentDescription(detail) }}
+					</h3>
+
+					<p class="text-muted-foreground mt-2 text-sm leading-6">
+						{{ operationalText(detail) }}
+					</p>
+				</section>
+
+				<section class="bg-card text-card-foreground rounded-xl border p-4">
+					<h4 class="font-semibold">Incidente</h4>
+
+					<div class="mt-4 grid gap-4 sm:grid-cols-2">
+						<div class="space-y-1">
+							<p class="text-muted-foreground flex items-center gap-2 text-xs">
+								<ng-icon name="lucideHash" class="size-4" />
+								Código
+							</p>
+							<p class="text-sm font-medium">
+								{{ incidentCode(detail) }}
+							</p>
+						</div>
+
+						<div class="space-y-1">
+							<p class="text-muted-foreground flex items-center gap-2 text-xs">
+								<ng-icon name="lucideInfo" class="size-4" />
+								Estado incidente
+							</p>
+							<p class="text-sm font-medium">
+								{{ detail.incident.status }}
+							</p>
+						</div>
+
+						<div class="space-y-1">
+							<p class="text-muted-foreground flex items-center gap-2 text-xs">
+								<ng-icon name="lucideMapPin" class="size-4" />
+								Ubicación
+							</p>
+							<p class="text-sm font-medium">
+								{{ incidentLocation(detail) }}
+							</p>
+						</div>
+
+						<div class="space-y-1">
+							<p class="text-muted-foreground flex items-center gap-2 text-xs">
+								<ng-icon name="lucideInfo" class="size-4" />
+								Prioridad
+							</p>
+							<p class="text-sm font-medium">
+								{{ incidentPriority(detail) }}
+							</p>
+						</div>
+
+						<div class="space-y-1 sm:col-span-2">
+							<p class="text-muted-foreground flex items-center gap-2 text-xs">
+								<ng-icon name="lucideCalendar" class="size-4" />
+								Fecha de incidente
+							</p>
+							<p class="text-sm font-medium">
+								{{ incidentCreatedAt(detail) }}
+							</p>
+						</div>
+					</div>
+				</section>
+
+				<section class="bg-card text-card-foreground rounded-xl border p-4">
+					<h4 class="font-semibold">Evaluación del candidato</h4>
+
+					<div class="mt-4 grid gap-4 sm:grid-cols-2">
+						<div class="space-y-1">
+							<p class="text-muted-foreground flex items-center gap-2 text-xs">
+								<ng-icon name="lucideStar" class="size-4" />
+								Match score
+							</p>
+							<p class="text-sm font-medium">
+								{{ matchScoreLabel(detail) }}
+							</p>
+						</div>
+
+						<div class="space-y-1">
+							<p class="text-muted-foreground flex items-center gap-2 text-xs">
+								<ng-icon name="lucideStar" class="size-4" />
+								Rating score
+							</p>
+							<p class="text-sm font-medium">
+								{{ ratingScoreLabel(detail) }}
+							</p>
+						</div>
+
+						<div class="space-y-1">
+							<p class="text-muted-foreground flex items-center gap-2 text-xs">
+								<ng-icon name="lucideInfo" class="size-4" />
+								Capacity score
+							</p>
+							<p class="text-sm font-medium">
+								{{ capacityScoreLabel(detail) }}
+							</p>
+						</div>
+
+						<div class="space-y-1">
+							<p class="text-muted-foreground flex items-center gap-2 text-xs">
+								<ng-icon name="lucideClock" class="size-4" />
+								Response score
+							</p>
+							<p class="text-sm font-medium">
+								{{ responseScoreLabel(detail) }}
+							</p>
+						</div>
+
+						<div class="space-y-1">
+							<p class="text-muted-foreground flex items-center gap-2 text-xs">
+								<ng-icon name="lucideRoute" class="size-4" />
+								Distancia
+							</p>
+							<p class="text-sm font-medium">
+								{{ distanceLabel(detail) }}
+							</p>
+						</div>
+
+						<div class="space-y-1">
+							<p class="text-muted-foreground flex items-center gap-2 text-xs">
+								<ng-icon name="lucideClock" class="size-4" />
+								ETA
+							</p>
+							<p class="text-sm font-medium">
+								{{ etaLabel(detail) }}
+							</p>
+						</div>
+					</div>
+				</section>
+
+				<section class="bg-card text-card-foreground rounded-xl border p-4">
+					<h4 class="font-semibold">Auditoría</h4>
+
+					<div class="mt-4 grid gap-4 sm:grid-cols-2">
+						<div class="space-y-1">
+							<p class="text-muted-foreground flex items-center gap-2 text-xs">
+								<ng-icon name="lucideCalendar" class="size-4" />
+								Creado
+							</p>
+							<p class="text-sm font-medium">
+								{{ candidateCreatedAt(detail) }}
+							</p>
+						</div>
+
+						<div class="space-y-1">
+							<p class="text-muted-foreground flex items-center gap-2 text-xs">
+								<ng-icon name="lucideCalendar" class="size-4" />
+								Actualizado
+							</p>
+							<p class="text-sm font-medium">
+								{{ candidateUpdatedAt(detail) }}
+							</p>
+						</div>
+					</div>
+				</section>
+
+				@if (!isCandidateFinalStatus(detail.candidate.candidate_status)) {
+					<section class="bg-card text-card-foreground rounded-xl border p-4">
+						<h4 class="font-semibold">Acciones rápidas</h4>
+
+						<div class="mt-4 grid gap-2 sm:grid-cols-2">
+							@if (detail.candidate.candidate_status !== "SELECTED") {
+								<button
+									type="button"
+									hlmBtn
+									variant="outline"
+									class="cursor-pointer"
+									(click)="prepareStatusChange(detail, 'SELECTED')"
+								>
+									Marcar seleccionado
+								</button>
+							}
+
+							<button
+								type="button"
+								hlmBtn
+								variant="outline"
+								class="cursor-pointer"
+								(click)="prepareStatusChange(detail, 'DISCARDED')"
+							>
+								Descartar
+							</button>
+						</div>
+					</section>
+				}
+			</div>
+		}
+	</app-side-drawer>
+
+	<app-confirm-action-dialog
+		[open]="!!pendingStatusChange()"
+		[title]="pendingStatusChange()?.title ?? ''"
+		[description]="pendingStatusChange()?.description ?? ''"
+		[confirmLabel]="pendingStatusChange()?.confirmLabel ?? 'Confirmar'"
+		[destructive]="pendingStatusChange()?.destructive ?? false"
+		[loading]="isChangingStatus()"
+		(confirmed)="confirmStatusChange()"
+		(cancelled)="cancelStatusChange()"
+	/>
+</div>

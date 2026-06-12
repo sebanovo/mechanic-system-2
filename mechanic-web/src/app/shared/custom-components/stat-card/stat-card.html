@@ -1,0 +1,15 @@
+<article class="bg-card text-card-foreground rounded-xl border p-4 shadow-sm">
+	<p class="text-muted-foreground text-sm">
+		{{ label() }}
+	</p>
+
+	<p class="mt-2 text-3xl font-bold">
+		{{ value() }}
+	</p>
+
+	@if (description()) {
+		<p class="text-muted-foreground mt-1 text-sm">
+			{{ description() }}
+		</p>
+	}
+</article>

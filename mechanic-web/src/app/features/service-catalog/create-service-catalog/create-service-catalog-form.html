@@ -1,0 +1,178 @@
+<form class="space-y-5" [formGroup]="form" (ngSubmit)="submit()">
+	<div class="grid gap-4 sm:grid-cols-2">
+		<hlm-field>
+			<label hlmFieldLabel for="service_code">Código</label>
+
+			<input
+				id="service_code"
+				type="text"
+				hlmInput
+				formControlName="service_code"
+				placeholder="OIL_CHANGE"
+				autocomplete="off"
+			/>
+
+			@if (
+				form.controls.service_code.touched &&
+				form.controls.service_code.hasError("required")
+			) {
+				<hlm-field-error forceShow> El código es obligatorio. </hlm-field-error>
+			}
+		</hlm-field>
+
+		<hlm-field>
+			<label hlmFieldLabel for="category">Categoría</label>
+
+			<input
+				id="category"
+				type="text"
+				hlmInput
+				formControlName="category"
+				placeholder="Mantenimiento"
+				autocomplete="off"
+			/>
+
+			@if (
+				form.controls.category.touched &&
+				form.controls.category.hasError("required")
+			) {
+				<hlm-field-error forceShow>
+					La categoría es obligatoria.
+				</hlm-field-error>
+			}
+		</hlm-field>
+	</div>
+
+	<hlm-field>
+		<label hlmFieldLabel for="service_name">Nombre del servicio</label>
+
+		<input
+			id="service_name"
+			type="text"
+			hlmInput
+			formControlName="service_name"
+			placeholder="Cambio de aceite"
+			autocomplete="off"
+		/>
+
+		@if (
+			form.controls.service_name.touched &&
+			form.controls.service_name.hasError("required")
+		) {
+			<hlm-field-error forceShow>
+				El nombre del servicio es obligatorio.
+			</hlm-field-error>
+		}
+	</hlm-field>
+
+	<hlm-field>
+		<label hlmFieldLabel for="description">Descripción</label>
+
+		<textarea
+			id="description"
+			formControlName="description"
+			rows="3"
+			class="border-input bg-background text-foreground placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-md border px-3 py-2 text-sm outline-none focus-visible:ring-[3px]"
+			placeholder="Describe brevemente el servicio."
+		></textarea>
+	</hlm-field>
+
+	<div class="grid gap-4 sm:grid-cols-2">
+		<hlm-field>
+			<label hlmFieldLabel for="min_price">Precio mínimo</label>
+
+			<input
+				id="min_price"
+				type="number"
+				hlmInput
+				formControlName="min_price"
+				placeholder="80"
+				min="0"
+			/>
+		</hlm-field>
+
+		<hlm-field>
+			<label hlmFieldLabel for="max_price">Precio máximo</label>
+
+			<input
+				id="max_price"
+				type="number"
+				hlmInput
+				formControlName="max_price"
+				placeholder="180"
+				min="0"
+			/>
+		</hlm-field>
+	</div>
+
+	<div class="grid gap-4 sm:grid-cols-2">
+		<hlm-field>
+			<label hlmFieldLabel for="min_duration_minutes">Duración mínima</label>
+
+			<input
+				id="min_duration_minutes"
+				type="number"
+				hlmInput
+				formControlName="min_duration_minutes"
+				placeholder="30"
+				min="1"
+			/>
+		</hlm-field>
+
+		<hlm-field>
+			<label hlmFieldLabel for="max_duration_minutes">Duración máxima</label>
+
+			<input
+				id="max_duration_minutes"
+				type="number"
+				hlmInput
+				formControlName="max_duration_minutes"
+				placeholder="60"
+				min="1"
+			/>
+		</hlm-field>
+	</div>
+
+	<label class="flex items-center gap-2 text-sm">
+		<input
+			type="checkbox"
+			formControlName="is_active"
+			class="accent-primary size-4"
+		/>
+		<span>Servicio activo</span>
+	</label>
+
+	@if (errorMessage()) {
+		<div
+			class="border-destructive/40 bg-destructive/10 text-destructive rounded-md border px-3 py-2 text-sm"
+		>
+			{{ errorMessage() }}
+		</div>
+	}
+
+	<div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+		<button
+			type="button"
+			hlmBtn
+			variant="outline"
+			class="cursor-pointer"
+			[disabled]="isSubmitting()"
+			(click)="cancel()"
+		>
+			Cancelar
+		</button>
+
+		<button
+			type="submit"
+			hlmBtn
+			class="cursor-pointer"
+			[disabled]="isSubmitting()"
+		>
+			@if (isSubmitting()) {
+				Creando...
+			} @else {
+				Crear servicio
+			}
+		</button>
+	</div>
+</form>

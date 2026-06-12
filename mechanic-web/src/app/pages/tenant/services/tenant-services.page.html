@@ -1,0 +1,42 @@
+<app-admin-page-shell>
+	<app-page-header
+		title="Servicios del taller"
+		description="Configura qué servicios ofrece el taller, sus precios personalizados y su disponibilidad operativa."
+		eyebrow="Operación"
+		[showRefresh]="false"
+		[showPrimaryAction]="true"
+		primaryActionLabel="Agregar servicio"
+		(primaryActionClicked)="openCreateDrawer()"
+	/>
+
+	<app-tenant-provider-services-list (editClicked)="openEditDrawer($event)" />
+
+	<app-side-drawer
+		[open]="showCreateDrawer()"
+		title="Agregar servicio al taller"
+		description="Selecciona un servicio del catálogo activo y define precios personalizados si corresponde."
+		widthClass="sm:max-w-2xl"
+		(closed)="closeCreateDrawer()"
+	>
+		<app-create-provider-service-form
+			(created)="onCreated()"
+			(cancelled)="closeCreateDrawer()"
+		/>
+	</app-side-drawer>
+
+	<app-side-drawer
+		[open]="!!editingItem()"
+		title="Editar servicio del taller"
+		description="Actualiza precios personalizados y disponibilidad del servicio."
+		widthClass="sm:max-w-2xl"
+		(closed)="closeEditDrawer()"
+	>
+		@if (editingItem()) {
+			<app-edit-provider-service-form
+				[item]="editingItem()!"
+				(updated)="onUpdated($event)"
+				(cancelled)="closeEditDrawer()"
+			/>
+		}
+	</app-side-drawer>
+</app-admin-page-shell>

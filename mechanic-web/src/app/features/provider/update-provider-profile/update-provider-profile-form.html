@@ -1,0 +1,68 @@
+<form class="space-y-5" [formGroup]="form" (ngSubmit)="submit()">
+	<hlm-field>
+		<label hlmFieldLabel for="operational_status">Estado operativo</label>
+
+		<select
+			id="operational_status"
+			formControlName="operational_status"
+			class="border-input bg-background h-10 w-full rounded-md border px-3 text-sm"
+		>
+			@for (option of statusOptions; track option.value) {
+				<option [value]="option.value">
+					{{ option.label }}
+				</option>
+			}
+		</select>
+	</hlm-field>
+
+	<label class="bg-card flex items-start gap-3 rounded-lg border p-4 text-sm">
+		<input
+			type="checkbox"
+			formControlName="accepts_emergency_requests"
+			class="accent-primary mt-0.5 size-4"
+		/>
+
+		<span>
+			<span class="block font-medium"> Aceptar solicitudes de emergencia </span>
+
+			<span class="text-muted-foreground mt-1 block leading-6">
+				Permite que el taller sea candidato cuando un cliente reporta un
+				incidente urgente.
+			</span>
+		</span>
+	</label>
+
+	@if (errorMessage()) {
+		<div
+			class="border-destructive/40 bg-destructive/10 text-destructive rounded-md border px-3 py-2 text-sm"
+		>
+			{{ errorMessage() }}
+		</div>
+	}
+
+	<div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+		<button
+			type="button"
+			hlmBtn
+			variant="outline"
+			class="cursor-pointer"
+			[disabled]="isSubmitting()"
+			(click)="cancel()"
+		>
+			Cancelar
+		</button>
+
+		<button
+			type="submit"
+			hlmBtn
+			class="cursor-pointer"
+			[disabled]="isSubmitting()"
+		>
+			@if (isSubmitting()) {
+				Guardando...
+			} @else {
+				Guardar operación
+			}
+		</button>
+	</div>
+</form>

@@ -1,0 +1,31 @@
+<div class="relative">
+	<button
+		type="button"
+		hlmBtn
+		variant="ghost"
+		size="icon"
+		class="cursor-pointer"
+		aria-label="Abrir acciones"
+		(click)="toggle()"
+	>
+		<ng-icon name="lucideMoreVertical" class="size-4" />
+	</button>
+
+	@if (open()) {
+		<div
+			class="bg-popover text-popover-foreground absolute right-0 z-20 mt-2 w-48 overflow-hidden rounded-md border p-1 shadow-md"
+		>
+			@for (action of actions(); track action.id) {
+				<button
+					type="button"
+					class="hover:bg-accent hover:text-accent-foreground flex w-full items-center rounded-sm px-2 py-2 text-left text-sm transition disabled:pointer-events-none disabled:opacity-50"
+					[class.text-destructive]="action.destructive"
+					[disabled]="action.disabled"
+					(click)="selectAction(action)"
+				>
+					{{ action.label }}
+				</button>
+			}
+		</div>
+	}
+</div>

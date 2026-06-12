@@ -1,0 +1,320 @@
+<div class="space-y-5">
+	<div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+		<app-stat-card
+			label="Total técnicos"
+			[value]="stats().total"
+			description="Registrados en el taller"
+		/>
+
+		<app-stat-card
+			label="Activos"
+			[value]="stats().active"
+			description="Pueden operar"
+			tone="success"
+		/>
+
+		<app-stat-card
+			label="Inactivos"
+			[value]="stats().inactive"
+			description="Sin operación"
+			tone="muted"
+		/>
+
+		<app-stat-card
+			label="Bloqueados"
+			[value]="stats().blocked"
+			description="Acceso restringido"
+			tone="destructive"
+		/>
+	</div>
+
+	<app-data-toolbar
+		searchPlaceholder="Buscar en esta página por nombre, correo o código..."
+		[showFilters]="false"
+		[showRefresh]="true"
+		(searchChanged)="onSearch($event)"
+		(refreshClicked)="load(); loadStats()"
+	/>
+
+	<app-page-section [padded]="true">
+		<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+			<label class="space-y-2 text-sm">
+				<span class="font-medium">Estado</span>
+
+				<select
+					class="border-input bg-background h-10 w-full rounded-md border px-3 text-sm"
+					[value]="status()"
+					(change)="onStatusFilterChange($event)"
+				>
+					@for (option of statusOptions; track option.value) {
+						<option [value]="option.value">
+							{{ option.label }}
+						</option>
+					}
+				</select>
+			</label>
+		</div>
+	</app-page-section>
+
+	@if (isLoading()) {
+		<app-loading-state
+			title="Cargando técnicos"
+			description="Estamos obteniendo el equipo del taller."
+		/>
+	} @else if (errorMessage()) {
+		<app-error-state
+			title="No se pudieron cargar los técnicos"
+			[description]="errorMessage()!"
+			(actionClicked)="load()"
+		/>
+	} @else if (filteredTechnicians().length === 0) {
+		<app-page-section [padded]="true">
+			<div
+				class="flex min-h-64 flex-col items-center justify-center text-center"
+			>
+				<div
+					class="bg-muted text-muted-foreground mb-4 flex size-12 items-center justify-center rounded-full"
+				>
+					<ng-icon name="lucideUser" class="size-5" />
+				</div>
+
+				<h3 class="text-base font-semibold">No hay técnicos para mostrar</h3>
+
+				<p class="text-muted-foreground mt-2 max-w-md text-sm">
+					Crea el primer técnico del taller o cambia los filtros de búsqueda.
+				</p>
+			</div>
+		</app-page-section>
+	} @else {
+		<div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+			@for (item of filteredTechnicians(); track item.technician.id) {
+				<article
+					class="bg-card text-card-foreground rounded-xl border p-4 shadow-sm transition hover:shadow-md"
+				>
+					<div class="flex items-start justify-between gap-3">
+						<div class="flex min-w-0 items-start gap-3">
+							<div
+								class="bg-muted text-muted-foreground flex size-11 shrink-0 items-center justify-center rounded-full"
+							>
+								<ng-icon name="lucideUser" class="size-5" />
+							</div>
+
+							<div class="min-w-0">
+								<h3 class="truncate text-base font-semibold">
+									{{ fullName(item) }}
+								</h3>
+
+								<p class="text-muted-foreground mt-1 truncate text-xs">
+									{{ item.technician.technician_code }}
+								</p>
+							</div>
+						</div>
+
+						<app-resource-actions-menu
+							[actions]="actionsFor(item)"
+							(actionSelected)="onAction($event, item)"
+						/>
+					</div>
+
+					<div class="mt-4 flex items-center justify-between gap-3">
+						<app-technician-status-badge [status]="item.technician.status" />
+
+						<p class="text-muted-foreground truncate text-xs">
+							{{ operationalText(item) }}
+						</p>
+					</div>
+
+					<div class="mt-4 space-y-2 text-sm">
+						<div class="text-muted-foreground flex min-w-0 items-center gap-2">
+							<ng-icon name="lucideMail" class="size-4 shrink-0" />
+							<span class="truncate">{{ item.user.email }}</span>
+						</div>
+
+						<div class="text-muted-foreground flex min-w-0 items-center gap-2">
+							<ng-icon name="lucidePhone" class="size-4 shrink-0" />
+							<span class="truncate">{{ phoneLabel(item) }}</span>
+						</div>
+
+						<div class="text-muted-foreground flex min-w-0 items-center gap-2">
+							<ng-icon name="lucideStar" class="size-4 shrink-0" />
+							<span>
+								{{ item.technician.average_rating }} / 5 ·
+								{{ item.technician.total_reviews }} reseñas
+							</span>
+						</div>
+					</div>
+
+					<div class="mt-5">
+						<button
+							type="button"
+							hlmBtn
+							variant="outline"
+							class="disable w-full cursor-pointer"
+							(click)="openDetail(item)"
+						>
+							Ver detalle
+						</button>
+					</div>
+				</article>
+			}
+		</div>
+
+		<app-pagination
+			[page]="pagination().page"
+			[pageSize]="pagination().page_size"
+			[total]="pagination().total"
+			[totalPages]="pagination().total_pages"
+			[disabled]="isLoading()"
+			(pageChanged)="onPageChange($event)"
+			(pageSizeChanged)="onPageSizeChange($event)"
+		/>
+	}
+
+	<app-side-drawer
+		[open]="isDetailDrawerOpen()"
+		title="Detalle del técnico"
+		description="Información operativa y datos principales del técnico."
+		widthClass="sm:max-w-2xl"
+		(closed)="closeDetail()"
+	>
+		@if (isDetailLoading()) {
+			<app-loading-state
+				title="Cargando técnico"
+				description="Estamos obteniendo el detalle del técnico."
+				minHeight="min-h-52"
+			/>
+		} @else if (detailErrorMessage()) {
+			<app-error-state
+				title="No se pudo cargar el detalle"
+				[description]="detailErrorMessage()!"
+				(actionClicked)="closeDetail()"
+			/>
+		} @else if (selectedTechnician()) {
+			@let detail = selectedTechnician()!;
+
+			<div class="space-y-5">
+				<section class="bg-card text-card-foreground rounded-xl border p-4">
+					<div class="flex items-start gap-4">
+						<div
+							class="bg-muted text-muted-foreground flex size-14 shrink-0 items-center justify-center rounded-full"
+						>
+							<ng-icon name="lucideUser" class="size-6" />
+						</div>
+
+						<div class="min-w-0 flex-1">
+							<h3 class="truncate text-lg font-semibold">
+								{{ fullName(detail) }}
+							</h3>
+
+							<p class="text-muted-foreground mt-1 truncate text-sm">
+								{{ detail.user.email }}
+							</p>
+
+							<div class="mt-3">
+								<app-technician-status-badge
+									[status]="detail.technician.status"
+								/>
+							</div>
+						</div>
+					</div>
+				</section>
+
+				<section class="bg-card text-card-foreground rounded-xl border p-4">
+					<h4 class="font-semibold">Información operativa</h4>
+
+					<div class="mt-4 grid gap-4 sm:grid-cols-2">
+						<div class="space-y-1">
+							<p class="text-muted-foreground flex items-center gap-2 text-xs">
+								<ng-icon name="lucideHash" class="size-4" />
+								Código
+							</p>
+							<p class="text-sm font-medium">
+								{{ detail.technician.technician_code }}
+							</p>
+						</div>
+
+						<div class="space-y-1">
+							<p class="text-muted-foreground flex items-center gap-2 text-xs">
+								<ng-icon name="lucideShield" class="size-4" />
+								Estado operativo
+							</p>
+							<p class="text-sm font-medium">
+								{{ operationalText(detail) }}
+							</p>
+						</div>
+
+						<div class="space-y-1">
+							<p class="text-muted-foreground flex items-center gap-2 text-xs">
+								<ng-icon name="lucideStar" class="size-4" />
+								Calificación
+							</p>
+							<p class="text-sm font-medium">
+								{{ detail.technician.average_rating }} / 5 ·
+								{{ detail.technician.total_reviews }} reseñas
+							</p>
+						</div>
+
+						<div class="space-y-1">
+							<p class="text-muted-foreground flex items-center gap-2 text-xs">
+								<ng-icon name="lucideCalendar" class="size-4" />
+								Creado
+							</p>
+							<p class="text-sm font-medium">
+								{{ createdAtLabel(detail) }}
+							</p>
+						</div>
+					</div>
+				</section>
+
+				<section class="bg-card text-card-foreground rounded-xl border p-4">
+					<h4 class="font-semibold">Datos de acceso</h4>
+
+					<div class="mt-4 grid gap-4 sm:grid-cols-2">
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Correo</p>
+							<p class="text-sm font-medium break-all">
+								{{ detail.user.email }}
+							</p>
+						</div>
+
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Teléfono</p>
+							<p class="text-sm font-medium">
+								{{ phoneLabel(detail) }}
+							</p>
+						</div>
+
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Email verificado</p>
+							<p class="text-sm font-medium">
+								@if (detail.user.email_verified) {
+									Sí
+								} @else {
+									No
+								}
+							</p>
+						</div>
+
+						<div class="space-y-1">
+							<p class="text-muted-foreground text-xs">Último acceso</p>
+							<p class="text-sm font-medium">
+								{{ lastLoginLabel(detail) }}
+							</p>
+						</div>
+					</div>
+				</section>
+			</div>
+		}
+	</app-side-drawer>
+
+	<app-confirm-action-dialog
+		[open]="!!pendingStatusChange()"
+		[title]="pendingStatusChange()?.title ?? ''"
+		[description]="pendingStatusChange()?.description ?? ''"
+		[confirmLabel]="pendingStatusChange()?.confirmLabel ?? 'Confirmar'"
+		[destructive]="pendingStatusChange()?.destructive ?? false"
+		[loading]="isChangingStatus()"
+		(confirmed)="confirmStatusChange()"
+		(cancelled)="cancelStatusChange()"
+	/>
+</div>

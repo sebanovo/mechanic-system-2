@@ -1,0 +1,30 @@
+<div class="relative w-full">
+	<ng-icon
+		name="lucideSearch"
+		class="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
+	/>
+
+	<input
+		hlmInput
+		type="search"
+		class="pr-10 pl-9"
+		[ngModel]="value()"
+		[placeholder]="placeholder()"
+		[attr.aria-label]="ariaLabel()"
+		(ngModelChange)="onValueChange($event)"
+	/>
+
+	@if (value()) {
+		<button
+			type="button"
+			hlmBtn
+			variant="ghost"
+			size="icon-xs"
+			class="absolute top-1/2 right-2 -translate-y-1/2 cursor-pointer"
+			aria-label="Limpiar búsqueda"
+			(click)="clear()"
+		>
+			<ng-icon name="lucideX" class="size-3" />
+		</button>
+	}
+</div>

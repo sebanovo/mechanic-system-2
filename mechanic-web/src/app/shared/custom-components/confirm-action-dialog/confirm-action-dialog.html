@@ -1,0 +1,49 @@
+@if (open()) {
+	<div class="fixed inset-0 z-[60]" role="dialog" aria-modal="true">
+		<div
+			class="absolute inset-0 bg-black/50"
+			aria-hidden="true"
+			(click)="cancel()"
+		></div>
+
+		<div
+			class="bg-card text-card-foreground absolute inset-x-4 top-1/2 mx-auto max-w-md -translate-y-1/2 rounded-xl border p-5 shadow-xl"
+		>
+			<h2 class="text-lg font-semibold">
+				{{ title() }}
+			</h2>
+
+			<p class="text-muted-foreground mt-2 text-sm leading-6">
+				{{ description() }}
+			</p>
+
+			<div class="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+				<button
+					type="button"
+					hlmBtn
+					variant="outline"
+					class="cursor-pointer"
+					[disabled]="loading()"
+					(click)="cancel()"
+				>
+					{{ cancelLabel() }}
+				</button>
+
+				<button
+					type="button"
+					hlmBtn
+					[variant]="destructive() ? 'destructive' : 'default'"
+					class="cursor-pointer"
+					[disabled]="loading()"
+					(click)="confirm()"
+				>
+					@if (loading()) {
+						Procesando...
+					} @else {
+						{{ confirmLabel() }}
+					}
+				</button>
+			</div>
+		</div>
+	</div>
+}

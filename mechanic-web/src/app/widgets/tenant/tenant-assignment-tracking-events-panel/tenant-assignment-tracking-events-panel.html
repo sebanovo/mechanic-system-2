@@ -1,0 +1,390 @@
+<div class="grid gap-6 xl:grid-cols-[380px_1fr]">
+	<section class="space-y-5">
+		<app-data-toolbar
+			searchPlaceholder="Buscar asignación..."
+			[showFilters]="false"
+			[showRefresh]="true"
+			(searchChanged)="onSearch($event)"
+			(refreshClicked)="loadAssignments()"
+		/>
+
+		<app-page-section [padded]="true">
+			<label class="space-y-2 text-sm">
+				<span class="font-medium">Estado de asignación</span>
+
+				<select
+					class="border-input bg-background h-10 w-full rounded-md border px-3 text-sm"
+					[value]="assignmentStatus()"
+					(change)="onAssignmentStatusChange($event)"
+				>
+					<option value="">Todas</option>
+					<option value="ASSIGNED">Asignadas</option>
+					<option value="EN_ROUTE">En camino</option>
+					<option value="ARRIVED">Llegó</option>
+					<option value="IN_SERVICE">En servicio</option>
+					<option value="COMPLETED">Completadas</option>
+					<option value="CANCELLED">Canceladas</option>
+				</select>
+			</label>
+		</app-page-section>
+
+		@if (isLoadingAssignments()) {
+			<app-loading-state
+				title="Cargando asignaciones"
+				description="Estamos obteniendo las asignaciones."
+				minHeight="min-h-52"
+			/>
+		} @else if (errorMessage()) {
+			<app-error-state
+				title="No se pudieron cargar los datos"
+				[description]="errorMessage()!"
+				(actionClicked)="loadAssignments()"
+			/>
+		} @else if (filteredAssignments().length === 0) {
+			<app-page-section [padded]="true">
+				<div
+					class="flex min-h-52 flex-col items-center justify-center text-center"
+				>
+					<ng-icon name="lucideRoute" class="text-muted-foreground size-6" />
+
+					<h3 class="mt-3 text-base font-semibold">Sin asignaciones</h3>
+
+					<p class="text-muted-foreground mt-2 text-sm">
+						No hay asignaciones para mostrar.
+					</p>
+				</div>
+			</app-page-section>
+		} @else {
+			<div class="space-y-3">
+				@for (item of filteredAssignments(); track item.assignment.id) {
+					<button
+						type="button"
+						class="bg-card text-card-foreground hover:bg-muted/40 w-full rounded-xl border p-4 text-left shadow-sm transition"
+						[class.ring-2]="
+							selectedAssignment()?.assignment?.id === item.assignment.id
+						"
+						[class.ring-primary]="
+							selectedAssignment()?.assignment?.id === item.assignment.id
+						"
+						(click)="selectAssignment(item)"
+					>
+						<div class="flex items-start justify-between gap-3">
+							<div class="min-w-0">
+								<p class="truncate text-sm font-semibold">
+									{{ assignmentCode(item) }}
+								</p>
+
+								<p class="text-muted-foreground mt-1 line-clamp-2 text-xs">
+									{{ assignmentDescription(item) }}
+								</p>
+							</div>
+
+							<app-assignment-status-badge
+								[status]="item.assignment.assignment_status"
+							/>
+						</div>
+
+						<p
+							class="text-muted-foreground mt-3 flex items-center gap-2 text-xs"
+						>
+							<ng-icon name="lucideMapPin" class="size-4 shrink-0" />
+							<span class="truncate">
+								{{ assignmentLocation(item) }}
+							</span>
+						</p>
+					</button>
+				}
+			</div>
+		}
+	</section>
+
+	<section class="space-y-5">
+		<div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+			<app-stat-card
+				label="Eventos"
+				[value]="stats().totalEvents"
+				description="Bitácora registrada"
+			/>
+
+			<app-stat-card
+				label="Ubicaciones"
+				[value]="stats().locations"
+				description="Puntos GPS"
+				tone="info"
+			/>
+
+			<app-stat-card
+				label="Notas"
+				[value]="stats().notes"
+				description="Observaciones"
+				tone="muted"
+			/>
+
+			<app-stat-card
+				label="Finales"
+				[value]="stats().finalEvents"
+				description="Completado/cancelado"
+				tone="success"
+			/>
+		</div>
+
+		<app-page-section [padded]="true">
+			<div
+				class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between"
+			>
+				<div class="min-w-0">
+					<p class="text-muted-foreground text-xs">Asignación seleccionada</p>
+
+					<h2 class="mt-1 truncate text-lg font-semibold">
+						{{ selectedAssignmentCode() }}
+					</h2>
+
+					<p class="text-muted-foreground mt-1 line-clamp-2 text-sm">
+						{{ selectedAssignmentDescription() }}
+					</p>
+				</div>
+
+				<button
+					type="button"
+					hlmBtn
+					class="cursor-pointer"
+					[disabled]="!selectedAssignment()"
+					(click)="
+						selectedAssignment() &&
+							createEventClicked.emit(selectedAssignment()!)
+					"
+				>
+					Registrar evento
+				</button>
+			</div>
+		</app-page-section>
+
+		<app-page-section [padded]="true">
+			<label class="space-y-2 text-sm">
+				<span class="font-medium">Tipo de evento</span>
+
+				<select
+					class="border-input bg-background h-10 w-full rounded-md border px-3 text-sm sm:max-w-xs"
+					[value]="eventType()"
+					[disabled]="!selectedAssignment()"
+					(change)="onEventTypeChange($event)"
+				>
+					@for (option of eventTypeOptions; track option.value) {
+						<option [value]="option.value">
+							{{ option.label }}
+						</option>
+					}
+				</select>
+			</label>
+		</app-page-section>
+
+		@if (!selectedAssignment()) {
+			<app-page-section [padded]="true">
+				<div
+					class="flex min-h-64 flex-col items-center justify-center text-center"
+				>
+					<ng-icon name="lucideRoute" class="text-muted-foreground size-6" />
+
+					<h3 class="mt-3 text-base font-semibold">
+						Selecciona una asignación
+					</h3>
+
+					<p class="text-muted-foreground mt-2 text-sm">
+						Elige una asignación para ver su bitácora operativa.
+					</p>
+				</div>
+			</app-page-section>
+		} @else if (isLoadingEvents()) {
+			<app-loading-state
+				title="Cargando eventos"
+				description="Estamos obteniendo la bitácora de la asignación."
+			/>
+		} @else if (events().length === 0) {
+			<app-page-section [padded]="true">
+				<div
+					class="flex min-h-64 flex-col items-center justify-center text-center"
+				>
+					<ng-icon name="lucideTimer" class="text-muted-foreground size-6" />
+
+					<h3 class="mt-3 text-base font-semibold">Sin eventos registrados</h3>
+
+					<p class="text-muted-foreground mt-2 text-sm">
+						Registra el primer avance operativo de esta asignación.
+					</p>
+				</div>
+			</app-page-section>
+		} @else {
+			<div class="space-y-3">
+				@for (item of events(); track item.tracking_event.id) {
+					<article
+						class="bg-card text-card-foreground rounded-xl border p-4 shadow-sm"
+					>
+						<div class="flex items-start justify-between gap-3">
+							<div class="min-w-0">
+								<div class="mb-2 flex flex-wrap items-center gap-2">
+									<app-assignment-tracking-event-type-badge
+										[eventType]="item.tracking_event.event_type"
+									/>
+
+									@if (isFinalEvent(item)) {
+										<span
+											class="bg-muted text-muted-foreground rounded-md px-2 py-0.5 text-xs font-medium"
+										>
+											Evento final
+										</span>
+									}
+								</div>
+
+								<h3 class="text-base font-semibold">
+									{{ eventLabel(item) }}
+								</h3>
+
+								<p class="text-muted-foreground mt-1 text-sm">
+									{{ eventDescription(item) }}
+								</p>
+							</div>
+
+							<button
+								type="button"
+								hlmBtn
+								variant="outline"
+								class="cursor-pointer"
+								(click)="openEventDetail(item)"
+							>
+								Detalle
+							</button>
+						</div>
+
+						<div class="mt-4 grid gap-2 text-sm md:grid-cols-2">
+							<div
+								class="text-muted-foreground flex min-w-0 items-center gap-2"
+							>
+								<ng-icon name="lucideCalendar" class="size-4 shrink-0" />
+								<span class="truncate">
+									{{ eventDate(item) }}
+								</span>
+							</div>
+
+							<div
+								class="text-muted-foreground flex min-w-0 items-center gap-2"
+							>
+								<ng-icon name="lucideMapPin" class="size-4 shrink-0" />
+								<span class="truncate">
+									{{ eventLocation(item) }}
+								</span>
+							</div>
+						</div>
+
+						@if (item.tracking_event.notes) {
+							<div class="bg-muted/40 mt-4 rounded-lg border p-3 text-sm">
+								<p class="text-muted-foreground leading-6">
+									{{ item.tracking_event.notes }}
+								</p>
+							</div>
+						}
+					</article>
+				}
+			</div>
+
+			<app-pagination
+				[page]="pagination().page"
+				[pageSize]="pagination().page_size"
+				[total]="pagination().total"
+				[totalPages]="pagination().total_pages"
+				[disabled]="isLoadingEvents()"
+				(pageChanged)="onPageChange($event)"
+				(pageSizeChanged)="onPageSizeChange($event)"
+			/>
+		}
+	</section>
+
+	<app-side-drawer
+		[open]="isDetailDrawerOpen()"
+		title="Detalle del evento"
+		description="Información completa del evento operativo registrado."
+		widthClass="sm:max-w-xl"
+		(closed)="closeEventDetail()"
+	>
+		@if (selectedEvent()) {
+			@let detail = selectedEvent()!;
+
+			<div class="space-y-5">
+				<section class="bg-card text-card-foreground rounded-xl border p-4">
+					<div class="mb-2">
+						<app-assignment-tracking-event-type-badge
+							[eventType]="detail.tracking_event.event_type"
+						/>
+					</div>
+
+					<h3 class="text-lg font-semibold">
+						{{ eventLabel(detail) }}
+					</h3>
+
+					<p class="text-muted-foreground mt-2 text-sm leading-6">
+						{{ eventDescription(detail) }}
+					</p>
+				</section>
+
+				<section class="bg-card text-card-foreground rounded-xl border p-4">
+					<h4 class="font-semibold">Ubicación</h4>
+
+					<div class="mt-4 grid gap-4 sm:grid-cols-2">
+						<div class="space-y-1">
+							<p class="text-muted-foreground flex items-center gap-2 text-xs">
+								<ng-icon name="lucideMapPin" class="size-4" />
+								Coordenadas
+							</p>
+							<p class="text-sm font-medium break-all">
+								{{ eventLocation(detail) }}
+							</p>
+						</div>
+
+						<div class="space-y-1">
+							<p class="text-muted-foreground flex items-center gap-2 text-xs">
+								<ng-icon name="lucideCalendar" class="size-4" />
+								Ocurrido
+							</p>
+							<p class="text-sm font-medium">
+								{{ eventDate(detail) }}
+							</p>
+						</div>
+					</div>
+				</section>
+
+				<section class="bg-card text-card-foreground rounded-xl border p-4">
+					<h4 class="font-semibold">Notas</h4>
+
+					<p class="text-muted-foreground mt-3 text-sm leading-6">
+						{{ detail.tracking_event.notes || "Sin notas registradas." }}
+					</p>
+				</section>
+
+				<section class="bg-card text-card-foreground rounded-xl border p-4">
+					<h4 class="font-semibold">Auditoría</h4>
+
+					<div class="mt-4 grid gap-4">
+						<div class="space-y-1">
+							<p class="text-muted-foreground flex items-center gap-2 text-xs">
+								<ng-icon name="lucideHash" class="size-4" />
+								Tracking Event ID
+							</p>
+							<p class="text-sm font-medium break-all">
+								{{ detail.tracking_event.id }}
+							</p>
+						</div>
+
+						<div class="space-y-1">
+							<p class="text-muted-foreground flex items-center gap-2 text-xs">
+								<ng-icon name="lucideCalendar" class="size-4" />
+								Creado
+							</p>
+							<p class="text-sm font-medium">
+								{{ eventCreatedAt(detail) }}
+							</p>
+						</div>
+					</div>
+				</section>
+			</div>
+		}
+	</app-side-drawer>
+</div>

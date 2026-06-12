@@ -1,0 +1,46 @@
+<header
+	class="bg-app-header text-app-header-foreground sticky top-0 z-30 border-b backdrop-blur"
+>
+	<div class="flex h-16 items-center justify-between gap-3 px-4 sm:px-6">
+		<div class="flex min-w-0 items-center gap-3">
+			<button
+				type="button"
+				hlmBtn
+				variant="ghost"
+				size="icon"
+				class="cursor-pointer lg:hidden"
+				aria-label="Abrir menú"
+				(click)="menuClicked.emit()"
+			>
+				<ng-icon hlm name="lucideMenu" size="sm" />
+			</button>
+
+			<div class="min-w-0">
+				<div class="flex min-w-0 items-center gap-2">
+					<h1 class="truncate text-base font-semibold sm:text-lg">
+						{{ title() }}
+					</h1>
+
+					@if (tenantName()) {
+						<span
+							class="bg-muted text-muted-foreground hidden rounded-full px-2 py-0.5 text-xs sm:inline-flex"
+						>
+							{{ tenantName() }}
+						</span>
+					}
+				</div>
+
+				@if (subtitle()) {
+					<p class="text-muted-foreground hidden truncate text-xs sm:block">
+						{{ subtitle() }}
+					</p>
+				}
+			</div>
+		</div>
+
+		<div class="flex shrink-0 items-center gap-1 sm:gap-2">
+			<app-notification-button />
+			<app-user-menu />
+		</div>
+	</div>
+</header>

@@ -7,6 +7,50 @@
 
 @import "@spartan-ng/brain/hlm-tailwind-preset.css";
 
+/*==================== new one ==================*/
+@import "@spartan-ng/brain/hlm-tailwind-preset.css";
+
+@theme inline {
+	--color-success: var(--success);
+	--color-success-foreground: var(--success-foreground);
+
+	--color-warning: var(--warning);
+	--color-warning-foreground: var(--warning-foreground);
+
+	--color-info: var(--info);
+	--color-info-foreground: var(--info-foreground);
+
+	--color-app-shell: var(--app-shell);
+	--color-app-content: var(--app-content);
+	--color-app-header: var(--app-header);
+	--color-app-header-foreground: var(--app-header-foreground);
+
+	--color-status-pending: var(--status-pending);
+	--color-status-pending-foreground: var(--status-pending-foreground);
+
+	--color-status-searching: var(--status-searching);
+	--color-status-searching-foreground: var(--status-searching-foreground);
+
+	--color-status-accepted: var(--status-accepted);
+	--color-status-accepted-foreground: var(--status-accepted-foreground);
+
+	--color-status-assigned: var(--status-assigned);
+	--color-status-assigned-foreground: var(--status-assigned-foreground);
+
+	--color-status-en-route: var(--status-en-route);
+	--color-status-en-route-foreground: var(--status-en-route-foreground);
+
+	--color-status-in-service: var(--status-in-service);
+	--color-status-in-service-foreground: var(--status-in-service-foreground);
+
+	--color-status-completed: var(--status-completed);
+	--color-status-completed-foreground: var(--status-completed-foreground);
+
+	--color-status-cancelled: var(--status-cancelled);
+	--color-status-cancelled-foreground: var(--status-cancelled-foreground);
+}
+/*================= new one end =================*/
+
 :root {
 	color-scheme: light;
 
@@ -15,6 +59,51 @@
 		Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
 		"Segoe UI Symbol", "Noto Color Emoji";
 
+	/* =============== custom colors ======================*/
+	/* Product semantic tokens */
+	--success: oklch(0.62 0.16 145);
+	--success-foreground: oklch(0.985 0.001 106.423);
+
+	--warning: oklch(0.78 0.16 75);
+	--warning-foreground: oklch(0.216 0.006 56.043);
+
+	--info: oklch(0.62 0.13 240);
+	--info-foreground: oklch(0.985 0.001 106.423);
+
+	--app-shell: oklch(0.985 0.001 106.423);
+	--app-content: oklch(0.97 0.001 106.424);
+
+	/* --app-header: oklch(1 0 0); */
+	--app-header: oklch(95.29% 0.019 260.17);
+
+	--app-header-foreground: oklch(0.147 0.004 49.25);
+
+	/* Operational status tokens */
+	--status-pending: oklch(0.78 0.16 75);
+	--status-pending-foreground: oklch(0.216 0.006 56.043);
+
+	--status-searching: oklch(0.62 0.13 240);
+	--status-searching-foreground: oklch(0.985 0.001 106.423);
+
+	--status-accepted: oklch(0.62 0.16 145);
+	--status-accepted-foreground: oklch(0.985 0.001 106.423);
+
+	--status-assigned: oklch(0.58 0.14 260);
+	--status-assigned-foreground: oklch(0.985 0.001 106.423);
+
+	--status-en-route: oklch(0.67 0.15 230);
+	--status-en-route-foreground: oklch(0.985 0.001 106.423);
+
+	--status-in-service: oklch(0.7 0.16 65);
+	--status-in-service-foreground: oklch(0.216 0.006 56.043);
+
+	--status-completed: oklch(0.58 0.15 145);
+	--status-completed-foreground: oklch(0.985 0.001 106.423);
+
+	--status-cancelled: oklch(0.58 0.2 27);
+	--status-cancelled-foreground: oklch(0.985 0.001 106.423);
+	/*======================== custom colors end ====================*/
+
 	--radius: 0.625rem;
 	--background: oklch(1 0 0);
 	--foreground: oklch(0.147 0.004 49.25);
@@ -22,7 +111,10 @@
 	--card-foreground: oklch(0.147 0.004 49.25);
 	--popover: oklch(1 0 0);
 	--popover-foreground: oklch(0.147 0.004 49.25);
-	--primary: oklch(0.216 0.006 56.043);
+
+	/* --primary: oklch(0.216 0.006 56.043); */
+	--primary: oklch(55.53% 0.207 259.73);
+
 	--primary-foreground: oklch(0.985 0.001 106.423);
 	--secondary: oklch(0.97 0.001 106.424);
 	--secondary-foreground: oklch(0.216 0.006 56.043);
@@ -34,7 +126,10 @@
 	--border: oklch(0.923 0.003 48.717);
 	--input: oklch(0.923 0.003 48.717);
 	--ring: oklch(0.709 0.01 56.259);
-	--sidebar: oklch(0.985 0.001 106.423);
+
+	/* --sidebar: oklch(0.985 0.001 106.423); */
+	--sidebar: oklch(95.29% 0.019 260.17);
+
 	--sidebar-foreground: oklch(0.147 0.004 49.25);
 	--sidebar-primary: oklch(0.216 0.006 56.043);
 	--sidebar-primary-foreground: oklch(0.985 0.001 106.423);
@@ -46,6 +141,48 @@
 
 :root.dark {
 	color-scheme: dark;
+
+	/*======================= custom colors ======================*/
+	/* Product semantic tokens */
+	--success: oklch(0.7 0.16 145);
+	--success-foreground: oklch(0.147 0.004 49.25);
+
+	--warning: oklch(0.82 0.16 75);
+	--warning-foreground: oklch(0.147 0.004 49.25);
+
+	--info: oklch(0.72 0.13 240);
+	--info-foreground: oklch(0.147 0.004 49.25);
+
+	--app-shell: oklch(0.147 0.004 49.25);
+	--app-content: oklch(0.18 0.005 49.25);
+	--app-header: oklch(0.216 0.006 56.043);
+	--app-header-foreground: oklch(0.985 0.001 106.423);
+
+	/* Operational status tokens */
+	--status-pending: oklch(0.82 0.16 75);
+	--status-pending-foreground: oklch(0.147 0.004 49.25);
+
+	--status-searching: oklch(0.72 0.13 240);
+	--status-searching-foreground: oklch(0.147 0.004 49.25);
+
+	--status-accepted: oklch(0.7 0.16 145);
+	--status-accepted-foreground: oklch(0.147 0.004 49.25);
+
+	--status-assigned: oklch(0.75 0.14 260);
+	--status-assigned-foreground: oklch(0.147 0.004 49.25);
+
+	--status-en-route: oklch(0.76 0.15 230);
+	--status-en-route-foreground: oklch(0.147 0.004 49.25);
+
+	--status-in-service: oklch(0.82 0.16 65);
+	--status-in-service-foreground: oklch(0.147 0.004 49.25);
+
+	--status-completed: oklch(0.7 0.15 145);
+	--status-completed-foreground: oklch(0.147 0.004 49.25);
+
+	--status-cancelled: oklch(0.7 0.2 27);
+	--status-cancelled-foreground: oklch(0.147 0.004 49.25);
+	/*===================== custom colors end ====================*/
 
 	--background: oklch(0.147 0.004 49.25);
 	--foreground: oklch(0.985 0.001 106.423);
@@ -79,8 +216,13 @@
 	* {
 		@apply border-border outline-ring/50;
 	}
+
+	html {
+		scroll-behavior: smooth;
+	}
+
 	body {
-		@apply bg-background text-foreground;
+		@apply bg-background text-foreground font-sans antialiased;
 	}
 }
 

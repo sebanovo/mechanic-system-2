@@ -12,22 +12,29 @@ import {
 import { provideRouter } from "@angular/router";
 
 import { routes } from "./app.routes";
-import { authTokenInterceptor } from "./core/http/interceptors/auth-token.interceptor";
-import { httpErrorInterceptor } from "./core/http/interceptors/http-error.interceptor";
-import { SessionBootstrapService } from "./core/session/services/session-bootstrap.service";
+import { authTokenInterceptor } from "./core/interceptors/auth-token.interceptor";
+import { httpErrorInterceptor } from "./core/interceptors/http-error.interceptor";
+import { SessionService } from "./core/session/session.service";
 
 export const appConfig: ApplicationConfig = {
 	providers: [
-		provideBrowserGlobalErrorListeners(), // catch global errors
+		provideBrowserGlobalErrorListeners(),
 		provideRouter(routes),
 
 		provideHttpClient(
 			withFetch(),
 			withInterceptors([authTokenInterceptor, httpErrorInterceptor])
 		),
+
 		provideAppInitializer(() => {
-			const sessionBootstrapService = inject(SessionBootstrapService);
-			return sessionBootstrapService.runBootstrap();
+			const sessionService = inject(SessionService);
+
+			return new Promise<void>(resolve => {
+				sessionService.bootstrap().subscribe({
+					next: () => resolve(),
+					error: () => resolve(),
+				});
+			});
 		}),
 	],
 };

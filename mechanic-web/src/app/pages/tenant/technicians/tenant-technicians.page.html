@@ -1,0 +1,26 @@
+<app-admin-page-shell>
+	<app-page-header
+		title="Técnicos"
+		description="Administra el equipo operativo del taller, revisa su estado y controla quiénes pueden recibir asignaciones."
+		eyebrow="Equipo"
+		[showRefresh]="false"
+		[showPrimaryAction]="true"
+		primaryActionLabel="Nuevo técnico"
+		(primaryActionClicked)="openCreateDrawer()"
+	/>
+
+	<app-tenant-technicians-list />
+
+	<app-side-drawer
+		[open]="showCreateDrawer()"
+		title="Nuevo técnico"
+		description="Crea una cuenta de técnico asociada al taller actual."
+		widthClass="sm:max-w-xl"
+		(closed)="closeCreateDrawer()"
+	>
+		<app-create-technician-form
+			(created)="onCreated()"
+			(cancelled)="closeCreateDrawer()"
+		/>
+	</app-side-drawer>
+</app-admin-page-shell>

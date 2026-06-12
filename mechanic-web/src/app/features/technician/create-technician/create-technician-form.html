@@ -1,0 +1,151 @@
+<form class="space-y-5" [formGroup]="form" (ngSubmit)="submit()">
+	<div class="grid gap-4 sm:grid-cols-2">
+		<hlm-field>
+			<label hlmFieldLabel for="first_name">Nombre</label>
+
+			<input
+				id="first_name"
+				type="text"
+				hlmInput
+				formControlName="first_name"
+				placeholder="Carlos"
+				autocomplete="given-name"
+			/>
+
+			@if (
+				form.controls.first_name.touched &&
+				form.controls.first_name.hasError("required")
+			) {
+				<hlm-field-error forceShow> El nombre es obligatorio. </hlm-field-error>
+			}
+
+			@if (
+				form.controls.first_name.touched &&
+				form.controls.first_name.hasError("minlength")
+			) {
+				<hlm-field-error forceShow>
+					El nombre debe tener al menos 2 caracteres.
+				</hlm-field-error>
+			}
+		</hlm-field>
+
+		<hlm-field>
+			<label hlmFieldLabel for="last_name">Apellido</label>
+
+			<input
+				id="last_name"
+				type="text"
+				hlmInput
+				formControlName="last_name"
+				placeholder="Mendoza"
+				autocomplete="family-name"
+			/>
+
+			@if (
+				form.controls.last_name.touched &&
+				form.controls.last_name.hasError("required")
+			) {
+				<hlm-field-error forceShow>
+					El apellido es obligatorio.
+				</hlm-field-error>
+			}
+
+			@if (
+				form.controls.last_name.touched &&
+				form.controls.last_name.hasError("minlength")
+			) {
+				<hlm-field-error forceShow>
+					El apellido debe tener al menos 2 caracteres.
+				</hlm-field-error>
+			}
+		</hlm-field>
+	</div>
+
+	<hlm-field>
+		<label hlmFieldLabel for="email">Correo electrónico</label>
+
+		<input
+			id="email"
+			type="email"
+			hlmInput
+			formControlName="email"
+			placeholder="tecnico@taller.com"
+			autocomplete="email"
+		/>
+
+		@if (
+			form.controls.email.touched && form.controls.email.hasError("required")
+		) {
+			<hlm-field-error forceShow> El correo es obligatorio. </hlm-field-error>
+		}
+
+		@if (form.controls.email.touched && form.controls.email.hasError("email")) {
+			<hlm-field-error forceShow> Ingresa un correo válido. </hlm-field-error>
+		}
+	</hlm-field>
+
+	<hlm-field>
+		<label hlmFieldLabel for="password">Contraseña temporal</label>
+
+		<input
+			id="password"
+			type="password"
+			hlmInput
+			formControlName="password"
+			placeholder="********"
+			autocomplete="new-password"
+		/>
+
+		@if (
+			form.controls.password.touched &&
+			form.controls.password.hasError("required")
+		) {
+			<hlm-field-error forceShow>
+				La contraseña es obligatoria.
+			</hlm-field-error>
+		}
+
+		@if (
+			form.controls.password.touched &&
+			form.controls.password.hasError("minlength")
+		) {
+			<hlm-field-error forceShow>
+				Debe tener al menos 8 caracteres.
+			</hlm-field-error>
+		}
+	</hlm-field>
+
+	@if (errorMessage()) {
+		<div
+			class="border-destructive/40 bg-destructive/10 text-destructive rounded-md border px-3 py-2 text-sm"
+		>
+			{{ errorMessage() }}
+		</div>
+	}
+
+	<div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+		<button
+			type="button"
+			hlmBtn
+			variant="outline"
+			class="cursor-pointer"
+			[disabled]="isSubmitting()"
+			(click)="cancel()"
+		>
+			Cancelar
+		</button>
+
+		<button
+			type="submit"
+			hlmBtn
+			class="cursor-pointer"
+			[disabled]="isSubmitting()"
+		>
+			@if (isSubmitting()) {
+				Creando...
+			} @else {
+				Crear técnico
+			}
+		</button>
+	</div>
+</form>

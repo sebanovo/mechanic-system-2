@@ -1,0 +1,70 @@
+<header
+	class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
+>
+	<div class="min-w-0">
+		@if (eyebrow()) {
+			<p class="text-muted-foreground mb-1 text-sm font-medium">
+				{{ eyebrow() }}
+			</p>
+		}
+
+		<div class="flex min-w-0 items-center gap-2">
+			@if (showBack()) {
+				<button
+					type="button"
+					hlmBtn
+					variant="ghost"
+					size="icon-sm"
+					class="shrink-0 cursor-pointer"
+					aria-label="Volver"
+					(click)="backClicked.emit()"
+				>
+					<ng-icon name="lucideArrowLeft" class="size-4" />
+				</button>
+			}
+
+			<h1
+				class="text-foreground truncate text-2xl font-semibold tracking-tight sm:text-3xl"
+			>
+				{{ title() }}
+			</h1>
+		</div>
+
+		@if (description()) {
+			<p
+				class="text-muted-foreground mt-2 max-w-3xl text-sm leading-6 sm:text-base"
+			>
+				{{ description() }}
+			</p>
+		}
+	</div>
+
+	@if (showRefresh() || showPrimaryAction()) {
+		<div class="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center">
+			@if (showRefresh()) {
+				<button
+					type="button"
+					hlmBtn
+					variant="outline"
+					class="cursor-pointer"
+					(click)="refreshClicked.emit()"
+				>
+					<ng-icon name="lucideRefreshCcw" class="mr-2 size-4" />
+					Actualizar
+				</button>
+			}
+
+			@if (showPrimaryAction()) {
+				<button
+					type="button"
+					hlmBtn
+					class="cursor-pointer"
+					(click)="primaryActionClicked.emit()"
+				>
+					<ng-icon [name]="primaryActionIcon()" class="mr-2 size-4" />
+					{{ primaryActionLabel() }}
+				</button>
+			}
+		</div>
+	}
+</header>

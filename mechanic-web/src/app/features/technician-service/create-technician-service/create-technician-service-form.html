@@ -1,0 +1,125 @@
+<form class="space-y-5" [formGroup]="form" (ngSubmit)="submit()">
+	<hlm-field>
+		<label hlmFieldLabel for="technician_id">Técnico</label>
+
+		<select
+			id="technician_id"
+			formControlName="technician_id"
+			class="border-input bg-background h-10 w-full rounded-md border px-3 text-sm"
+			[disabled]="isLoadingOptions()"
+		>
+			<option value="">
+				@if (isLoadingOptions()) {
+					Cargando técnicos...
+				} @else {
+					Selecciona un técnico activo
+				}
+			</option>
+
+			@for (item of technicians(); track item.technician.id) {
+				<option [value]="item.technician.id">
+					{{ technicianLabel(item) }}
+				</option>
+			}
+		</select>
+
+		@if (
+			form.controls.technician_id.touched &&
+			form.controls.technician_id.hasError("required")
+		) {
+			<hlm-field-error forceShow> Selecciona un técnico. </hlm-field-error>
+		}
+	</hlm-field>
+
+	<hlm-field>
+		<label hlmFieldLabel for="provider_service_id">Servicio del taller</label>
+
+		<select
+			id="provider_service_id"
+			formControlName="provider_service_id"
+			class="border-input bg-background h-10 w-full rounded-md border px-3 text-sm"
+			[disabled]="isLoadingOptions()"
+		>
+			<option value="">
+				@if (isLoadingOptions()) {
+					Cargando servicios...
+				} @else {
+					Selecciona un servicio disponible
+				}
+			</option>
+
+			@for (item of providerServices(); track item.provider_service.id) {
+				<option [value]="item.provider_service.id">
+					{{ providerServiceLabel(item) }}
+				</option>
+			}
+		</select>
+
+		@if (
+			form.controls.provider_service_id.touched &&
+			form.controls.provider_service_id.hasError("required")
+		) {
+			<hlm-field-error forceShow>
+				Selecciona un servicio del taller.
+			</hlm-field-error>
+		}
+	</hlm-field>
+
+	<hlm-field>
+		<label hlmFieldLabel for="skill_level">Nivel del técnico</label>
+
+		<select
+			id="skill_level"
+			formControlName="skill_level"
+			class="border-input bg-background h-10 w-full rounded-md border px-3 text-sm"
+		>
+			@for (option of skillLevelOptions; track option.value) {
+				<option [value]="option.value">
+					{{ option.label }}
+				</option>
+			}
+		</select>
+	</hlm-field>
+
+	<div class="bg-muted/40 rounded-lg border p-4 text-sm">
+		<p class="font-medium">Importante</p>
+		<p class="text-muted-foreground mt-1 leading-6">
+			Un taller solo puede ser candidato para un incidente si ofrece el servicio
+			y tiene al menos un técnico activo habilitado para atenderlo.
+		</p>
+	</div>
+
+	@if (errorMessage()) {
+		<div
+			class="border-destructive/40 bg-destructive/10 text-destructive rounded-md border px-3 py-2 text-sm"
+		>
+			{{ errorMessage() }}
+		</div>
+	}
+
+	<div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+		<button
+			type="button"
+			hlmBtn
+			variant="outline"
+			class="cursor-pointer"
+			[disabled]="isSubmitting()"
+			(click)="cancel()"
+		>
+			Cancelar
+		</button>
+
+		<button
+			type="submit"
+			hlmBtn
+			class="cursor-pointer"
+			[disabled]="isSubmitting() || isLoadingOptions()"
+		>
+			@if (isSubmitting()) {
+				Habilitando...
+			} @else {
+				Habilitar servicio
+			}
+		</button>
+	</div>
+</form>

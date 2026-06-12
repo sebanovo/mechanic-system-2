@@ -1,0 +1,102 @@
+<header
+	class="bg-background/90 supports-[backdrop-filter]:bg-background/75 sticky top-0 z-50 border-b backdrop-blur"
+>
+	<div
+		class="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8"
+	>
+		<a
+			[routerLink]="appRoutes.public.home"
+			fragment="home"
+			class="text-foreground flex items-center gap-2 font-semibold tracking-tight"
+			aria-label="Ir al inicio"
+		>
+			<span
+				class="bg-primary text-primary-foreground flex size-9 items-center justify-center rounded-xl text-sm font-bold"
+			>
+				M
+			</span>
+
+			<span class="text-base sm:text-lg"> Mechanic </span>
+		</a>
+
+		<nav
+			class="hidden items-center gap-1 lg:flex"
+			aria-label="Navegación principal"
+		>
+			@for (item of navigationItems().links; track item.id) {
+				<a
+					[routerLink]="appRoutes.public.home"
+					[fragment]="item.fragment"
+					class="text-muted-foreground hover:bg-accent hover:text-accent-foreground rounded-md px-3 py-2 text-sm font-medium transition"
+				>
+					{{ item.label }}
+				</a>
+			}
+		</nav>
+
+		<div class="hidden items-center gap-2 lg:flex">
+			<a
+				[routerLink]="appRoutes.auth.login"
+				class="text-foreground hover:bg-accent rounded-md px-4 py-2 text-sm font-medium transition"
+			>
+				Iniciar sesión
+			</a>
+
+			<a
+				[routerLink]="appRoutes.auth.register"
+				class="bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm font-medium shadow-sm transition hover:opacity-90"
+			>
+				Crear cuenta
+			</a>
+		</div>
+
+		<button
+			type="button"
+			class="bg-background text-foreground inline-flex size-10 items-center justify-center rounded-md border lg:hidden"
+			aria-label="Abrir menú"
+			[attr.aria-expanded]="isMobileMenuOpen()"
+			(click)="toggleMobileMenu()"
+		>
+			@if (!isMobileMenuOpen()) {
+				<span class="text-xl leading-none">☰</span>
+			} @else {
+				<span class="text-xl leading-none">×</span>
+			}
+		</button>
+	</div>
+
+	@if (isMobileMenuOpen()) {
+		<div class="bg-background border-t lg:hidden">
+			<nav class="mx-auto flex max-w-7xl flex-col gap-1 px-4 py-4 sm:px-6">
+				@for (item of navigationItems().links; track item.id) {
+					<a
+						[routerLink]="appRoutes.public.home"
+						[fragment]="item.fragment"
+						class="text-muted-foreground hover:bg-accent hover:text-accent-foreground rounded-md px-3 py-3 text-sm font-medium"
+						(click)="closeMobileMenu()"
+					>
+						{{ item.label }}
+					</a>
+				}
+
+				<div class="mt-4 grid gap-2 border-t pt-4">
+					<a
+						[routerLink]="appRoutes.auth.login"
+						class="text-foreground rounded-md border px-4 py-3 text-center text-sm font-medium"
+						(click)="closeMobileMenu()"
+					>
+						Iniciar sesión
+					</a>
+
+					<a
+						[routerLink]="appRoutes.auth.register"
+						class="bg-primary text-primary-foreground rounded-md px-4 py-3 text-center text-sm font-medium"
+						(click)="closeMobileMenu()"
+					>
+						Crear cuenta
+					</a>
+				</div>
+			</nav>
+		</div>
+	}
+</header>

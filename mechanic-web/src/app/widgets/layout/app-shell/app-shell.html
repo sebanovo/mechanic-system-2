@@ -1,0 +1,48 @@
+<!-- min-h-screen changed to h-screen and add overflow-hidden -->
+<div class="bg-app-shell text-foreground h-screen overflow-hidden">
+	<!-- min-h-screen change to h-full -->
+	<div class="flex h-full">
+		<!-- add h-full -->
+		<div class="hidden h-full lg:block">
+			<app-app-sidebar
+				[groups]="navigationGroups()"
+				[contextLabel]="contextLabel()"
+			/>
+		</div>
+
+		@if (isMobileSidebarOpen()) {
+			<div class="fixed inset-0 z-40 lg:hidden" role="dialog" aria-modal="true">
+				<div
+					class="absolute inset-0 bg-black/50"
+					aria-hidden="true"
+					(click)="closeMobileSidebar()"
+				></div>
+
+				<div class="absolute inset-y-0 left-0 max-w-[85vw]">
+					<app-app-sidebar
+						[groups]="navigationGroups()"
+						[contextLabel]="contextLabel()"
+					/>
+				</div>
+			</div>
+		}
+
+		<!-- principal layout with overflow-hidden -->
+		<div class="flex min-w-0 flex-1 flex-col overflow-hidden">
+			<app-app-header
+				[title]="shellTitle()"
+				[subtitle]="shellSubtitle()"
+				[tenantName]="tenantName()"
+				(menuClicked)="openMobileSidebar()"
+			/>
+			<!-- <main class="min-h-0 overflow-y-auto"> -->
+			<main
+				class="bg-app-content min-h-0 min-w-0 flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8"
+			>
+				<div class="mx-auto w-full max-w-7xl">
+					<ng-content />
+				</div>
+			</main>
+		</div>
+	</div>
+</div>
