@@ -239,7 +239,7 @@ class _AssignmentTrackingMapCardState extends State<AssignmentTrackingMapCard> {
                               strokeWidth: 5,
                               color: Theme.of(
                                 context,
-                              ).colorScheme.primary.withOpacity(0.88),
+                              ).colorScheme.primary.withValues(alpha: 0.88),
                             ),
                           ],
                         ),
@@ -284,7 +284,7 @@ class _AssignmentTrackingMapCardState extends State<AssignmentTrackingMapCard> {
                         decoration: BoxDecoration(
                           color: Theme.of(
                             context,
-                          ).colorScheme.surface.withOpacity(0.92),
+                          ).colorScheme.surface.withValues(alpha: 0.92),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
                             color: Theme.of(context).colorScheme.outlineVariant,
@@ -347,7 +347,7 @@ class _AssignmentTrackingMapCardState extends State<AssignmentTrackingMapCard> {
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: color.withOpacity(0.28),
+              color: color.withValues(alpha: 0.28),
               blurRadius: 16,
               spreadRadius: 2,
             ),
@@ -366,7 +366,7 @@ class _AssignmentTrackingMapCardState extends State<AssignmentTrackingMapCard> {
   ) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface.withOpacity(0.9),
+        color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Padding(

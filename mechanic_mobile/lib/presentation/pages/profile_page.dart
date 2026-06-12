@@ -285,11 +285,6 @@ String _initials(String value) {
   return ('${parts.first[0]}${parts[1][0]}').toUpperCase();
 }
 
-String _formatDate(DateTime? value) {
-  if (value == null) return '-';
-  return '${value.year.toString().padLeft(4, '0')}-${value.month.toString().padLeft(2, '0')}-${value.day.toString().padLeft(2, '0')}';
-}
-
 void _toast(BuildContext context, String message) {
   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
 }

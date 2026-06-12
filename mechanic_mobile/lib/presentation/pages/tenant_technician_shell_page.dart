@@ -2,13 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import '../../app/theme/app_theme.dart';
 import '../../domain/entities/auth_context_entity.dart';
 import '../helpers/tenant_record_helpers.dart';
 import '../utils/api_enum_labels.dart';
 import '../viewmodels/auth_viewmodel.dart';
 import '../viewmodels/tenant_viewmodel.dart';
-import '../widgets/offline_status_banner.dart';
 import '../widgets/app_widgets.dart';
 import 'assignment_tracking_page.dart';
 
@@ -141,9 +139,9 @@ class _TenantTechnicianShellPageState extends State<TenantTechnicianShellPage> {
           child: Text(
             'Panel técnico',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w900,
-                  color: Colors.white,
-                ),
+              fontWeight: FontWeight.w900,
+              color: Colors.white,
+            ),
           ),
         ),
       ),
@@ -218,9 +216,9 @@ class _TenantTechnicianShellPageState extends State<TenantTechnicianShellPage> {
                   children: [
                     Text(
                       'Panel técnico',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            color: Colors.white,
-                          ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.titleLarge?.copyWith(color: Colors.white),
                     ),
                     const SizedBox(height: 4),
                     const Text(
@@ -362,8 +360,7 @@ class _TenantTechnicianShellPageState extends State<TenantTechnicianShellPage> {
                               Expanded(
                                 child: Text(
                                   tenantRecordPrimaryLabel(assignment),
-                                  style:
-                                      Theme.of(context).textTheme.titleLarge,
+                                  style: Theme.of(context).textTheme.titleLarge,
                                 ),
                               ),
                               StatusBadge(
@@ -374,23 +371,19 @@ class _TenantTechnicianShellPageState extends State<TenantTechnicianShellPage> {
                           const SizedBox(height: 8),
                           Text(
                             tenantRecordSecondaryLabel(assignment),
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
+                            style: Theme.of(context).textTheme.bodyMedium
                                 ?.copyWith(
-                                  color:
-                                      Theme.of(context).colorScheme.onSurfaceVariant,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
                                 ),
                           ),
                           const SizedBox(height: 12),
                           Align(
                             alignment: Alignment.centerRight,
                             child: TextButton.icon(
-                              onPressed: () => _openAssignment(
-                                context,
-                                vm,
-                                assignment,
-                              ),
+                              onPressed: () =>
+                                  _openAssignment(context, vm, assignment),
                               icon: const Icon(Icons.open_in_new_rounded),
                               label: const Text('Abrir seguimiento'),
                             ),
@@ -446,13 +439,9 @@ class _TenantTechnicianShellPageState extends State<TenantTechnicianShellPage> {
                       const SizedBox(height: 6),
                       Text(
                         tenantRecordSecondaryLabel(_selectedAssignment!),
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodyMedium
-                            ?.copyWith(
-                              color:
-                                  Theme.of(context).colorScheme.onSurfaceVariant,
-                            ),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                       ),
                       const SizedBox(height: 12),
                       Align(
@@ -568,10 +557,7 @@ class _TenantTechnicianShellPageState extends State<TenantTechnicianShellPage> {
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 10),
-                InfoRow(
-                  label: 'Correo',
-                  value: auth?.user.email ?? '-',
-                ),
+                InfoRow(label: 'Correo', value: auth?.user.email ?? '-'),
                 const Divider(height: 24),
                 InfoRow(
                   label: 'Tipo de usuario',
@@ -660,7 +646,9 @@ class _TenantTechnicianShellPageState extends State<TenantTechnicianShellPage> {
               icon: Icons.inbox_rounded,
             )
           else
-            ...items.take(20).map(
+            ...items
+                .take(20)
+                .map(
                   (item) => Padding(
                     padding: const EdgeInsets.only(bottom: 10),
                     child: SurfaceCard(
@@ -705,7 +693,9 @@ class _TenantTechnicianShellPageState extends State<TenantTechnicianShellPage> {
             icon: Icons.inbox_rounded,
           )
         else
-          ...items.take(8).map(
+          ...items
+              .take(8)
+              .map(
                 (item) => Padding(
                   padding: const EdgeInsets.only(bottom: 10),
                   child: SurfaceCard(
@@ -757,14 +747,6 @@ class _TenantTechnicianShellPageState extends State<TenantTechnicianShellPage> {
     });
   }
 
-  Widget _trackingPlaceholder(BuildContext context) {
-    return const EmptyStatePanel(
-      title: 'Sin asignación seleccionada',
-      subtitle: 'Abre una asignación desde la pestaña correspondiente.',
-      icon: Icons.timeline_rounded,
-    );
-  }
-
   Widget _hero(
     BuildContext context,
     AuthContextEntity? auth,
@@ -788,16 +770,16 @@ class _TenantTechnicianShellPageState extends State<TenantTechnicianShellPage> {
               Text(
                 auth?.user.fullName ?? 'Técnico',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: Colors.black,
-                      fontWeight: FontWeight.w900,
-                    ),
+                  color: Colors.black,
+                  fontWeight: FontWeight.w900,
+                ),
               ),
               const SizedBox(height: 8),
               Text(
                 auth?.currentTenant?.commercialName ?? 'Sin tenant activo',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Colors.black87,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyLarge?.copyWith(color: Colors.black87),
               ),
               const SizedBox(height: 12),
               Wrap(
@@ -847,125 +829,6 @@ class _TenantTechnicianShellPageState extends State<TenantTechnicianShellPage> {
     );
   }
 
-  Widget _capabilitySection(
-    BuildContext context, {
-    required String title,
-    required String subtitle,
-    required List<({String title, String subtitle, IconData icon, bool allowed})>
-        items,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SectionHeader(title: title, subtitle: subtitle),
-        const SizedBox(height: 10),
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final cardWidth = constraints.maxWidth >= 700
-                ? (constraints.maxWidth - 12) / 2
-                : constraints.maxWidth;
-            return Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: [
-                for (final item in items)
-                  SizedBox(
-                    width: cardWidth,
-                    child: _capabilityCard(context, item),
-                  ),
-              ],
-            );
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _capabilityCard(
-    BuildContext context,
-    ({String title, String subtitle, IconData icon, bool allowed}) item,
-  ) {
-    final allowed = item.allowed;
-    final color = allowed ? SapphirePalette.sapphire600 : Colors.grey.shade600;
-    final surface = allowed
-        ? SapphirePalette.sapphire50
-        : Theme.of(context).colorScheme.surfaceContainerHighest;
-
-    return SurfaceCard(
-      child: Container(
-        decoration: BoxDecoration(
-          color: surface,
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(
-            color: allowed
-                ? SapphirePalette.sapphire200
-                : Theme.of(context).colorScheme.outlineVariant,
-          ),
-        ),
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 46,
-                  height: 46,
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: allowed ? 0.16 : 0.10),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Icon(item.icon, color: color, size: 24),
-                ),
-                const Spacer(),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: allowed
-                        ? SapphirePalette.sapphire100
-                        : Theme.of(context).colorScheme.surface,
-                    borderRadius: BorderRadius.circular(999),
-                    border: Border.all(
-                      color: allowed
-                          ? SapphirePalette.sapphire200
-                          : Theme.of(context).colorScheme.outlineVariant,
-                    ),
-                  ),
-                  child: Text(
-                    allowed ? 'Permitido' : 'Bloqueado',
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: allowed
-                              ? SapphirePalette.sapphire800
-                              : Colors.grey.shade700,
-                          fontWeight: FontWeight.w800,
-                        ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            Text(
-              item.title,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w900,
-                    color: allowed ? SapphirePalette.sapphire900 : null,
-                  ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              item.subtitle,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _chip(BuildContext context, String label, IconData icon) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -982,9 +845,9 @@ class _TenantTechnicianShellPageState extends State<TenantTechnicianShellPage> {
           Text(
             label,
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w800,
-                ),
+              color: Colors.white,
+              fontWeight: FontWeight.w800,
+            ),
           ),
         ],
       ),
@@ -997,7 +860,7 @@ class _TenantTechnicianShellPageState extends State<TenantTechnicianShellPage> {
     required IconData icon,
     required VoidCallback onTap,
   }) {
-  return Material(
+    return Material(
       color: const Color(0xFFFFF8D6),
       borderRadius: BorderRadius.circular(18),
       child: InkWell(
@@ -1013,9 +876,9 @@ class _TenantTechnicianShellPageState extends State<TenantTechnicianShellPage> {
               Text(
                 label,
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: Colors.black,
-                      fontWeight: FontWeight.w800,
-                    ),
+                  color: Colors.black,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
             ],
           ),

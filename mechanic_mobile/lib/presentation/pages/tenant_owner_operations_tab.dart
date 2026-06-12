@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../viewmodels/tenant_viewmodel.dart';
@@ -39,6 +40,7 @@ class _TenantOwnerOperationsTabState extends State<TenantOwnerOperationsTab> {
       vm.reloadMembers(),
       vm.reloadIncidents(),
       vm.reloadAssignments(),
+      vm.reloadOffers(),
       vm.reloadTenantSessions(),
       vm.reloadServiceCatalog(),
     ]);
@@ -105,6 +107,13 @@ class _TenantOwnerOperationsTabState extends State<TenantOwnerOperationsTab> {
               icon: Icons.add_business_rounded,
               onTap: () => showCreateProviderServiceSheet(context, vm),
             ),
+            const SizedBox(height: 10),
+            ActionCard(
+              title: 'Asignaciones',
+              subtitle: 'Gestionar asignaciones en una vista dedicada.',
+              icon: Icons.assignment_turned_in_rounded,
+              onTap: () => context.go('/tenant-assignments'),
+            ),
             const SizedBox(height: 18),
             TenantOwnerRecordsSection(
               title: 'Técnicos',
@@ -120,11 +129,6 @@ class _TenantOwnerOperationsTabState extends State<TenantOwnerOperationsTab> {
               title: 'Incidentes',
               subtitle: '${vm.incidents.pagination.total} incidentes en el taller.',
               items: vm.incidents.items,
-            ),
-            TenantOwnerRecordsSection(
-              title: 'Asignaciones',
-              subtitle: '${vm.assignments.pagination.total} asignaciones operativas.',
-              items: vm.assignments.items,
             ),
             TenantOwnerRecordsSection(
               title: 'Sesiones',

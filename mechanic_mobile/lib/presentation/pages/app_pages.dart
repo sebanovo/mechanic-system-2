@@ -18,6 +18,7 @@ export 'tenant_owner_overview_tab.dart';
 export 'tenant_owner_network_tab.dart';
 export 'tenant_owner_profile_tab.dart';
 export 'tenant_owner_shell_page.dart';
+export 'tenant_assignments_page.dart';
 export 'tenant_technician_page.dart';
 export 'tenant_technician_shell_page.dart';
 export 'assignment_tracking_page.dart';

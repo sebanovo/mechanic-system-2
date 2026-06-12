@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../app/theme/app_theme.dart';
 import '../../domain/entities/auth_context_entity.dart';
 import '../helpers/tenant_record_helpers.dart';
 import '../utils/api_enum_labels.dart';
@@ -28,7 +27,7 @@ class TenantOwnerHero extends StatelessWidget {
         ? Map<String, dynamic>.from(detail['tenant'])
         : tenant;
 
-  return SurfaceCard(
+    return SurfaceCard(
       padding: const EdgeInsets.all(0),
       child: Container(
         decoration: const BoxDecoration(
@@ -55,9 +54,9 @@ class TenantOwnerHero extends StatelessWidget {
                 tenant.isEmpty
                     ? 'Sin tenant actual seleccionado'
                     : tenant['commercial_name']?.toString() ?? 'Sin nombre',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: Colors.black87,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyLarge?.copyWith(color: Colors.black87),
               ),
               const SizedBox(height: 12),
               Wrap(

@@ -26,7 +26,7 @@ class IncidentDetailPage extends StatelessWidget {
     }
 
     return Scaffold(
-        appBar: AppBar(
+      appBar: AppBar(
         leading: IconButton(
           tooltip: 'Volver atrás',
           onPressed: () async {
@@ -40,7 +40,9 @@ class IncidentDetailPage extends StatelessWidget {
         title: const Text('Detalle del incidente'),
         actions: [
           IconButton(
-            onPressed: incident == null ? null : () => showIncidentForm(context, existing: incident),
+            onPressed: incident == null
+                ? null
+                : () => showIncidentForm(context, existing: incident),
             icon: const Icon(Icons.edit_rounded),
           ),
         ],
@@ -50,110 +52,136 @@ class IncidentDetailPage extends StatelessWidget {
         child: vm.detailLoading
             ? const Center(child: CircularProgressIndicator())
             : vm.error != null
-                ? ErrorBanner(message: vm.error!)
-                    : incident == null
-                    ? const EmptyStatePanel(
-                        title: 'Incidente no encontrado',
-                        subtitle: 'Regresa al listado para cargar otro registro.',
-                        icon: Icons.sos_rounded,
-                      )
-                    : ListView(
+            ? ErrorBanner(message: vm.error!)
+            : incident == null
+            ? const EmptyStatePanel(
+                title: 'Incidente no encontrado',
+                subtitle: 'Regresa al listado para cargar otro registro.',
+                icon: Icons.sos_rounded,
+              )
+            : ListView(
+                children: [
+                  if (incident.raw['offline_state'] != null) ...[
+                    SurfaceCard(
+                      child: Row(
                         children: [
-                          if (incident.raw['offline_state'] != null) ...[
-                            SurfaceCard(
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.cloud_off_rounded,
-                                    color: Theme.of(context).colorScheme.error,
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Text(
-                                      'Este incidente aún está pendiente de sincronización.',
-                                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                          ],
-                          SurfaceCard(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        incident.title,
-                                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: 24),
-                                      ),
-                                    ),
-                                    StatusBadge(label: incidentStatusLabelFromApi(incident.status)),
-                                  ],
-                                ),
-                                const SizedBox(height: 10),
-                                Text(incident.incidentCode, style: Theme.of(context).textTheme.bodyMedium),
-                                const SizedBox(height: 18),
-                                InfoRow(label: 'Vehículo', value: incident.vehicleId),
-                                const Divider(height: 24),
-                                InfoRow(label: 'Prioridad', value: incident.priority),
-                                const Divider(height: 24),
-                                InfoRow(label: 'Ubicación', value: '${incident.latitude}, ${incident.longitude}'),
-                                const Divider(height: 24),
-                                InfoRow(label: 'Reportado', value: _formatDate(incident.reportedAt)),
-                              ],
-                            ),
+                          Icon(
+                            Icons.cloud_off_rounded,
+                            color: Theme.of(context).colorScheme.error,
                           ),
-                          const SizedBox(height: 12),
-                          if (incident.addressText != null)
-                            SurfaceCard(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text('Dirección', style: Theme.of(context).textTheme.titleLarge),
-                                  const SizedBox(height: 10),
-                                  Text(incident.addressText!, style: Theme.of(context).textTheme.bodyLarge),
-                                ],
-                              ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'Este incidente aún está pendiente de sincronización.',
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(fontWeight: FontWeight.w700),
                             ),
-                          if (incident.description != null) ...[
-                            const SizedBox(height: 12),
-                            SurfaceCard(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text('Descripción', style: Theme.of(context).textTheme.titleLarge),
-                                  const SizedBox(height: 10),
-                                  Text(incident.description!, style: Theme.of(context).textTheme.bodyLarge),
-                                ],
-                              ),
-                            ),
-                          ],
-                          const SizedBox(height: 12),
-                          ElevatedButton.icon(
-                            onPressed: () async {
-                              final ok = await context.read<IncidentsViewModel>().cancel(
-                                    incidentId,
-                                    const IncidentCancelInput(),
-                                  );
-                              if (!context.mounted) return;
-                              if (ok) {
-                                final popped = await Navigator.of(context).maybePop();
-                                if (!popped && context.mounted) {
-                                  context.go('/home');
-                                }
-                              }
-                            },
-                            icon: const Icon(Icons.cancel_rounded),
-                            label: const Text('Cancelar incidente'),
                           ),
                         ],
                       ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  SurfaceCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                incident.title,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headlineMedium
+                                    ?.copyWith(fontSize: 24),
+                              ),
+                            ),
+                            StatusBadge(
+                              label: incidentStatusLabelFromApi(
+                                incident.status,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          incident.incidentCode,
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                        const SizedBox(height: 18),
+                        InfoRow(label: 'Vehículo', value: incident.vehicleId),
+                        const Divider(height: 24),
+                        InfoRow(label: 'Prioridad', value: incident.priority),
+                        const Divider(height: 24),
+                        InfoRow(
+                          label: 'Ubicación',
+                          value: '${incident.latitude}, ${incident.longitude}',
+                        ),
+                        const Divider(height: 24),
+                        InfoRow(
+                          label: 'Reportado',
+                          value: _formatDate(incident.reportedAt),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  if (incident.addressText != null)
+                    SurfaceCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Dirección',
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            incident.addressText!,
+                            style: Theme.of(context).textTheme.bodyLarge,
+                          ),
+                        ],
+                      ),
+                    ),
+                  if (incident.description != null) ...[
+                    const SizedBox(height: 12),
+                    SurfaceCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Descripción',
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            incident.description!,
+                            style: Theme.of(context).textTheme.bodyLarge,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+                  ElevatedButton.icon(
+                    onPressed: () async {
+                      final ok = await context
+                          .read<IncidentsViewModel>()
+                          .cancel(incidentId, const IncidentCancelInput());
+                      if (!context.mounted) return;
+                      if (ok) {
+                        final popped = await Navigator.of(context).maybePop();
+                        if (!popped && context.mounted) {
+                          context.go('/home');
+                        }
+                      }
+                    },
+                    icon: const Icon(Icons.cancel_rounded),
+                    label: const Text('Cancelar incidente'),
+                  ),
+                ],
+              ),
       ),
     );
   }
@@ -174,7 +202,10 @@ Future<void> showAiAnalysisDialog(
           children: [
             _analysisRow('Versión', analysis['analysis_version']),
             _analysisRow('Resultado', analysis['analysis_result']),
-            _analysisRow('Probable servicio', analysis['probable_service_code']),
+            _analysisRow(
+              'Probable servicio',
+              analysis['probable_service_code'],
+            ),
             _analysisRow('Problema probable', analysis['probable_problem']),
             _analysisRow('Confianza', analysis['confidence_score']),
             _analysisRow('Precio mínimo', analysis['estimated_min_price']),
@@ -187,7 +218,10 @@ Future<void> showAiAnalysisDialog(
               'Duración máxima',
               analysis['estimated_max_duration_minutes'],
             ),
-            _analysisRow('Prioridad recomendada', analysis['recommended_priority']),
+            _analysisRow(
+              'Prioridad recomendada',
+              analysis['recommended_priority'],
+            ),
           ],
         ),
       ),
@@ -206,17 +240,6 @@ Widget _analysisRow(String label, Object? value) {
     padding: const EdgeInsets.only(bottom: 10),
     child: Text('$label: ${value ?? "-"}'),
   );
-}
-
-String _analysisSummary(Map<String, dynamic> analysis) {
-  final problem = analysis['probable_problem']?.toString().trim();
-  final service = analysis['probable_service_code']?.toString().trim();
-  final confidence = analysis['confidence_score']?.toString().trim();
-  return [
-    if (problem != null && problem.isNotEmpty) problem,
-    if (service != null && service.isNotEmpty) 'Servicio: $service',
-    if (confidence != null && confidence.isNotEmpty) 'Confianza: $confidence',
-  ].join(' • ');
 }
 
 String _formatDate(DateTime? value) {

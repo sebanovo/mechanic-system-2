@@ -50,6 +50,13 @@ class TenantOwnerRecordsSection extends StatelessWidget {
                         children: [
                           StatusBadge(label: _recordStatus(title, item)),
                           const SizedBox(width: 8),
+                          if (title == 'Asignaciones')
+                            IconButton(
+                              tooltip: 'Gestionar asignación',
+                              visualDensity: VisualDensity.compact,
+                              onPressed: () => _openAssignmentActions(context, item),
+                              icon: const Icon(Icons.assignment_turned_in_rounded),
+                            ),
                           _recordActions(context, title, item),
                         ],
                       ),
@@ -121,7 +128,7 @@ Future<void> _openRecord(
     final merged = <String, dynamic>{
       ...item,
       ...?detail,
-      'tracking_session': ?session,
+      if (session != null) 'tracking_session': session,
     };
     showTenantRecordDetails(context, title: title, record: merged);
     return;
@@ -247,12 +254,17 @@ Widget _recordActions(
 
   if (title == 'Asignaciones') {
     return PopupMenuButton<String>(
-      tooltip: 'Cambiar estado',
+      tooltip: 'Más opciones',
       onSelected: (value) async {
         final vm = context.read<TenantViewModel>();
+        if (value == 'edit') {
+          showEditAssignmentSheet(context, vm, item);
+          return;
+        }
         await vm.changeAssignmentStatus(recordId, {'assignment_status': value});
       },
       itemBuilder: (context) => const [
+        PopupMenuItem(value: 'edit', child: Text('Editar asignación')),
         PopupMenuItem(value: 'PENDING', child: Text('Pendiente')),
         PopupMenuItem(value: 'ASSIGNED', child: Text('Asignada')),
         PopupMenuItem(value: 'EN_ROUTE', child: Text('En ruta')),
@@ -332,7 +344,7 @@ String _recordStatus(String sectionTitle, Map<String, dynamic> item) {
 }
 
 String _recordId(String sectionTitle, Map<String, dynamic> item) {
-  switch (sectionTitle) {
+  switch (sectionTitle.trim()) {
     case 'Servicios del proveedor':
       return _sectionId(item, 'provider_service');
     case 'Servicios técnicos':
@@ -352,6 +364,47 @@ String _recordId(String sectionTitle, Map<String, dynamic> item) {
     default:
       return tenantRecordId(item);
   }
+}
+
+Future<void> _openAssignmentActions(
+  BuildContext context,
+  Map<String, dynamic> item,
+) async {
+  final vm = context.read<TenantViewModel>();
+  final assignmentId = tenantAssignmentId(item);
+  if (assignmentId.isEmpty) return;
+  if (!context.mounted) return;
+  await showModalBottomSheet<void>(
+    context: context,
+    showDragHandle: true,
+    builder: (sheetContext) {
+      return SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.edit_rounded),
+                title: const Text('Editar asignación'),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  showEditAssignmentSheet(context, vm, item);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.assignment_turned_in_rounded),
+                title: const Text('Cambiar estado'),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                },
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
 }
 
 String _sectionId(Map<String, dynamic> item, String key) {

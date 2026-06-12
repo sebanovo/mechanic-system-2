@@ -2,6 +2,9 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 
 class DefaultFirebaseOptions {
+  static const String webVapidKey =
+      'BNKs9MawNjRfsrgM8vj4xYnPVWMOCYlsJZVnM4-7R7yK9xChXQR0WaYJiJsdo4_sfOshIxGnx78zQCK2DPepPLs';
+
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
       return web;

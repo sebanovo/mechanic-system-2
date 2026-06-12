@@ -245,11 +245,251 @@ void showCreateTechnicianServiceSheet(BuildContext context, TenantViewModel vm) 
   );
 }
 
-String _selectedTechnicianId(Map<String, dynamic> record) {
+void showCreateAssignmentSheet(BuildContext context, TenantViewModel vm) {
+  Map<String, dynamic>? selectedOffer = vm.offers.items.isNotEmpty
+      ? Map<String, dynamic>.from(vm.offers.items.first)
+      : null;
+  Map<String, dynamic>? selectedTechnician = vm.technicians.items.isNotEmpty
+      ? Map<String, dynamic>.from(vm.technicians.items.first)
+      : null;
+  final notes = TextEditingController();
+
+  showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (sheetContext) {
+      return StatefulBuilder(
+        builder: (context, setState) {
+          return Padding(
+            padding: EdgeInsets.only(bottom: MediaQuery.of(sheetContext).viewInsets.bottom),
+            child: _SheetScaffold(
+              title: 'Nueva asignación',
+              children: [
+                _recordPickerCard(
+                  context,
+                  label: 'Oferta',
+                  helper: 'Selecciona una oferta aceptada del taller.',
+                  value: selectedOffer == null
+                      ? 'Selecciona una oferta'
+                      : _assignmentOfferLabel(selectedOffer!),
+                  detail: selectedOffer == null
+                      ? 'Incluye incidente, proveedor y estado.'
+                      : _assignmentOfferDetail(selectedOffer!),
+                  icon: Icons.local_offer_rounded,
+                  onTap: () async {
+                    final chosen = await _pickRecord(
+                      context,
+                      title: 'Seleccionar oferta',
+                      items: vm.offers.items,
+                      titleBuilder: (item) => _assignmentOfferLabel(item),
+                      subtitleBuilder: (item) => _assignmentOfferDetail(item),
+                    );
+                    if (!sheetContext.mounted || chosen == null) return;
+                    setState(() => selectedOffer = chosen);
+                  },
+                ),
+                const SizedBox(height: 12),
+                _recordPickerCard(
+                  context,
+                  label: 'Técnico',
+                  helper: 'Selecciona el técnico que atenderá la incidencia.',
+                  value: selectedTechnician == null
+                      ? 'Selecciona un técnico'
+                      : _technicianSelectionLabel(selectedTechnician!),
+                  detail: selectedTechnician == null
+                      ? 'Muestra código, nombre y estado.'
+                      : _technicianSelectionDetail(selectedTechnician!),
+                  icon: Icons.person_rounded,
+                  onTap: () async {
+                    final chosen = await _pickRecord(
+                      context,
+                      title: 'Seleccionar técnico',
+                      items: vm.technicians.items,
+                      titleBuilder: (item) => _technicianSelectionLabel(item),
+                      subtitleBuilder: (item) => _technicianSelectionDetail(item),
+                    );
+                    if (!sheetContext.mounted || chosen == null) return;
+                    setState(() => selectedTechnician = chosen);
+                  },
+                ),
+                const SizedBox(height: 12),
+                _sheetField(notes, 'Notas'),
+                const SizedBox(height: 18),
+                ElevatedButton(
+                  onPressed: vm.submitting
+                      ? null
+                      : () async {
+                          final offerId = _selectedOfferId(selectedOffer);
+                          final technicianId = _selectedTechnicianId(selectedTechnician);
+                          if (offerId.isEmpty || technicianId.isEmpty) {
+                            showAppSnackBar(
+                              sheetContext,
+                              'Selecciona una oferta y un técnico válidos antes de continuar.',
+                            );
+                            return;
+                          }
+                          final ok = await vm.createAssignment({
+                            'offer_id': offerId,
+                            'technician_id': technicianId,
+                            if (notes.text.trim().isNotEmpty) 'notes': notes.text.trim(),
+                          });
+                          if (!sheetContext.mounted) return;
+                          if (ok) {
+                            Navigator.of(sheetContext).pop();
+                          } else if (vm.error != null && vm.error!.isNotEmpty) {
+                            showAppSnackBar(sheetContext, vm.error!);
+                          }
+                        },
+                  child: const Text('Crear asignación'),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    },
+  );
+}
+
+void showEditAssignmentSheet(
+  BuildContext context,
+  TenantViewModel vm,
+  Map<String, dynamic> record,
+) {
+  final currentAssignment = record['assignment'] is Map
+      ? Map<String, dynamic>.from(record['assignment'])
+      : record;
+  Map<String, dynamic>? selectedOffer = record['offer'] is Map
+      ? Map<String, dynamic>.from(record['offer'])
+      : _findOfferById(vm.offers.items, _selectedOfferId(currentAssignment));
+  Map<String, dynamic>? selectedTechnician = record['technician'] is Map
+      ? Map<String, dynamic>.from(record['technician'])
+      : _findTechnicianById(
+          vm.technicians.items,
+          _selectedTechnicianId(currentAssignment),
+        );
+  final notes = TextEditingController(
+    text: currentAssignment['notes']?.toString() ?? '',
+  );
+
+  showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (sheetContext) {
+      return StatefulBuilder(
+        builder: (context, setState) {
+          return Padding(
+            padding: EdgeInsets.only(bottom: MediaQuery.of(sheetContext).viewInsets.bottom),
+            child: _SheetScaffold(
+              title: 'Editar asignación',
+              children: [
+                _recordPickerCard(
+                  context,
+                  label: 'Oferta',
+                  helper: 'Puedes cambiar la oferta relacionada a la asignación.',
+                  value: selectedOffer == null
+                      ? 'Selecciona una oferta'
+                      : _assignmentOfferLabel(selectedOffer!),
+                  detail: selectedOffer == null
+                      ? 'Incluye incidente, proveedor y estado.'
+                      : _assignmentOfferDetail(selectedOffer!),
+                  icon: Icons.local_offer_rounded,
+                  onTap: () async {
+                    final chosen = await _pickRecord(
+                      context,
+                      title: 'Seleccionar oferta',
+                      items: vm.offers.items,
+                      titleBuilder: (item) => _assignmentOfferLabel(item),
+                      subtitleBuilder: (item) => _assignmentOfferDetail(item),
+                    );
+                    if (!sheetContext.mounted || chosen == null) return;
+                    setState(() => selectedOffer = chosen);
+                  },
+                ),
+                const SizedBox(height: 12),
+                _recordPickerCard(
+                  context,
+                  label: 'Técnico',
+                  helper: 'Puedes reasignar la asignación a otro técnico.',
+                  value: selectedTechnician == null
+                      ? 'Selecciona un técnico'
+                      : _technicianSelectionLabel(selectedTechnician!),
+                  detail: selectedTechnician == null
+                      ? 'Muestra código, nombre y estado.'
+                      : _technicianSelectionDetail(selectedTechnician!),
+                  icon: Icons.person_rounded,
+                  onTap: () async {
+                    final chosen = await _pickRecord(
+                      context,
+                      title: 'Seleccionar técnico',
+                      items: vm.technicians.items,
+                      titleBuilder: (item) => _technicianSelectionLabel(item),
+                      subtitleBuilder: (item) => _technicianSelectionDetail(item),
+                    );
+                    if (!sheetContext.mounted || chosen == null) return;
+                    setState(() => selectedTechnician = chosen);
+                  },
+                ),
+                const SizedBox(height: 12),
+                _sheetField(notes, 'Notas'),
+                const SizedBox(height: 18),
+                ElevatedButton(
+                  onPressed: vm.submitting
+                      ? null
+                      : () async {
+                          final assignmentId = tenantAssignmentId(currentAssignment);
+                          final technicianId = _selectedTechnicianId(selectedTechnician);
+                          if (assignmentId.isEmpty || technicianId.isEmpty) {
+                            showAppSnackBar(
+                              sheetContext,
+                              'Selecciona un técnico válido antes de continuar.',
+                            );
+                            return;
+                          }
+                          final ok = await vm.updateAssignment(
+                            assignmentId,
+                            {
+                              'technician_id': technicianId,
+                              if (_selectedOfferId(selectedOffer).isNotEmpty)
+                                'offer_id': _selectedOfferId(selectedOffer),
+                              if (notes.text.trim().isNotEmpty) 'notes': notes.text.trim(),
+                            },
+                          );
+                          if (!sheetContext.mounted) return;
+                          if (ok) {
+                            Navigator.of(sheetContext).pop();
+                          } else if (vm.error != null && vm.error!.isNotEmpty) {
+                            showAppSnackBar(sheetContext, vm.error!);
+                          }
+                        },
+                  child: const Text('Guardar cambios'),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    },
+  );
+}
+
+String _selectedTechnicianId(Map<String, dynamic>? record) {
+  if (record == null) return '';
   final technician = record['technician'] is Map
       ? Map<String, dynamic>.from(record['technician'])
       : record;
   final id = technician['id']?.toString().trim() ?? '';
+  return id;
+}
+
+String _selectedOfferId(Map<String, dynamic>? record) {
+  if (record == null) return '';
+  final offer = record['offer'] is Map
+      ? Map<String, dynamic>.from(record['offer'])
+      : record;
+  final id = offer['id']?.toString().trim() ?? '';
   return id;
 }
 
@@ -259,6 +499,58 @@ String _selectedProviderServiceId(Map<String, dynamic> record) {
       : record;
   final id = providerService['id']?.toString().trim() ?? '';
   return id;
+}
+
+Map<String, dynamic>? _findOfferById(
+  List<Map<String, dynamic>> items,
+  String id,
+) {
+  if (id.isEmpty) return null;
+  for (final item in items) {
+    if (_selectedOfferId(item) == id) return item;
+  }
+  return null;
+}
+
+Map<String, dynamic>? _findTechnicianById(
+  List<Map<String, dynamic>> items,
+  String id,
+) {
+  if (id.isEmpty) return null;
+  for (final item in items) {
+    if (_selectedTechnicianId(item) == id) return item;
+  }
+  return null;
+}
+
+String _assignmentOfferLabel(Map<String, dynamic> record) {
+  final offer = record['offer'] is Map
+      ? Map<String, dynamic>.from(record['offer'])
+      : record;
+  final status = offer['offer_status']?.toString().trim() ?? '';
+  final id = offer['id']?.toString().trim() ?? '';
+  final incident = offer['incident_id']?.toString().trim() ?? '';
+  final parts = <String>[
+    if (id.isNotEmpty) id,
+    if (status.isNotEmpty) status,
+    if (incident.isNotEmpty) incident,
+  ];
+  return parts.isEmpty ? tenantRecordPrimaryLabel(record) : parts.join(' • ');
+}
+
+String _assignmentOfferDetail(Map<String, dynamic> record) {
+  final offer = record['offer'] is Map
+      ? Map<String, dynamic>.from(record['offer'])
+      : record;
+  final provider = offer['provider_profile_id']?.toString().trim() ?? '';
+  final message = offer['message']?.toString().trim() ?? '';
+  final response = offer['response_message']?.toString().trim() ?? '';
+  final parts = <String>[
+    if (provider.isNotEmpty) 'Proveedor $provider',
+    if (message.isNotEmpty) message,
+    if (response.isNotEmpty) response,
+  ];
+  return parts.isEmpty ? tenantRecordSecondaryLabel(record) : parts.join(' • ');
 }
 
 void showTechnicianManagementSheet(

@@ -84,11 +84,10 @@ class _TenantOwnerShellPageState extends State<TenantOwnerShellPage> {
                   icon: const Icon(Icons.dashboard_rounded),
                 ),
                 IconButton(
-                  onPressed: () => context.read<AuthViewModel>().signOut().then(
-                        (_) {
-                          if (context.mounted) context.go('/entry');
-                        },
-                      ),
+                  onPressed: () =>
+                      context.read<AuthViewModel>().signOut().then((_) {
+                        if (context.mounted) context.go('/entry');
+                      }),
                   icon: const Icon(Icons.logout_rounded),
                 ),
               ],
@@ -140,20 +139,32 @@ class _TenantOwnerShellPageState extends State<TenantOwnerShellPage> {
       labelType: NavigationRailLabelType.all,
       leading: Padding(
         padding: const EdgeInsets.all(16),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: Colors.black,
-            borderRadius: BorderRadius.circular(18),
-          ),
-          child: Text(
-            'Panel de taller',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Colors.black,
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Text(
+                'Panel de taller',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w900,
                   color: Colors.white,
                 ),
-          ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            FilledButton.icon(
+              onPressed: () => context.go('/tenant-assignments'),
+              icon: const Icon(Icons.assignment_turned_in_rounded),
+              label: const Text('Asignaciones'),
+            ),
+          ],
         ),
       ),
       destinations: const [
@@ -217,9 +228,9 @@ class _TenantOwnerShellPageState extends State<TenantOwnerShellPage> {
                   children: [
                     Text(
                       'Panel de taller',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            color: Colors.white,
-                          ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.titleLarge?.copyWith(color: Colors.white),
                     ),
                     const SizedBox(height: 4),
                     const Text(
@@ -231,12 +242,50 @@ class _TenantOwnerShellPageState extends State<TenantOwnerShellPage> {
               ),
             ),
             const Divider(height: 24),
-            _drawerTile(context, index: 0, icon: Icons.home_rounded, label: 'Inicio'),
-            _drawerTile(context, index: 1, icon: Icons.handyman_rounded, label: 'Operaciones'),
-            _drawerTile(context, index: 2, icon: Icons.inventory_2_rounded, label: 'Catálogo'),
-            _drawerTile(context, index: 3, icon: Icons.apartment_rounded, label: 'Red'),
-            _drawerTile(context, index: 4, icon: Icons.notifications_rounded, label: 'Notificaciones'),
-            _drawerTile(context, index: 5, icon: Icons.person_rounded, label: 'Perfil'),
+            _drawerTile(
+              context,
+              index: 0,
+              icon: Icons.home_rounded,
+              label: 'Inicio',
+            ),
+            _drawerTile(
+              context,
+              index: 1,
+              icon: Icons.handyman_rounded,
+              label: 'Operaciones',
+            ),
+            _drawerTile(
+              context,
+              index: 2,
+              icon: Icons.inventory_2_rounded,
+              label: 'Catálogo',
+            ),
+            _drawerTile(
+              context,
+              index: 3,
+              icon: Icons.apartment_rounded,
+              label: 'Red',
+            ),
+            _drawerTile(
+              context,
+              index: 4,
+              icon: Icons.notifications_rounded,
+              label: 'Notificaciones',
+            ),
+            _drawerTile(
+              context,
+              index: 5,
+              icon: Icons.person_rounded,
+              label: 'Perfil',
+            ),
+            ListTile(
+              leading: const Icon(Icons.assignment_turned_in_rounded),
+              title: const Text('Asignaciones'),
+              onTap: () {
+                Navigator.of(context).pop();
+                context.go('/tenant-assignments');
+              },
+            ),
             const Divider(height: 24),
             ListTile(
               leading: const Icon(Icons.logout_rounded),

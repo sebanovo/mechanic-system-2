@@ -24,8 +24,6 @@ class NotificationService {
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
   bool _initialized = false;
-  static const String _webVapidKey =
-      'BNKs9MawNjRfsrgM8vj4xYnPVWMOCYlsJZVnM4-7R7yK9xChXQR0WaYJiJsdo4_sfOshIxGnx78zQCK2DPepPLs';
 
   Future<void> initialize() async {
     if (_initialized) return;
@@ -76,7 +74,7 @@ class NotificationService {
       await initialize();
       for (var attempt = 0; attempt < 3; attempt++) {
         final token = await FirebaseMessaging.instance.getToken(
-          vapidKey: kIsWeb ? _webVapidKey : null,
+          vapidKey: kIsWeb ? DefaultFirebaseOptions.webVapidKey : null,
         );
         if (token != null && token.isNotEmpty) {
           return token;

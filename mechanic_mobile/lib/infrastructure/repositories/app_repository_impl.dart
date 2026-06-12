@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import '../../core/error/failures.dart';
 import '../../core/network/connectivity_service.dart';
@@ -11,7 +10,11 @@ import '../local/vehicle_offline_store.dart';
 import '../models/app_models.dart';
 
 class ClientRepositoryImpl
-    implements ClientRepository, SessionRepository, VehicleRepository, IncidentRepository {
+    implements
+        ClientRepository,
+        SessionRepository,
+        VehicleRepository,
+        IncidentRepository {
   ClientRepositoryImpl(
     this._remoteDataSource,
     this._connectivityService,
@@ -56,10 +59,7 @@ class ClientRepositoryImpl
   ) {
     final data = _envelopeData(response);
     final items = listMapOf(data['items']).map(parser).toList();
-    return PagedResult<T>(
-      items: items,
-      pagination: _pagination(data),
-    );
+    return PagedResult<T>(items: items, pagination: _pagination(data));
   }
 
   Future<List<Map<String, dynamic>>> _cachedVehicleMaps() async {
@@ -67,7 +67,9 @@ class ClientRepositoryImpl
     return vehicles;
   }
 
-  Future<void> _cacheVehiclesFromRemote(List<Map<String, dynamic>> vehicles) async {
+  Future<void> _cacheVehiclesFromRemote(
+    List<Map<String, dynamic>> vehicles,
+  ) async {
     await _vehicleOfflineStore.saveCachedVehicles(vehicles);
   }
 
@@ -83,7 +85,9 @@ class ClientRepositoryImpl
     return _incidentOfflineStore.loadCachedIncidents();
   }
 
-  Future<void> _cacheIncidentsFromRemote(List<Map<String, dynamic>> incidents) async {
+  Future<void> _cacheIncidentsFromRemote(
+    List<Map<String, dynamic>> incidents,
+  ) async {
     await _incidentOfflineStore.saveCachedIncidents(incidents);
   }
 
@@ -95,62 +99,17 @@ class ClientRepositoryImpl
     await _incidentOfflineStore.deleteCachedIncident(id);
   }
 
-  VehicleModel _vehicleFromInput(
-    VehicleUpsertInput input, {
-    required String id,
-    String offlineState = 'pending_create',
-    String? statusOverride,
-  }) {
-    final now = DateTime.now().toIso8601String();
-    return VehicleModel.fromJson(<String, dynamic>{
-      'id': id,
-      'customer_id': '',
-      'plate_number': input.plateNumber,
-      'vehicle_type': input.vehicleType,
-      'brand': input.brand,
-      'model': input.model,
-      'year': input.year,
-      'color': input.color,
-      'status': statusOverride ?? 'PENDING_SYNC',
-      'created_at': now,
-      'updated_at': now,
-      'offline_state': offlineState,
-    });
-  }
-
-  VehicleModel _vehicleFromMap(Map<String, dynamic> map) => VehicleModel.fromJson(map);
+  VehicleModel _vehicleFromMap(Map<String, dynamic> map) =>
+      VehicleModel.fromJson(map);
 
   bool _isNetworkFailure(Object error) {
-    return error is NetworkFailure || error is ServerFailure || error is UnknownFailure && error.message.contains('conectar');
+    return error is NetworkFailure ||
+        error is ServerFailure ||
+        error is UnknownFailure && error.message.contains('conectar');
   }
 
   String _tempId(String prefix) {
     return '$prefix-${DateTime.now().millisecondsSinceEpoch}';
-  }
-
-  Map<String, dynamic> _vehicleMapFromEntity(
-    VehicleEntity entity, {
-    String? offlineState,
-  }) {
-    final raw = Map<String, dynamic>.from(entity.raw);
-    raw
-      ..['id'] = entity.id
-      ..['customer_id'] = entity.customerId
-      ..['plate_number'] = entity.plateNumber
-      ..['vehicle_type'] = entity.vehicleType
-      ..['status'] = entity.status
-      ..['created_at'] = entity.createdAt?.toIso8601String()
-      ..['updated_at'] = entity.updatedAt?.toIso8601String()
-      ..['brand'] = entity.brand
-      ..['model'] = entity.model
-      ..['year'] = entity.year
-      ..['color'] = entity.color;
-    if (offlineState != null) {
-      raw['offline_state'] = offlineState;
-    } else {
-      raw.remove('offline_state');
-    }
-    return raw;
   }
 
   Map<String, dynamic> _vehicleMapFromInputPayload(
@@ -331,8 +290,10 @@ class ClientRepositoryImpl
   ) async {
     if (_connectivityService.isOnline) {
       try {
-        final response =
-            await _remoteDataSource.updateVehicle(vehicleId, input.toJson());
+        final response = await _remoteDataSource.updateVehicle(
+          vehicleId,
+          input.toJson(),
+        );
         final data = _envelopeData(response);
         await _cacheVehicle(data);
         return _vehicleFromMap(data);
@@ -357,10 +318,7 @@ class ClientRepositoryImpl
     await _queueVehicleOperation(
       opType: 'update',
       resourceId: vehicleId,
-      payload: {
-        'vehicle_id': vehicleId,
-        ...input.toJson(),
-      },
+      payload: {'vehicle_id': vehicleId, ...input.toJson()},
     );
     return _vehicleFromMap(localMap);
   }
@@ -439,10 +397,7 @@ class ClientRepositoryImpl
     await _queueVehicleOperation(
       opType: 'status',
       resourceId: vehicleId,
-      payload: {
-        'vehicle_id': vehicleId,
-        'status': input.status,
-      },
+      payload: {'vehicle_id': vehicleId, 'status': input.status},
     );
     return _vehicleFromMap(localMap);
   }
@@ -467,10 +422,7 @@ class ClientRepositoryImpl
               final data = _envelopeData(response);
               final remoteId = data['id']?.toString() ?? resolvedId;
               vehicleIdMap[resourceId] = remoteId;
-              await _cacheVehicle({
-                ...data,
-                'id': remoteId,
-              });
+              await _cacheVehicle({...data, 'id': remoteId});
               if (resourceId != remoteId) {
                 await _removeVehicleCache(resourceId);
               }
@@ -516,7 +468,8 @@ class ClientRepositoryImpl
         final resourceId = operation['resource_id']?.toString() ?? '';
         final payload = Map<String, dynamic>.from(operation['payload'] as Map);
         final mappedVehicleId = payload['vehicle_id']?.toString();
-        if (mappedVehicleId != null && vehicleIdMap.containsKey(mappedVehicleId)) {
+        if (mappedVehicleId != null &&
+            vehicleIdMap.containsKey(mappedVehicleId)) {
           payload['vehicle_id'] = vehicleIdMap[mappedVehicleId];
         }
         final resolvedId = idMap[resourceId] ?? resourceId;
@@ -527,10 +480,7 @@ class ClientRepositoryImpl
               final data = _envelopeData(response);
               final remoteId = data['id']?.toString() ?? resolvedId;
               idMap[resourceId] = remoteId;
-              await _cacheIncident({
-                ...data,
-                'id': remoteId,
-              });
+              await _cacheIncident({...data, 'id': remoteId});
               if (resourceId != remoteId) {
                 await _removeIncidentCache(resourceId);
               }
@@ -575,7 +525,9 @@ class ClientRepositoryImpl
           pageSize: pageSize,
         );
         final data = _envelopeData(response);
-        final items = listMapOf(data['items']).map(IncidentModel.fromJson).toList();
+        final items = listMapOf(
+          data['items'],
+        ).map(IncidentModel.fromJson).toList();
         await _cacheIncidentsFromRemote(listMapOf(data['items']));
         return PagedResult<IncidentEntity>(
           items: items,
@@ -666,8 +618,10 @@ class ClientRepositoryImpl
   ) async {
     if (_connectivityService.isOnline) {
       try {
-        final response =
-            await _remoteDataSource.updateIncident(incidentId, input.toJson());
+        final response = await _remoteDataSource.updateIncident(
+          incidentId,
+          input.toJson(),
+        );
         final data = _envelopeData(response);
         await _cacheIncident(data);
         return IncidentModel.fromJson(data);
@@ -686,7 +640,8 @@ class ClientRepositoryImpl
       ...existing,
       ...input.toJson(),
       'id': incidentId,
-      'title': stringOf(existing['title']) ??
+      'title':
+          stringOf(existing['title']) ??
           (input.description?.trim().isNotEmpty == true
               ? input.description!.trim()
               : 'Incidente pendiente'),
@@ -710,8 +665,10 @@ class ClientRepositoryImpl
   ) async {
     if (_connectivityService.isOnline) {
       try {
-        final response =
-            await _remoteDataSource.cancelIncident(incidentId, input.toJson());
+        final response = await _remoteDataSource.cancelIncident(
+          incidentId,
+          input.toJson(),
+        );
         final data = _envelopeData(response);
         await _cacheIncident(data);
         return IncidentModel.fromJson(data);
@@ -760,10 +717,7 @@ class ClientRepositoryImpl
       page: page,
       pageSize: pageSize,
     );
-    return _paged<Map<String, dynamic>>(
-      response,
-      (json) => json,
-    );
+    return _paged<Map<String, dynamic>>(response, (json) => json);
   }
 
   @override
@@ -792,8 +746,9 @@ class ClientRepositoryImpl
   Future<Map<String, dynamic>> getMyAssignmentTrackingSession(
     String assignmentId,
   ) async {
-    final response =
-        await _remoteDataSource.getAssignmentTrackingSession(assignmentId);
+    final response = await _remoteDataSource.getAssignmentTrackingSession(
+      assignmentId,
+    );
     return _envelopeData(response);
   }
 }

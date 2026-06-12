@@ -58,6 +58,10 @@ final appRouter = GoRouter(
       builder: (context, state) => const TenantSessionsPage(),
     ),
     GoRoute(
+      path: '/tenant-assignments',
+      builder: (context, state) => const TenantAssignmentsPage(),
+    ),
+    GoRoute(
       path: '/vehicles/:id',
       builder: (context, state) =>
           VehicleDetailPage(vehicleId: state.pathParameters['id']!),
