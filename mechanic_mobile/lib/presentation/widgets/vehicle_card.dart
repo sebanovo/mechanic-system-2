@@ -35,7 +35,28 @@ class VehicleCard extends StatelessWidget {
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                 ),
-                StatusBadge(label: vehicleStatusLabelFromApi(vehicle.status)),
+                if ((vehicle.raw['offline_state']?.toString().trim() ?? '').isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.tertiaryContainer,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        'Pendiente',
+                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                              fontWeight: FontWeight.w800,
+                            ),
+                      ),
+                    ),
+                  ),
+                StatusBadge(
+                  label: (vehicle.raw['offline_state']?.toString().trim() ?? '').isNotEmpty
+                      ? 'Sincronizando'
+                      : vehicleStatusLabelFromApi(vehicle.status),
+                ),
               ],
             ),
             const SizedBox(height: 8),

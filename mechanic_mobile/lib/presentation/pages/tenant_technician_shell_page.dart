@@ -8,7 +8,9 @@ import '../helpers/tenant_record_helpers.dart';
 import '../utils/api_enum_labels.dart';
 import '../viewmodels/auth_viewmodel.dart';
 import '../viewmodels/tenant_viewmodel.dart';
+import '../widgets/offline_status_banner.dart';
 import '../widgets/app_widgets.dart';
+import 'assignment_tracking_page.dart';
 
 class TenantTechnicianShellPage extends StatefulWidget {
   const TenantTechnicianShellPage({super.key});
@@ -84,18 +86,25 @@ class _TenantTechnicianShellPageState extends State<TenantTechnicianShellPage> {
             ),
       drawer: wide ? null : _buildDrawer(context),
       body: SafeArea(
-        child: wide
-            ? Row(
-                children: [
-                  _buildRail(context),
-                  VerticalDivider(
-                    width: 1,
-                    color: Theme.of(context).colorScheme.outlineVariant,
-                  ),
-                  Expanded(child: _buildPageView(pages)),
-                ],
-              )
-            : _buildPageView(pages),
+        child: Column(
+          children: [
+            const OfflineStatusBanner(),
+            Expanded(
+              child: wide
+                  ? Row(
+                      children: [
+                        _buildRail(context),
+                        VerticalDivider(
+                          width: 1,
+                          color: Theme.of(context).colorScheme.outlineVariant,
+                        ),
+                        Expanded(child: _buildPageView(pages)),
+                      ],
+                    )
+                  : _buildPageView(pages),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -435,6 +444,16 @@ class _TenantTechnicianShellPageState extends State<TenantTechnicianShellPage> {
             AssignmentTrackingLivePanel(
               assignmentId: _selectedAssignmentId!,
               trackingSession: vm.assignmentTrackingSession,
+              onOpenMap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => AssignmentTrackingPage(
+                      assignmentId: _selectedAssignmentId!,
+                      trackingSession: vm.assignmentTrackingSession,
+                    ),
+                  ),
+                );
+              },
             ),
           ],
         ],

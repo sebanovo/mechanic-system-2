@@ -9,6 +9,7 @@ import 'tenant_owner_overview_tab.dart';
 import 'tenant_owner_profile_tab.dart';
 import 'notifications_page.dart';
 import '../viewmodels/auth_viewmodel.dart';
+import '../widgets/offline_status_banner.dart';
 
 class TenantOwnerShellPage extends StatefulWidget {
   const TenantOwnerShellPage({super.key});
@@ -94,18 +95,25 @@ class _TenantOwnerShellPageState extends State<TenantOwnerShellPage> {
             ),
       drawer: wide ? null : _buildDrawer(context),
       body: SafeArea(
-        child: wide
-            ? Row(
-                children: [
-                  _buildRail(context),
-                  VerticalDivider(
-                    width: 1,
-                    color: Theme.of(context).colorScheme.outlineVariant,
-                  ),
-                  Expanded(child: _buildPageView(pages)),
-                ],
-              )
-            : _buildPageView(pages),
+        child: Column(
+          children: [
+            const OfflineStatusBanner(),
+            Expanded(
+              child: wide
+                  ? Row(
+                      children: [
+                        _buildRail(context),
+                        VerticalDivider(
+                          width: 1,
+                          color: Theme.of(context).colorScheme.outlineVariant,
+                        ),
+                        Expanded(child: _buildPageView(pages)),
+                      ],
+                    )
+                  : _buildPageView(pages),
+            ),
+          ],
+        ),
       ),
     );
   }

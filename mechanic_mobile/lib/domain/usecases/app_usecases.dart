@@ -20,6 +20,7 @@ export 'app/register_my_notification_device_usecase.dart';
 export 'app/revoke_my_notification_device_usecase.dart';
 export 'app/list_my_sessions_usecase.dart';
 export 'app/list_my_vehicles_usecase.dart';
+export 'app/sync_vehicle_offline_queue_usecase.dart';
 export 'app/run_incident_ai_analysis_usecase.dart';
 export 'app/revoke_session_usecase.dart';
 export 'app/update_incident_usecase.dart';

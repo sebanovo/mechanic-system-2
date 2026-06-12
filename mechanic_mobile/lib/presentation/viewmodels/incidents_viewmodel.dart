@@ -76,8 +76,10 @@ class IncidentsViewModel extends ChangeNotifier {
     message = null;
     notifyListeners();
     try {
-      await _createIncident(input);
-      message = 'Incidente creado';
+      final created = await _createIncident(input);
+      message = created.raw['offline_state'] != null
+          ? 'Incidente guardado sin conexión. Se sincronizará al volver internet.'
+          : 'Incidente creado';
       await loadIncidents();
       return true;
     } catch (exception) {
@@ -95,8 +97,10 @@ class IncidentsViewModel extends ChangeNotifier {
     message = null;
     notifyListeners();
     try {
-      await _updateIncident(incidentId, input);
-      message = 'Incidente actualizado';
+      final updated = await _updateIncident(incidentId, input);
+      message = updated.raw['offline_state'] != null
+          ? 'Incidente actualizado localmente. Se sincronizará al volver internet.'
+          : 'Incidente actualizado';
       await loadIncidents();
       await loadIncident(incidentId);
       return true;
@@ -115,8 +119,10 @@ class IncidentsViewModel extends ChangeNotifier {
     message = null;
     notifyListeners();
     try {
-      await _cancelIncident(incidentId, input);
-      message = 'Incidente cancelado';
+      final cancelled = await _cancelIncident(incidentId, input);
+      message = cancelled.raw['offline_state'] != null
+          ? 'Cancelación guardada sin conexión. Se sincronizará al volver internet.'
+          : 'Incidente cancelado';
       await loadIncidents();
       await loadIncident(incidentId);
       return true;

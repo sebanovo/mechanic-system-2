@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 
+import '../../core/di/injection_container.dart';
+import '../../core/services/geolocation_service.dart';
 import '../helpers/tenant_record_helpers.dart';
 import '../viewmodels/tenant_viewmodel.dart';
 import '../widgets/app_widgets.dart';
@@ -478,6 +480,12 @@ void showEditTenantProfileSheet(BuildContext context, TenantViewModel vm) {
                       final position = await _resolveCurrentPosition();
                       latitude.text = position.latitude.toString();
                       longitude.text = position.longitude.toString();
+                      if (sheetContext.mounted) {
+                        showAppSnackBar(
+                          sheetContext,
+                          'GPS aplicado: ${position.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}',
+                        );
+                      }
                     } catch (exception) {
                       if (!sheetContext.mounted) return;
                       showAppSnackBar(
@@ -829,21 +837,7 @@ String? _parseNullableDateTime(String value) {
 }
 
 Future<Position> _resolveCurrentPosition() async {
-  final enabled = await Geolocator.isLocationServiceEnabled();
-  if (!enabled) {
-    throw Exception('Activa la ubicación para usar coordenadas actuales.');
-  }
-  var permission = await Geolocator.checkPermission();
-  if (permission == LocationPermission.denied) {
-    permission = await Geolocator.requestPermission();
-  }
-  if (permission == LocationPermission.denied) {
-    throw Exception('Permiso de ubicación denegado.');
-  }
-  if (permission == LocationPermission.deniedForever) {
-    throw Exception('El permiso de ubicación está bloqueado en el sistema.');
-  }
-  return Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+  return sl<GeolocationService>().resolveCurrentPosition();
 }
 
 String _technicianSelectionLabel(Map<String, dynamic> record) {

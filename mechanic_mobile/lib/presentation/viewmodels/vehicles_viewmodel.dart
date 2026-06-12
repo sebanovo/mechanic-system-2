@@ -72,8 +72,10 @@ class VehiclesViewModel extends ChangeNotifier {
     message = null;
     notifyListeners();
     try {
-      await _createVehicle(input);
-      message = 'Vehículo creado';
+      final created = await _createVehicle(input);
+      message = created.raw['offline_state'] != null
+          ? 'Vehículo guardado sin conexión. Se sincronizará al volver internet.'
+          : 'Vehículo creado';
       await loadVehicles();
       return true;
     } catch (exception) {
@@ -91,8 +93,10 @@ class VehiclesViewModel extends ChangeNotifier {
     message = null;
     notifyListeners();
     try {
-      await _updateVehicle(vehicleId, input);
-      message = 'Vehículo actualizado';
+      final updated = await _updateVehicle(vehicleId, input);
+      message = updated.raw['offline_state'] != null
+          ? 'Vehículo actualizado localmente. Se sincronizará al volver internet.'
+          : 'Vehículo actualizado';
       await loadVehicles();
       await loadVehicle(vehicleId);
       return true;
@@ -111,8 +115,10 @@ class VehiclesViewModel extends ChangeNotifier {
     message = null;
     notifyListeners();
     try {
-      await _deleteVehicle(vehicleId);
-      message = 'Vehículo eliminado';
+      final deleted = await _deleteVehicle(vehicleId);
+      message = deleted.raw['offline_state'] != null
+          ? 'Eliminación guardada sin conexión. Se sincronizará al volver internet.'
+          : 'Vehículo eliminado';
       await loadVehicles();
       if (selectedVehicle?.vehicle.id == vehicleId) {
         selectedVehicle = null;
@@ -133,8 +139,10 @@ class VehiclesViewModel extends ChangeNotifier {
     message = null;
     notifyListeners();
     try {
-      await _changeVehicleStatus(vehicleId, input);
-      message = 'Estado actualizado';
+      final changed = await _changeVehicleStatus(vehicleId, input);
+      message = changed.raw['offline_state'] != null
+          ? 'Cambio de estado guardado sin conexión. Se sincronizará al volver internet.'
+          : 'Estado actualizado';
       await loadVehicles();
       await loadVehicle(vehicleId);
       return true;
