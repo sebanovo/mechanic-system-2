@@ -1,7 +1,9 @@
 import 'package:get_it/get_it.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../network/api_client.dart';
+import '../network/connectivity_service.dart';
 import '../services/session_storage.dart';
 import '../../domain/repositories/app_repositories.dart';
 import '../../domain/repositories/auth_repository.dart';
@@ -11,6 +13,7 @@ import '../../infrastructure/datasources/auth_remote_datasource.dart';
 import '../../infrastructure/datasources/client_remote_datasource.dart';
 import '../../infrastructure/datasources/notification_remote_datasource.dart';
 import '../../infrastructure/datasources/tenant_remote_datasource.dart';
+import '../../infrastructure/local/vehicle_offline_store.dart';
 import '../../infrastructure/repositories/auth_repository_impl.dart';
 import '../../infrastructure/repositories/app_repository_impl.dart';
 import '../../infrastructure/repositories/notification_repository_impl.dart';
@@ -27,6 +30,10 @@ Future<void> configureDependencies() async {
   sl.registerSingleton<SharedPreferences>(preferences);
   sl.registerLazySingleton<SessionStorage>(() => SessionStorage(preferences));
   await sl<SessionStorage>().load();
+  sl.registerLazySingleton<ConnectivityService>(
+    () => ConnectivityService(Connectivity()),
+  );
+  await sl<ConnectivityService>().start();
 
   sl.registerLazySingleton<ApiClient>(() => ApiClient(sl<SessionStorage>()));
   sl.registerLazySingleton<AuthRemoteDataSource>(
@@ -42,13 +49,20 @@ Future<void> configureDependencies() async {
     () => TenantRemoteDataSource(sl<ApiClient>()),
   );
   sl.registerLazySingleton<NotificationService>(() => NotificationService());
+  sl.registerLazySingleton<VehicleOfflineStore>(
+    () => VehicleOfflineStore.instance,
+  );
 
   sl.registerLazySingleton<AuthRepository>(
     () => AuthRepositoryImpl(sl<AuthRemoteDataSource>(), sl<SessionStorage>()),
   );
 
   sl.registerLazySingleton<ClientRepository>(
-    () => ClientRepositoryImpl(sl<ClientRemoteDataSource>()),
+    () => ClientRepositoryImpl(
+      sl<ClientRemoteDataSource>(),
+      sl<ConnectivityService>(),
+      sl<VehicleOfflineStore>(),
+    ),
   );
   sl.registerLazySingleton<NotificationRepository>(
     () => NotificationRepositoryImpl(sl<NotificationRemoteDataSource>()),

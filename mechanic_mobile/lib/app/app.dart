@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../app/theme/app_theme.dart';
 import '../constants/env.dart';
 import '../core/di/injection_container.dart';
+import '../core/network/connectivity_service.dart';
 import '../core/routes/app_routes.dart';
 import '../core/services/session_storage.dart';
 import '../presentation/viewmodels/auth_viewmodel.dart';
@@ -26,6 +27,7 @@ class MechanicMobileApp extends StatelessWidget {
         ChangeNotifierProvider.value(value: sl<NotificationsViewModel>()),
         ChangeNotifierProvider.value(value: sl<TenantViewModel>()),
         ChangeNotifierProvider.value(value: sl<SessionStorage>()),
+        ChangeNotifierProvider.value(value: sl<ConnectivityService>()),
       ],
       child: MaterialApp.router(
         title: AppEnv.appName,

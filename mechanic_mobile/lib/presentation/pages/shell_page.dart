@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../viewmodels/auth_viewmodel.dart';
 import '../viewmodels/app_viewmodels.dart';
+import '../widgets/offline_status_banner.dart';
 import 'notifications_page.dart';
 import 'assignments_page.dart';
 import 'dashboard_page.dart';
@@ -35,26 +36,33 @@ class ShellPage extends StatelessWidget {
             ),
       drawer: wide ? null : _buildDrawer(context, vm),
       body: SafeArea(
-        child: wide
-            ? Row(
-                children: [
-                  _buildRail(context, vm),
-                  VerticalDivider(
-                    width: 1,
-                    color: Theme.of(context).colorScheme.outlineVariant,
-                  ),
-                  Expanded(
-                    child: IndexedStack(
+        child: Column(
+          children: [
+            const OfflineStatusBanner(),
+            Expanded(
+              child: wide
+                  ? Row(
+                      children: [
+                        _buildRail(context, vm),
+                        VerticalDivider(
+                          width: 1,
+                          color: Theme.of(context).colorScheme.outlineVariant,
+                        ),
+                        Expanded(
+                          child: IndexedStack(
+                            index: vm.selectedIndex,
+                            children: pages,
+                          ),
+                        ),
+                      ],
+                    )
+                  : IndexedStack(
                       index: vm.selectedIndex,
                       children: pages,
                     ),
-                  ),
-                ],
-              )
-            : IndexedStack(
-                index: vm.selectedIndex,
-                children: pages,
-              ),
+            ),
+          ],
+        ),
       ),
     );
   }

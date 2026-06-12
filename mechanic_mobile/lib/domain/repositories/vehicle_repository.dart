@@ -14,4 +14,6 @@ abstract class VehicleRepository {
     String vehicleId,
     VehicleStatusChangeInput input,
   );
+
+  Future<void> syncOfflineQueue();
 }
