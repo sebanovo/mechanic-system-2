@@ -34,32 +34,32 @@ type ServiceItem = {
 export class PublicServices {
 	protected readonly services: ServiceItem[] = [
 		{
-			icon: "clipboard",
+			icon: "lucideClipboard",
 			title: "Recepción de incidentes",
 			description: "Captura casos desde web, QR o panel interno con contexto desde el primer minuto.",
 		},
 		{
-			icon: "sparkles",
+			icon: "lucideSparkles",
 			title: "Análisis IA",
 			description: "Genera prioridad sugerida, hipótesis y siguiente acción a partir del síntoma.",
 		},
 		{
-			icon: "route",
+			icon: "lucideRoute",
 			title: "Asignación y tracking",
 			description: "Coordina talleres, técnicos y tiempos de llegada con visibilidad completa.",
 		},
 		{
-			icon: "shield",
+			icon: "lucideShield",
 			title: "Auditoría y control",
 			description: "Cada cambio queda registrado para superadmin, taller y operación.",
 		},
 		{
-			icon: "bot",
+			icon: "lucideBot",
 			title: "Operación multirol",
 			description: "Clientes, talleres, técnicos y superadmin trabajan sobre la misma fuente de verdad.",
 		},
 		{
-			icon: "database",
+			icon: "lucideDatabase",
 			title: "Historial unificado",
 			description: "Incidentes, ofertas, sesiones y análisis viven bajo un mismo ecosistema.",
 		},

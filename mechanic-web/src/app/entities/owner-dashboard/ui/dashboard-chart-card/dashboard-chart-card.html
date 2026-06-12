@@ -1,7 +1,7 @@
-<article class="bg-card text-card-foreground h-full rounded-xl border p-4 shadow-sm">
+<article class="bg-card text-card-foreground h-full rounded-2xl border border-black p-4 shadow-sm">
 	<header class="mb-4">
-		<h3 class="text-sm font-semibold">{{ title() }}</h3>
-		<p class="text-muted-foreground mt-0.5 text-xs">{{ description() }}</p>
+		<h3 class="text-sm font-semibold uppercase tracking-[0.14em]">{{ title() }}</h3>
+		<p class="text-foreground/75 mt-0.5 text-xs">{{ description() }}</p>
 	</header>
 
 	<div [class]="chartHeightClass()">

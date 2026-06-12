@@ -1,31 +1,30 @@
-<section id="services" class="bg-background py-20 sm:py-24">
+<section id="services" class="bg-app-content border-t border-t-primary py-20 sm:py-24">
 	<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 		<div class="mx-auto max-w-3xl text-center">
-			<p class="text-primary text-sm font-semibold uppercase tracking-[0.24em]">Capacidades</p>
+			<p class="text-primary text-sm font-bold uppercase tracking-[0.28em]">Capacidades</p>
 
-			<h2
-				class="text-foreground mt-4 text-3xl font-semibold tracking-tight sm:text-4xl"
-			>
-				Un sistema pensado para operar mecánica con menos fricción
+			<h2 class="text-foreground mt-4 text-3xl font-black uppercase tracking-[0.05em] sm:text-4xl">
+				Un sistema para operar mecánica con menos fricción
 			</h2>
 
-			<p class="text-muted-foreground mt-4 text-base leading-7">
-				No es solo una lista de incidentes. Mechanic organiza todo el ciclo operativo: solicitud, análisis, respuesta, seguimiento y auditoría.
+			<p class="text-foreground/75 mt-4 text-base leading-7">
+				Mechanic organiza solicitud, análisis, respuesta, seguimiento y auditoría
+				en bloques sólidos y claros.
 			</p>
 		</div>
 
 		<div class="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
 			@for (service of services; track service.title) {
-				<article class="bg-card rounded-2xl border p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-					<div class="bg-primary/10 text-primary mb-4 flex size-11 items-center justify-center rounded-2xl">
-						<ng-icon [name]="'lucide' + service.icon" class="size-5" />
+				<article class="bg-card rounded-2xl border border-black p-6">
+					<div class="mb-4 flex size-12 items-center justify-center rounded-2xl border border-black bg-primary text-black">
+						<ng-icon [name]="service.icon" class="size-5" />
 					</div>
 
 					<h3 class="text-card-foreground text-base font-semibold">
 						{{ service.title }}
 					</h3>
 
-					<p class="text-muted-foreground mt-2 text-sm leading-6">
+					<p class="text-foreground/75 mt-2 text-sm leading-6">
 						{{ service.description }}
 					</p>
 				</article>

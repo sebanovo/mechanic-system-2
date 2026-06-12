@@ -50,7 +50,7 @@ export function buildTechnicianMetricKpis(
 			description:
 				"Desde la asignación hasta la llegada.",
 			icon: "lucideClock3",
-			tone: "blue",
+			tone: "amber",
 		},
 		{
 			type: "metric",
@@ -63,7 +63,7 @@ export function buildTechnicianMetricKpis(
 			description:
 				"Desde la asignación hasta completar el servicio.",
 			icon: "lucideTimer",
-			tone: "indigo",
+			tone: "amber",
 		},
 	];
 }
@@ -81,7 +81,7 @@ export function buildTechnicianComplianceKpi(
 		description:
 			"Cumplimiento respecto al tiempo estimado del catálogo.",
 		icon: "lucideShieldCheck",
-		tone: "violet",
+		tone: "green",
 		percentage:
 			formatPercentage(
 				compliance.percentage,

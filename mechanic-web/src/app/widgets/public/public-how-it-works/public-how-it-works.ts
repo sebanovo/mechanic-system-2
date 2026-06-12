@@ -31,25 +31,25 @@ type StepItem = {
 export class PublicHowItWorks {
 	protected readonly steps: StepItem[] = [
 		{
-			icon: "circle-dot",
+			icon: "lucideCircleDot",
 			number: "01",
 			title: "Se registra el incidente",
 			description: "Cliente, QR o panel interno capturan síntoma, ubicación y contexto del caso.",
 		},
 		{
-			icon: "sparkles",
+			icon: "lucideSparkles",
 			number: "02",
 			title: "La IA sugiere prioridad y diagnóstico",
 			description: "El sistema propone servicio probable, prioridad y notas de análisis.",
 		},
 		{
-			icon: "workflow",
+			icon: "lucideWorkflow",
 			number: "03",
 			title: "Se asigna taller y técnico",
 			description: "La operación confirma disponibilidad, oferta y seguimiento operativo.",
 		},
 		{
-			icon: "satellite",
+			icon: "lucideSatellite",
 			number: "04",
 			title: "Se monitorea hasta el cierre",
 			description: "Queda trazabilidad de ruta, tiempos, auditoría y resultado final.",

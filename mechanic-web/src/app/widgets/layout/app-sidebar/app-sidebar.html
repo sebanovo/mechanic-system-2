@@ -1,18 +1,16 @@
 <aside
-	class="bg-sidebar text-sidebar-foreground flex h-full w-72 flex-col border-r"
+	class="bg-sidebar text-sidebar-foreground flex h-full w-72 flex-col border-r border-r-primary/40"
 >
-	<div class="flex h-16 shrink-0 items-center gap-3 border-b px-4">
-		<div
-			class="bg-primary text-primary-foreground flex size-9 items-center justify-center rounded-xl text-sm font-bold"
-		>
-			M
+	<div class="flex h-16 shrink-0 items-center gap-3 border-b border-b-primary/30 px-4">
+		<div class="flex size-10 items-center justify-center rounded-xl border border-primary/40 bg-primary p-1">
+			<img src="/logo2.png" alt="Mechanic" class="size-full object-contain" />
 		</div>
 
 		<div class="min-w-0">
-			<p class="truncate text-sm font-semibold">
+			<p class="truncate text-sm font-semibold uppercase tracking-[0.18em] text-primary">
 				{{ appName() }}
 			</p>
-			<p class="text-muted-foreground truncate text-xs">
+			<p class="text-sidebar-foreground/70 truncate text-xs">
 				{{ contextLabel() }}
 			</p>
 		</div>
@@ -24,7 +22,7 @@
 				<section>
 					@if (group.label) {
 						<p
-							class="text-muted-foreground mb-2 px-3 text-xs font-semibold tracking-wide uppercase"
+							class="text-sidebar-foreground/60 mb-2 px-3 text-xs font-semibold tracking-[0.2em] uppercase"
 						>
 							{{ group.label }}
 						</p>
@@ -36,7 +34,7 @@
 								[routerLink]="item.route"
 								routerLinkActive="bg-sidebar-accent text-sidebar-accent-foreground"
 								[routerLinkActiveOptions]="{ exact: item.exact ?? false }"
-								class="text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition"
+								class="text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground flex items-center gap-3 rounded-xl border border-transparent px-3 py-2 text-sm font-medium transition hover:border-primary/30"
 							>
 								<ng-icon [name]="iconName(item.icon)" class="size-4 shrink-0" />
 

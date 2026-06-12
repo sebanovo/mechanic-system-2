@@ -16,7 +16,7 @@ export function buildOwnerDashboardKpis(
 			value: formatMinutes(kpis.average_arrival_time_minutes),
 			description: "Desde la asignación hasta la llegada.",
 			icon: "lucideClock3",
-			tone: "blue",
+			tone: "amber",
 		},
 		{
 			type: "metric",
@@ -25,7 +25,7 @@ export function buildOwnerDashboardKpis(
 			value: formatMinutes(kpis.average_resolution_time_minutes),
 			description: "Desde la asignación hasta la finalización.",
 			icon: "lucideTimer",
-			tone: "indigo",
+			tone: "amber",
 		},
 		{
 			type: "metric",
@@ -81,7 +81,7 @@ export function buildOwnerDashboardKpis(
 			title: "Zonas con más incidentes",
 			description: "Top 3 zonas con mayor demanda.",
 			icon: "lucideMapPinned",
-			tone: "rose",
+			tone: "amber",
 			items: kpis.top_zones.map(item => ({
 				label: item.name,
 				value: formatInteger(item.total),
@@ -94,7 +94,7 @@ export function buildOwnerDashboardKpis(
 			title: "Servicios dentro del tiempo esperado",
 			description: "Cumplimiento del tiempo estimado.",
 			icon: "lucideShieldCheck",
-			tone: "violet",
+			tone: "green",
 			items: [
 				{
 					label: "Cumplimiento",

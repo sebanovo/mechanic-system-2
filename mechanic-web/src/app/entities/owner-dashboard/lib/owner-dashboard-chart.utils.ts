@@ -3,13 +3,13 @@ import { ChartData, ChartOptions, TooltipItem } from "chart.js";
 import { OwnerDashboardCharts } from "../model";
 import { formatDashboardDate, normalizeTrendItems } from "./owner-dashboard.utils";
 
-const BLUE = "#2563eb";
-const GREEN = "#16a34a";
-const RED = "#dc2626";
-const VIOLET = "#7c3aed";
-const ROSE = "#e11d48";
-const GRID = "rgba(148, 163, 184, 0.28)";
-const TICK = "#64748b";
+const YELLOW = "#ffc107";
+const AMBER = "#ffb300";
+const GREEN = "#2e7d32";
+const RED = "#c62828";
+const BLACK = "#111111";
+const GRID = "rgba(17, 17, 17, 0.18)";
+const TICK = "#111111";
 
 export interface OwnerDashboardChartView {
 	incidentsByService: ChartData<"bar", number[], string>;
@@ -185,8 +185,8 @@ export function buildOwnerDashboardCharts(
 				{
 					label: "Incidentes",
 					data: charts.incidents_by_service.map(item => item.value),
-					backgroundColor: BLUE,
-					borderColor: BLUE,
+					backgroundColor: YELLOW,
+					borderColor: BLACK,
 					borderRadius: 6,
 					maxBarThickness: 48,
 				},
@@ -200,7 +200,7 @@ export function buildOwnerDashboardCharts(
 					data: trend.map(item => item.completed),
 					borderColor: GREEN,
 					backgroundColor: GREEN,
-					pointBackgroundColor: "#ffffff",
+					pointBackgroundColor: "#fffbeb",
 					pointBorderColor: GREEN,
 					pointBorderWidth: 2,
 					pointRadius: 3,
@@ -212,7 +212,7 @@ export function buildOwnerDashboardCharts(
 					data: trend.map(item => item.cancelled),
 					borderColor: RED,
 					backgroundColor: RED,
-					pointBackgroundColor: "#ffffff",
+					pointBackgroundColor: "#fffbeb",
 					pointBorderColor: RED,
 					pointBorderWidth: 2,
 					pointRadius: 3,
@@ -222,10 +222,10 @@ export function buildOwnerDashboardCharts(
 				{
 					label: "No atendidos",
 					data: trend.map(item => item.unattended),
-					borderColor: VIOLET,
-					backgroundColor: VIOLET,
-					pointBackgroundColor: "#ffffff",
-					pointBorderColor: VIOLET,
+					borderColor: AMBER,
+					backgroundColor: AMBER,
+					pointBackgroundColor: "#fffbeb",
+					pointBorderColor: AMBER,
 					pointBorderWidth: 2,
 					pointRadius: 3,
 					pointHoverRadius: 5,
@@ -239,8 +239,8 @@ export function buildOwnerDashboardCharts(
 				{
 					label: "Servicios completados",
 					data: charts.technician_performance.map(item => item.completed_services),
-					backgroundColor: GREEN,
-					borderColor: GREEN,
+					backgroundColor: YELLOW,
+					borderColor: BLACK,
 					borderRadius: 6,
 					maxBarThickness: 34,
 				},
@@ -252,8 +252,8 @@ export function buildOwnerDashboardCharts(
 				{
 					label: "Incidentes",
 					data: charts.top_zones.map(item => item.incidents),
-					backgroundColor: ROSE,
-					borderColor: ROSE,
+					backgroundColor: AMBER,
+					borderColor: BLACK,
 					borderRadius: 6,
 					maxBarThickness: 34,
 				},
@@ -265,8 +265,8 @@ export function buildOwnerDashboardCharts(
 				{
 					label: "Cumplimiento",
 					data: charts.service_compliance.map(item => item.percentage),
-					backgroundColor: VIOLET,
-					borderColor: VIOLET,
+					backgroundColor: YELLOW,
+					borderColor: BLACK,
 					borderRadius: 6,
 					maxBarThickness: 34,
 				},

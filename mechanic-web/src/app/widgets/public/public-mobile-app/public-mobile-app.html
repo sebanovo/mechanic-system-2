@@ -1,120 +1,52 @@
-<section id="app" class="bg-app-content border-t py-20 sm:py-24">
-	<div
-		class="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[0.95fr_1.05fr] lg:px-8"
-	>
+<section id="app" class="bg-app-content border-t border-t-primary py-20 sm:py-24">
+	<div class="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[0.95fr_1.05fr] lg:px-8">
 		<div class="max-w-2xl">
-			<p class="text-primary text-sm font-semibold uppercase tracking-[0.24em]">QR móvil</p>
+			<p class="text-primary text-sm font-bold uppercase tracking-[0.28em]">QR móvil</p>
 
-			<h2 class="text-foreground mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
+			<h2 class="text-foreground mt-4 text-3xl font-black uppercase tracking-[0.05em] sm:text-4xl">
 				Escanea y abre la operación en segundos
 			</h2>
 
-			<p class="text-muted-foreground mt-4 text-base leading-7">
-				El acceso QR lleva a una experiencia móvil pensada para clientes y talleres. Menos pasos, menos fricción y más contexto desde el primer contacto.
+			<p class="text-foreground/75 mt-4 text-base leading-7">
+				El acceso QR lleva a una experiencia móvil pensada para clientes y talleres.
+				Menos pasos, menos fricción y más contexto desde el primer contacto.
 			</p>
 
 			<div class="mt-8 grid gap-4 sm:grid-cols-2">
-				<div class="bg-card rounded-2xl border p-5 shadow-sm">
-					<div class="text-primary flex size-11 items-center justify-center rounded-2xl bg-emerald-500/10">
+				<div class="bg-card rounded-2xl border border-black p-5">
+					<div class="flex size-12 items-center justify-center rounded-2xl border border-black bg-primary text-black">
 						<ng-icon name="lucideSmartphone" class="size-5" />
 					</div>
 					<h3 class="text-card-foreground mt-4 text-base font-semibold">Vista móvil</h3>
-					<p class="text-muted-foreground mt-2 text-sm leading-6">Acceso rápido para abrir, revisar y seguir incidentes sin entrar al escritorio.</p>
+					<p class="text-foreground/75 mt-2 text-sm leading-6">Acceso rápido para abrir, revisar y seguir incidentes sin
+						entrar al escritorio.</p>
 				</div>
 
-				<div class="bg-card rounded-2xl border p-5 shadow-sm">
-					<div class="text-primary flex size-11 items-center justify-center rounded-2xl bg-sky-500/10">
+				<div class="bg-card rounded-2xl border border-black p-5">
+					<div class="flex size-12 items-center justify-center rounded-2xl border border-black bg-primary text-black">
 						<ng-icon name="lucideBellRing" class="size-5" />
 					</div>
 					<h3 class="text-card-foreground mt-4 text-base font-semibold">Notificaciones</h3>
-					<p class="text-muted-foreground mt-2 text-sm leading-6">Alertas por cambios de estado, asignaciones y eventos críticos del caso.</p>
+					<p class="text-foreground/75 mt-2 text-sm leading-6">Alertas por cambios de estado, asignaciones y eventos
+						críticos del caso.</p>
 				</div>
 
-				<div class="bg-card rounded-2xl border p-5 shadow-sm">
-					<div class="text-primary flex size-11 items-center justify-center rounded-2xl bg-amber-500/10">
+				<div class="bg-card rounded-2xl border border-black p-5">
+					<div class="flex size-12 items-center justify-center rounded-2xl border border-black bg-primary text-black">
 						<ng-icon name="lucideClock3" class="size-5" />
 					</div>
 					<h3 class="text-card-foreground mt-4 text-base font-semibold">Tiempo real</h3>
-					<p class="text-muted-foreground mt-2 text-sm leading-6">Seguimiento de estados, ETA y progreso operativo sin depender de llamadas.</p>
+					<p class="text-foreground/75 mt-2 text-sm leading-6">Seguimiento de estados, ETA y progreso operativo sin
+						depender de llamadas.</p>
 				</div>
 
-				<div class="bg-card rounded-2xl border p-5 shadow-sm">
-					<div class="text-primary flex size-11 items-center justify-center rounded-2xl bg-violet-500/10">
+				<div class="bg-card rounded-2xl border border-black p-5">
+					<div class="flex size-12 items-center justify-center rounded-2xl border border-black bg-primary text-black">
 						<ng-icon name="lucideShieldCheck" class="size-5" />
 					</div>
 					<h3 class="text-card-foreground mt-4 text-base font-semibold">Control seguro</h3>
-					<p class="text-muted-foreground mt-2 text-sm leading-6">Acceso controlado, trazabilidad y experiencia lista para operación real.</p>
-				</div>
-			</div>
-		</div>
-
-		<div class="relative">
-			<div class="absolute -left-8 top-8 size-28 rounded-full bg-emerald-500/10 blur-3xl"></div>
-			<div class="absolute -right-10 bottom-10 size-32 rounded-full bg-sky-500/10 blur-3xl"></div>
-
-			<div class="bg-card/95 rounded-[2rem] border p-5 shadow-[0_24px_90px_rgba(15,23,42,0.12)] backdrop-blur sm:p-6">
-				<div class="rounded-[1.5rem] border bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 p-5 text-slate-100">
-					<div class="flex items-center justify-between gap-4">
-						<div>
-							<p class="text-xs uppercase tracking-[0.24em] text-slate-400">Acceso QR</p>
-							<p class="mt-2 text-xl font-semibold">Portal móvil de Mechanic</p>
-						</div>
-						<div class="rounded-2xl bg-white/10 p-3">
-							<ng-icon name="lucideQrCode" class="size-6 text-emerald-300" />
-						</div>
-					</div>
-
-					<div class="mt-6 grid gap-6 lg:grid-cols-[0.78fr_1.22fr]">
-						<div class="rounded-3xl border border-white/10 bg-white p-4 text-slate-950 shadow-lg">
-							<div class="grid grid-cols-6 gap-1.5">
-								@for (row of qrPattern; track $index) {
-									@for (cell of row; track $index) {
-										<div
-											class="aspect-square rounded-[2px]"
-											[class.bg-slate-950]="cell === 1"
-											[class.bg-transparent]="cell === 0"
-										></div>
-									}
-								}
-							</div>
-							<div class="mt-4 rounded-2xl bg-slate-950 p-3 text-center text-white">
-								<p class="text-xs uppercase tracking-[0.24em] text-slate-400">Escanea aquí</p>
-								<p class="mt-1 text-sm font-medium">Abre el flujo móvil de Mechanic</p>
-							</div>
-						</div>
-
-						<div class="space-y-3">
-							<div class="rounded-2xl bg-white/5 p-4">
-								<p class="text-xs uppercase tracking-[0.2em] text-slate-400">1. Cliente</p>
-								<p class="mt-1 text-sm font-medium">Crea o sigue un incidente desde el teléfono.</p>
-							</div>
-							<div class="rounded-2xl bg-white/5 p-4">
-								<p class="text-xs uppercase tracking-[0.2em] text-slate-400">2. Taller</p>
-								<p class="mt-1 text-sm font-medium">Recibe contexto, acepta la atención y responde con trazabilidad.</p>
-							</div>
-							<div class="rounded-2xl bg-white/5 p-4">
-								<p class="text-xs uppercase tracking-[0.2em] text-slate-400">3. Operación</p>
-								<p class="mt-1 text-sm font-medium">Supervisa estado, historial y eventos críticos desde cualquier lugar.</p>
-							</div>
-						</div>
-					</div>
-
-					<div class="mt-6 flex flex-col gap-3 sm:flex-row">
-						<a
-							[routerLink]="appRoutes.auth.registerClient"
-							class="bg-primary text-primary-foreground inline-flex items-center justify-center rounded-md px-5 py-3 text-sm font-medium shadow-sm transition hover:opacity-90"
-						>
-							Probar acceso móvil
-							<ng-icon name="lucideArrowRight" class="ml-2 size-4" />
-						</a>
-
-						<a
-							[routerLink]="appRoutes.auth.login"
-							class="bg-white/5 text-white hover:bg-white/10 inline-flex items-center justify-center rounded-md border border-white/10 px-5 py-3 text-sm font-medium transition"
-						>
-							Ya tengo cuenta
-						</a>
-					</div>
+					<p class="text-foreground/75 mt-2 text-sm leading-6">Acceso controlado, trazabilidad y experiencia lista para
+						operación real.</p>
 				</div>
 			</div>
 		</div>

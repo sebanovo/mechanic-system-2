@@ -17,7 +17,7 @@ export function buildPlatformDashboardKpis(
 			value: formatInteger(kpis.total_incidents),
 			description: "Total de incidentes dentro del periodo.",
 			icon: "lucideWrench",
-			tone: "blue",
+			tone: "amber",
 		},
 		{
 			type: "metric",
@@ -59,7 +59,7 @@ export function buildPlatformDashboardKpis(
 			),
 			description: "Desde la oferta hasta la primera aceptación.",
 			icon: "lucideClock3",
-			tone: "indigo",
+			tone: "amber",
 		},
 		{
 			type: "list",
@@ -67,7 +67,7 @@ export function buildPlatformDashboardKpis(
 			title: "Incidentes en proceso",
 			description: "Distribución actual del flujo operativo.",
 			icon: "lucideUsersRound",
-			tone: "violet",
+			tone: "green",
 			items: [
 				{
 					label: "Esperando taller",
@@ -161,7 +161,7 @@ export function buildPlatformDashboardKpis(
 			title: "Zonas con más incidentes",
 			description: "Top 3 zonas con mayor demanda.",
 			icon: "lucideMapPinned",
-			tone: "rose",
+			tone: "amber",
 			items: kpis.top_zones.map(item => ({
 				label: item.name,
 				value: formatInteger(item.total),
@@ -174,7 +174,7 @@ export function buildPlatformDashboardKpis(
 			title: "Servicios dentro del tiempo esperado",
 			description: "Cumplimiento del tiempo estimado.",
 			icon: "lucideShieldCheck",
-			tone: "violet",
+			tone: "green",
 			items: [
 				{
 					label: "Cumplimiento",

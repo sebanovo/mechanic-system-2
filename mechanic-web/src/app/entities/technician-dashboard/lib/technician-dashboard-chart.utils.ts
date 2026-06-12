@@ -1,36 +1,24 @@
-import {
-	ChartData,
-	ChartOptions,
-} from "chart.js";
+import { ChartData, ChartOptions } from "chart.js";
 
-import {
-	formatDashboardDate,
-} from "../../owner-dashboard/lib/owner-dashboard.utils";
-import {
-	TechnicianDashboardCharts,
-} from "../model";
+import { formatDashboardDate } from "../../owner-dashboard/lib/owner-dashboard.utils";
+import { TechnicianDashboardCharts } from "../model";
 
-const BLUE = "#2563eb";
-const GREEN = "#16a34a";
-const ROSE = "#e11d48";
-const VIOLET = "#7c3aed";
-const GRID =
-	"rgba(148, 163, 184, 0.28)";
-const TICK = "#64748b";
+const YELLOW = "#ffc107";
+const AMBER = "#ffb300";
+const GREEN = "#2e7d32";
+const RED = "#c62828";
+const BLACK = "#111111";
+const GRID = "rgba(17, 17, 17, 0.18)";
+const TICK = "#111111";
 
 export interface TechnicianDashboardChartView {
-	servicesByType:
-		ChartData<"bar", number[], string>;
-	completedTrend:
-		ChartData<"line", number[], string>;
-	serviceCompliance:
-		ChartData<"bar", number[], string>;
-	topZones:
-		ChartData<"bar", number[], string>;
+	servicesByType: ChartData<"bar", number[], string>;
+	completedTrend: ChartData<"line", number[], string>;
+	serviceCompliance: ChartData<"bar", number[], string>;
+	topZones: ChartData<"bar", number[], string>;
 }
 
-export const TECHNICIAN_VERTICAL_BAR_OPTIONS:
-	ChartOptions<"bar"> = {
+export const TECHNICIAN_VERTICAL_BAR_OPTIONS: ChartOptions<"bar"> = {
 	responsive: true,
 	maintainAspectRatio: false,
 	plugins: {
@@ -67,8 +55,7 @@ export const TECHNICIAN_VERTICAL_BAR_OPTIONS:
 	},
 };
 
-export const TECHNICIAN_HORIZONTAL_BAR_OPTIONS:
-	ChartOptions<"bar"> = {
+export const TECHNICIAN_HORIZONTAL_BAR_OPTIONS: ChartOptions<"bar"> = {
 	responsive: true,
 	maintainAspectRatio: false,
 	indexAxis: "y",
@@ -102,8 +89,7 @@ export const TECHNICIAN_HORIZONTAL_BAR_OPTIONS:
 	},
 };
 
-export const TECHNICIAN_PERCENTAGE_OPTIONS:
-	ChartOptions<"bar"> = {
+export const TECHNICIAN_PERCENTAGE_OPTIONS: ChartOptions<"bar"> = {
 	...TECHNICIAN_HORIZONTAL_BAR_OPTIONS,
 	scales: {
 		x: {
@@ -115,8 +101,7 @@ export const TECHNICIAN_PERCENTAGE_OPTIONS:
 			},
 			ticks: {
 				color: TICK,
-				callback: value =>
-					`${value}%`,
+				callback: value => `${value}%`,
 			},
 		},
 		y: {
@@ -134,15 +119,13 @@ export const TECHNICIAN_PERCENTAGE_OPTIONS:
 		},
 		tooltip: {
 			callbacks: {
-				label: context =>
-					`${context.parsed.x}%`,
+				label: context => `${context.parsed.x}%`,
 			},
 		},
 	},
 };
 
-export const TECHNICIAN_LINE_OPTIONS:
-	ChartOptions<"line"> = {
+export const TECHNICIAN_LINE_OPTIONS: ChartOptions<"line"> = {
 	responsive: true,
 	maintainAspectRatio: false,
 	interaction: {
@@ -155,11 +138,7 @@ export const TECHNICIAN_LINE_OPTIONS:
 		},
 		tooltip: {
 			callbacks: {
-				label: context =>
-					`Completados: ${
-						context.parsed.y ??
-						0
-					}`,
+				label: context => `Completados: ${context.parsed.y ?? 0}`,
 			},
 		},
 	},
@@ -187,57 +166,38 @@ export const TECHNICIAN_LINE_OPTIONS:
 };
 
 export function buildTechnicianCharts(
-	charts: TechnicianDashboardCharts,
+	charts: TechnicianDashboardCharts
 ): TechnicianDashboardChartView {
 	const trend = [...charts.completed_services_trend].sort(
 		(first, second) =>
 			new Date(`${first.date}T00:00:00`).getTime() -
-			new Date(`${second.date}T00:00:00`).getTime(),
+			new Date(`${second.date}T00:00:00`).getTime()
 	);
 
 	return {
 		servicesByType: {
-			labels:
-				charts.services_by_type.map(
-					item =>
-						item.name,
-				),
+			labels: charts.services_by_type.map(item => item.name),
 			datasets: [
 				{
 					label: "Servicios",
-					data:
-						charts.services_by_type.map(
-							item =>
-								item.value,
-						),
-					backgroundColor:
-						BLUE,
-					borderColor: BLUE,
+					data: charts.services_by_type.map(item => item.value),
+					backgroundColor: YELLOW,
+					borderColor: BLACK,
 					borderRadius: 6,
 					maxBarThickness: 48,
 				},
 			],
 		},
 		completedTrend: {
-			labels: trend.map(item =>
-				formatDashboardDate(item.date),
-			),
+			labels: trend.map(item => formatDashboardDate(item.date)),
 			datasets: [
 				{
-					label:
-						"Servicios completados",
-					data: trend.map(
-						item =>
-							item.completed,
-					),
-					borderColor:
-						GREEN,
-					backgroundColor:
-						GREEN,
-					pointBackgroundColor:
-						"#ffffff",
-					pointBorderColor:
-						GREEN,
+					label: "Servicios completados",
+					data: trend.map(item => item.completed),
+					borderColor: GREEN,
+					backgroundColor: GREEN,
+					pointBackgroundColor: "#fffbeb",
+					pointBorderColor: GREEN,
 					pointBorderWidth: 2,
 					pointRadius: 3,
 					pointHoverRadius: 5,
@@ -247,46 +207,26 @@ export function buildTechnicianCharts(
 			],
 		},
 		serviceCompliance: {
-			labels:
-				charts.service_compliance.map(
-					item =>
-						item.service_name,
-				),
+			labels: charts.service_compliance.map(item => item.service_name),
 			datasets: [
 				{
-					label:
-						"Cumplimiento",
-					data:
-						charts.service_compliance.map(
-							item =>
-								item.percentage,
-						),
-					backgroundColor:
-						VIOLET,
-					borderColor:
-						VIOLET,
+					label: "Cumplimiento",
+					data: charts.service_compliance.map(item => item.percentage),
+					backgroundColor: AMBER,
+					borderColor: BLACK,
 					borderRadius: 6,
 					maxBarThickness: 34,
 				},
 			],
 		},
 		topZones: {
-			labels:
-				charts.top_zones.map(
-					item =>
-						item.zone,
-				),
+			labels: charts.top_zones.map(item => item.zone),
 			datasets: [
 				{
 					label: "Servicios",
-					data:
-						charts.top_zones.map(
-							item =>
-								item.incidents,
-						),
-					backgroundColor:
-						ROSE,
-					borderColor: ROSE,
+					data: charts.top_zones.map(item => item.incidents),
+					backgroundColor: YELLOW,
+					borderColor: BLACK,
 					borderRadius: 6,
 					maxBarThickness: 34,
 				},

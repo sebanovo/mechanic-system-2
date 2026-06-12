@@ -1,5 +1,5 @@
 <header
-	class="bg-background/90 supports-[backdrop-filter]:bg-background/75 sticky top-0 z-50 border-b backdrop-blur"
+	class="bg-background sticky top-0 z-50 border-b border-b-primary"
 >
 	<div
 		class="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8"
@@ -7,16 +7,16 @@
 		<a
 			[routerLink]="appRoutes.public.home"
 			fragment="home"
-			class="text-foreground flex items-center gap-2 font-semibold tracking-tight"
+			class="text-foreground flex items-center gap-3 font-semibold"
 			aria-label="Ir al inicio"
 		>
-			<span
-				class="bg-primary text-primary-foreground flex size-9 items-center justify-center rounded-xl text-sm font-bold"
-			>
-				M
+			<span class="flex size-10 items-center justify-center rounded-xl border border-primary/40 bg-black p-1">
+				<img src="/logo2.png" alt="Mechanic" class="size-full object-contain" />
 			</span>
 
-			<span class="text-base sm:text-lg"> Mechanic </span>
+			<span class="font-display text-sm uppercase tracking-[0.2em] text-primary sm:text-base">
+				Mechanic
+			</span>
 		</a>
 
 		<nav
@@ -27,7 +27,7 @@
 				<a
 					[routerLink]="appRoutes.public.home"
 					[fragment]="item.fragment"
-					class="text-muted-foreground hover:bg-accent hover:text-accent-foreground rounded-md px-3 py-2 text-sm font-medium transition"
+					class="text-foreground hover:bg-primary hover:text-primary-foreground rounded-md border border-transparent px-3 py-2 text-sm font-medium transition hover:border-primary"
 				>
 					{{ item.label }}
 				</a>
@@ -37,14 +37,14 @@
 		<div class="hidden items-center gap-2 lg:flex">
 			<a
 				[routerLink]="appRoutes.auth.login"
-				class="text-foreground hover:bg-accent rounded-md px-4 py-2 text-sm font-medium transition"
+				class="text-foreground hover:bg-black hover:text-primary rounded-md border border-black px-4 py-2 text-sm font-medium transition"
 			>
 				Iniciar sesión
 			</a>
 
 			<a
 				[routerLink]="appRoutes.auth.register"
-				class="bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm font-medium shadow-sm transition hover:opacity-90"
+				class="bg-primary text-primary-foreground rounded-md border border-black px-4 py-2 text-sm font-bold uppercase tracking-[0.14em] shadow-sm transition hover:bg-primary/90"
 			>
 				Crear cuenta
 			</a>
@@ -52,7 +52,7 @@
 
 		<button
 			type="button"
-			class="bg-background text-foreground inline-flex size-10 items-center justify-center rounded-md border lg:hidden"
+			class="bg-primary text-primary-foreground inline-flex size-10 items-center justify-center rounded-md border border-black lg:hidden"
 			aria-label="Abrir menú"
 			[attr.aria-expanded]="isMobileMenuOpen()"
 			(click)="toggleMobileMenu()"
@@ -66,23 +66,23 @@
 	</div>
 
 	@if (isMobileMenuOpen()) {
-		<div class="bg-background border-t lg:hidden">
+		<div class="bg-card border-t border-t-primary lg:hidden">
 			<nav class="mx-auto flex max-w-7xl flex-col gap-1 px-4 py-4 sm:px-6">
 				@for (item of navigationItems().links; track item.id) {
 					<a
 						[routerLink]="appRoutes.public.home"
 						[fragment]="item.fragment"
-						class="text-muted-foreground hover:bg-accent hover:text-accent-foreground rounded-md px-3 py-3 text-sm font-medium"
+						class="text-foreground hover:bg-primary hover:text-primary-foreground rounded-md border border-transparent px-3 py-3 text-sm font-medium transition hover:border-primary"
 						(click)="closeMobileMenu()"
 					>
 						{{ item.label }}
 					</a>
 				}
 
-				<div class="mt-4 grid gap-2 border-t pt-4">
+				<div class="mt-4 grid gap-2 border-t border-t-primary/40 pt-4">
 					<a
 						[routerLink]="appRoutes.auth.login"
-						class="text-foreground rounded-md border px-4 py-3 text-center text-sm font-medium"
+						class="text-foreground rounded-md border border-black px-4 py-3 text-center text-sm font-medium"
 						(click)="closeMobileMenu()"
 					>
 						Iniciar sesión
@@ -90,7 +90,7 @@
 
 					<a
 						[routerLink]="appRoutes.auth.register"
-						class="bg-primary text-primary-foreground rounded-md px-4 py-3 text-center text-sm font-medium"
+						class="bg-primary text-primary-foreground rounded-md border border-black px-4 py-3 text-center text-sm font-bold uppercase tracking-[0.14em]"
 						(click)="closeMobileMenu()"
 					>
 						Crear cuenta

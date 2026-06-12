@@ -1,16 +1,16 @@
 <article
-	class="bg-card text-card-foreground flex h-full min-h-40 flex-col rounded-xl border p-4 shadow-sm transition-shadow hover:shadow-md"
+	class="bg-card text-card-foreground flex h-full min-h-40 flex-col rounded-2xl border border-black p-4 shadow-sm transition-shadow hover:shadow-md"
 >
 	<div class="flex items-start justify-between gap-3">
 		<div class="min-w-0 flex-1">
-			<p class="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+			<p class="text-foreground/75 text-xs font-semibold tracking-[0.18em] uppercase">
 				{{ kpi().title }}
 			</p>
 
 			@if (metricKpi()) {
 				@let metric = metricKpi()!;
 
-				<h3 class="mt-2 text-3xl font-bold tracking-tight">
+				<h3 class="mt-2 text-3xl font-black tracking-tight">
 					{{ metric.value }}
 				</h3>
 			}
@@ -31,12 +31,12 @@
 			<div class="mt-4 flex flex-wrap gap-1.5">
 				@for (item of list.items; track item.label) {
 					<span
-						class="bg-muted/60 inline-flex max-w-full items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium"
-					>
+				class="inline-flex max-w-full items-center gap-1.5 rounded-full border border-black bg-[#FFF9C4] px-2.5 py-1 text-xs font-medium"
+				>
 						<span class="truncate">{{ item.label }}</span>
 
 						@if (item.value) {
-							<span class="text-muted-foreground shrink-0 font-semibold">
+							<span class="text-foreground/70 shrink-0 font-semibold">
 								{{ item.value }}
 							</span>
 						}
@@ -44,7 +44,7 @@
 				}
 			</div>
 		} @else {
-			<p class="text-muted-foreground mt-4 text-sm">
+			<p class="text-foreground/75 mt-4 text-sm">
 				{{ list.emptyLabel }}
 			</p>
 		}
@@ -52,7 +52,7 @@
 
 	<div class="mt-auto pt-4">
 		<div class="border-t pt-3">
-			<p class="text-muted-foreground text-xs leading-5">
+			<p class="text-foreground/75 text-xs leading-5">
 				{{ kpi().description }}
 			</p>
 		</div>

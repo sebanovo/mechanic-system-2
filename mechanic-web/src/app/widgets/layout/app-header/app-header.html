@@ -1,5 +1,5 @@
 <header
-	class="bg-app-header text-app-header-foreground sticky top-0 z-30 border-b backdrop-blur"
+	class="bg-app-header text-app-header-foreground sticky top-0 z-30 border-b border-b-primary"
 >
 	<div class="flex h-16 items-center justify-between gap-3 px-4 sm:px-6">
 		<div class="flex min-w-0 items-center gap-3">
@@ -8,7 +8,7 @@
 				hlmBtn
 				variant="ghost"
 				size="icon"
-				class="cursor-pointer lg:hidden"
+				class="cursor-pointer border border-primary/30 bg-primary/10 text-primary lg:hidden"
 				aria-label="Abrir menú"
 				(click)="menuClicked.emit()"
 			>
@@ -16,14 +16,14 @@
 			</button>
 
 			<div class="min-w-0">
-				<div class="flex min-w-0 items-center gap-2">
-					<h1 class="truncate text-base font-semibold sm:text-lg">
+				<div class="flex min-w-0 items-center gap-3">
+					<h1 class="truncate text-sm font-semibold uppercase tracking-[0.22em] text-primary sm:text-base">
 						{{ title() }}
 					</h1>
 
 					@if (tenantName()) {
 						<span
-							class="bg-muted text-muted-foreground hidden rounded-full px-2 py-0.5 text-xs sm:inline-flex"
+							class="bg-primary text-primary-foreground hidden rounded-full px-3 py-1 text-[0.7rem] font-semibold uppercase tracking-[0.16em] sm:inline-flex"
 						>
 							{{ tenantName() }}
 						</span>
@@ -31,7 +31,7 @@
 				</div>
 
 				@if (subtitle()) {
-					<p class="text-muted-foreground hidden truncate text-xs sm:block">
+					<p class="text-app-header-foreground/70 hidden truncate text-xs sm:block">
 						{{ subtitle() }}
 					</p>
 				}
