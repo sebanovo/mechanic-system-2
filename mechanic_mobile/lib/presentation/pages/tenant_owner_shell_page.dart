@@ -137,36 +137,6 @@ class _TenantOwnerShellPageState extends State<TenantOwnerShellPage> {
       selectedIndex: _index,
       onDestinationSelected: _goTo,
       labelType: NavigationRailLabelType.all,
-      leading: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: Colors.black,
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: Text(
-                'Panel de taller',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w900,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            FilledButton.icon(
-              onPressed: () => context.go('/tenant-assignments'),
-              icon: const Icon(Icons.assignment_turned_in_rounded),
-              label: const Text('Asignaciones'),
-            ),
-          ],
-        ),
-      ),
       destinations: const [
         NavigationRailDestination(
           icon: Icon(Icons.home_rounded),
@@ -179,6 +149,10 @@ class _TenantOwnerShellPageState extends State<TenantOwnerShellPage> {
         NavigationRailDestination(
           icon: Icon(Icons.inventory_2_rounded),
           label: Text('Catálogo'),
+        ),
+        NavigationRailDestination(
+          icon: Icon(Icons.assignment_turned_in_rounded),
+          label: Text('Asignaciones'),
         ),
         NavigationRailDestination(
           icon: Icon(Icons.apartment_rounded),
@@ -260,6 +234,14 @@ class _TenantOwnerShellPageState extends State<TenantOwnerShellPage> {
               icon: Icons.inventory_2_rounded,
               label: 'Catálogo',
             ),
+            ListTile(
+              leading: const Icon(Icons.assignment_turned_in_rounded),
+              title: const Text('Asignaciones'),
+              onTap: () {
+                Navigator.of(context).pop();
+                context.go('/tenant-assignments');
+              },
+            ),
             _drawerTile(
               context,
               index: 3,
@@ -277,14 +259,6 @@ class _TenantOwnerShellPageState extends State<TenantOwnerShellPage> {
               index: 5,
               icon: Icons.person_rounded,
               label: 'Perfil',
-            ),
-            ListTile(
-              leading: const Icon(Icons.assignment_turned_in_rounded),
-              title: const Text('Asignaciones'),
-              onTap: () {
-                Navigator.of(context).pop();
-                context.go('/tenant-assignments');
-              },
             ),
             const Divider(height: 24),
             ListTile(

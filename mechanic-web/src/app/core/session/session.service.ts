@@ -33,7 +33,7 @@ export class SessionService {
 					tap(context => this.navigateAfterAuth(context)),
 					map(() => true),
 					catchError(() => {
-						this.store.setAnonymous();
+						this.setAnonymousIfStillUnauthenticated();
 						return of(false);
 					})
 				)
@@ -166,5 +166,13 @@ export class SessionService {
 		}
 
 		void this.router.navigateByUrl(this.getDefaultRedirect(context.user_type));
+	}
+
+	private setAnonymousIfStillUnauthenticated(): void {
+		if (this.store.isAuthenticated() || this.store.accessToken()) {
+			return;
+		}
+
+		this.store.setAnonymous();
 	}
 }

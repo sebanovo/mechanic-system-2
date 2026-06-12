@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../viewmodels/tenant_viewmodel.dart';
@@ -62,6 +63,13 @@ class _TenantAssignmentsPageState extends State<TenantAssignmentsPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Asignaciones'),
+        leading: Builder(
+          builder: (context) => IconButton(
+            tooltip: 'Menú',
+            onPressed: () => Scaffold.of(context).openDrawer(),
+            icon: const Icon(Icons.menu_rounded),
+          ),
+        ),
         actions: [
           IconButton(
             tooltip: 'Refrescar',
@@ -69,6 +77,85 @@ class _TenantAssignmentsPageState extends State<TenantAssignmentsPage> {
             icon: const Icon(Icons.refresh_rounded),
           ),
         ],
+      ),
+      drawer: Drawer(
+        backgroundColor: const Color(0xFFFFF8D6),
+        child: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.black,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Asignaciones',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              color: Colors.white,
+                            ),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'Navegación del taller',
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const Divider(height: 24),
+              _drawerTile(
+                context,
+                icon: Icons.home_rounded,
+                label: 'Inicio',
+                onTap: () => context.go('/tenant-home'),
+              ),
+              _drawerTile(
+                context,
+                icon: Icons.handyman_rounded,
+                label: 'Operaciones',
+                onTap: () => context.go('/tenant-home'),
+              ),
+              _drawerTile(
+                context,
+                icon: Icons.inventory_2_rounded,
+                label: 'Catálogo',
+                onTap: () => context.go('/tenant-home'),
+              ),
+              _drawerTile(
+                context,
+                icon: Icons.assignment_turned_in_rounded,
+                label: 'Asignaciones',
+                onTap: () => Navigator.of(context).pop(),
+              ),
+              _drawerTile(
+                context,
+                icon: Icons.apartment_rounded,
+                label: 'Red',
+                onTap: () => context.go('/tenant-home'),
+              ),
+              _drawerTile(
+                context,
+                icon: Icons.notifications_rounded,
+                label: 'Notificaciones',
+                onTap: () => context.go('/tenant-notifications'),
+              ),
+              _drawerTile(
+                context,
+                icon: Icons.person_rounded,
+                label: 'Perfil',
+                onTap: () => context.go('/tenant-home'),
+              ),
+            ],
+          ),
+        ),
       ),
       body: RefreshIndicator(
         onRefresh: _refresh,
@@ -104,6 +191,19 @@ class _TenantAssignmentsPageState extends State<TenantAssignmentsPage> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _drawerTile(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return ListTile(
+      leading: Icon(icon),
+      title: Text(label),
+      onTap: onTap,
     );
   }
 }

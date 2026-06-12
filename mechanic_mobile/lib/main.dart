@@ -11,9 +11,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await AppEnv.load();
   await configureDependencies();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await sl<NotificationService>().initialize();
   runApp(const MechanicMobileApp());
 }
