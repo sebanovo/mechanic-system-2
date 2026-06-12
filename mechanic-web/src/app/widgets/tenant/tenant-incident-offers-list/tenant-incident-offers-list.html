@@ -1,0 +1,406 @@
+<div class="space-y-5">
+	<div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+		<app-stat-card
+			label="Total ofertas"
+			[value]="stats().total"
+			description="Recibidas por el taller"
+		/>
+
+		<app-stat-card
+			label="Pendientes"
+			[value]="stats().pending"
+			description="Esperan respuesta"
+			tone="warning"
+		/>
+
+		<app-stat-card
+			label="Aceptadas"
+			[value]="stats().accepted"
+			description="Atención confirmada"
+			tone="success"
+		/>
+
+		<app-stat-card
+			label="Cerradas"
+			[value]="stats().rejected + stats().expired + stats().cancelled"
+			description="Rechazadas, expiradas o canceladas"
+			tone="muted"
+		/>
+	</div>
+
+	<app-data-toolbar
+		searchPlaceholder="Buscar por incidente, servicio, dirección o estado..."
+		[showFilters]="false"
+		[showRefresh]="true"
+		(searchChanged)="onSearch($event)"
+		(refreshClicked)="load(); loadStats()"
+	/>
+
+	<app-page-section [padded]="true">
+		<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+			<label class="space-y-2 text-sm">
+				<span class="font-medium">Estado de oferta</span>
+
+				<select
+					class="border-input bg-background h-10 w-full rounded-md border px-3 text-sm"
+					[value]="status()"
+					(change)="onStatusFilterChange($event)"
+				>
+					@for (option of statusOptions; track option.value) {
+						<option [value]="option.value">
+							{{ option.label }}
+						</option>
+					}
+				</select>
+			</label>
+		</div>
+	</app-page-section>
+
+	@if (isLoading()) {
+		<app-loading-state
+			title="Cargando ofertas"
+			description="Estamos obteniendo las ofertas recibidas por el taller."
+		/>
+	} @else if (errorMessage()) {
+		<app-error-state
+			title="No se pudieron cargar las ofertas"
+			[description]="errorMessage()!"
+			(actionClicked)="load()"
+		/>
+	} @else if (filteredItems().length === 0) {
+		<app-page-section [padded]="true">
+			<div
+				class="flex min-h-64 flex-col items-center justify-center text-center"
+			>
+				<div
+					class="bg-muted text-muted-foreground mb-4 flex size-12 items-center justify-center rounded-full"
+				>
+					<ng-icon name="lucideWrench" class="size-5" />
+				</div>
+
+				<h3 class="text-base font-semibold">No hay ofertas para mostrar</h3>
+
+				<p class="text-muted-foreground mt-2 max-w-md text-sm">
+					Las ofertas aparecerán aquí cuando el sistema solicite al taller
+					atender un incidente.
+				</p>
+			</div>
+		</app-page-section>
+	} @else {
+		<div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+			@for (item of filteredItems(); track $index) {
+				<article
+					class="bg-card text-card-foreground rounded-xl border p-4 shadow-sm transition hover:shadow-md"
+				>
+					<div class="flex items-start justify-between gap-3">
+						<div class="min-w-0">
+							<div class="mb-2 flex flex-wrap items-center gap-2">
+								<span
+									class="bg-muted text-muted-foreground rounded-md px-2 py-0.5 text-xs font-medium"
+								>
+									{{ incidentCode(item) }}
+								</span>
+
+								<app-incident-offer-status-badge [status]="offerStatus(item)" />
+							</div>
+
+							<h3 class="truncate text-base font-semibold">
+								{{ serviceName(item) }}
+							</h3>
+
+							<p class="text-muted-foreground mt-1 truncate text-sm">
+								{{ description(item) }}
+							</p>
+						</div>
+
+						<app-resource-actions-menu
+							[actions]="actionsFor(item)"
+							(actionSelected)="onAction($event, item)"
+						/>
+					</div>
+
+					<div class="mt-4 space-y-2 text-sm">
+						<div class="text-muted-foreground flex min-w-0 items-center gap-2">
+							<ng-icon name="lucideMapPin" class="size-4 shrink-0" />
+							<span class="truncate">
+								{{ location(item) }}
+							</span>
+						</div>
+
+						<div class="text-muted-foreground flex min-w-0 items-center gap-2">
+							<ng-icon name="lucideClock" class="size-4 shrink-0" />
+							<span class="truncate"> Enviada: {{ sentAtLabel(item) }} </span>
+						</div>
+
+						<div class="text-muted-foreground flex min-w-0 items-center gap-2">
+							<ng-icon name="lucideTimer" class="size-4 shrink-0" />
+							<span class="truncate"> Vence: {{ expiresAtLabel(item) }} </span>
+						</div>
+
+						<div class="text-muted-foreground flex min-w-0 items-center gap-2">
+							<ng-icon name="lucideInfo" class="size-4 shrink-0" />
+							<span class="truncate">
+								{{ operationalText(item) }}
+							</span>
+						</div>
+					</div>
+
+					<div class="mt-5 grid gap-2 sm:grid-cols-2">
+						<button
+							type="button"
+							hlmBtn
+							variant="outline"
+							class="cursor-pointer"
+							(click)="openDetail(item)"
+						>
+							Ver detalle
+						</button>
+
+						@if (isPending(item)) {
+							<button
+								type="button"
+								hlmBtn
+								class="cursor-pointer"
+								(click)="respondClicked.emit({ item, mode: 'ACCEPT' })"
+							>
+								Aceptar
+							</button>
+						}
+					</div>
+				</article>
+			}
+		</div>
+
+		<app-pagination
+			[page]="pagination().page"
+			[pageSize]="pagination().page_size"
+			[total]="pagination().total"
+			[totalPages]="pagination().total_pages"
+			[disabled]="isLoading()"
+			(pageChanged)="onPageChange($event)"
+			(pageSizeChanged)="onPageSizeChange($event)"
+		/>
+	}
+
+	<app-side-drawer
+		[open]="isDetailDrawerOpen()"
+		title="Detalle de la oferta"
+		description="Información completa del incidente y respuesta del taller."
+		widthClass="sm:max-w-2xl"
+		(closed)="closeDetail()"
+	>
+		@if (isDetailLoading()) {
+			<app-loading-state
+				title="Cargando oferta"
+				description="Estamos obteniendo el detalle de la oferta."
+				minHeight="min-h-52"
+			/>
+		} @else if (detailErrorMessage()) {
+			<app-error-state
+				title="No se pudo cargar el detalle"
+				[description]="detailErrorMessage()!"
+				(actionClicked)="closeDetail()"
+			/>
+		} @else if (selectedItem()) {
+			@let detail = selectedItem()!;
+
+			<div class="space-y-5">
+				<section class="bg-card text-card-foreground rounded-xl border p-4">
+					<div class="mb-2 flex flex-wrap items-center gap-2">
+						<span
+							class="bg-muted text-muted-foreground rounded-md px-2 py-0.5 text-xs font-medium"
+						>
+							{{ incidentCode(detail) }}
+						</span>
+
+						<app-incident-offer-status-badge [status]="offerStatus(detail)" />
+					</div>
+
+					<h3 class="text-lg font-semibold">
+						{{ serviceName(detail) }}
+					</h3>
+
+					<p class="text-muted-foreground mt-2 text-sm leading-6">
+						{{ description(detail) }}
+					</p>
+
+					@if (detailOfferMessage(detail)) {
+						<div class="bg-muted/40 mt-4 rounded-lg border p-4 text-sm">
+							<p class="font-medium">Mensaje de la oferta</p>
+							<p class="text-muted-foreground mt-1 leading-6">
+								{{ detailOfferMessage(detail) }}
+							</p>
+						</div>
+					}
+				</section>
+
+				<section class="bg-card text-card-foreground rounded-xl border p-4">
+					<h4 class="font-semibold">Incidente</h4>
+
+					<div class="mt-4 grid gap-4 sm:grid-cols-2">
+						<div class="space-y-1">
+							<p class="text-muted-foreground flex items-center gap-2 text-xs">
+								<ng-icon name="lucideHash" class="size-4" />
+								Código
+							</p>
+							<p class="text-sm font-medium">
+								{{ incidentCode(detail) }}
+							</p>
+						</div>
+
+						<div class="space-y-1">
+							<p class="text-muted-foreground flex items-center gap-2 text-xs">
+								<ng-icon name="lucideWrench" class="size-4" />
+								Servicio
+							</p>
+							<p class="text-sm font-medium">
+								{{ serviceName(detail) }}
+							</p>
+							<p class="text-muted-foreground text-xs">
+								{{ serviceCategory(detail) }}
+							</p>
+						</div>
+
+						<div class="space-y-1 sm:col-span-2">
+							<p class="text-muted-foreground flex items-center gap-2 text-xs">
+								<ng-icon name="lucideMapPin" class="size-4" />
+								Ubicación
+							</p>
+							<p class="text-sm font-medium">
+								{{ location(detail) }}
+							</p>
+						</div>
+
+						<div class="space-y-1">
+							<p class="text-muted-foreground flex items-center gap-2 text-xs">
+								<ng-icon name="lucideInfo" class="size-4" />
+								Prioridad
+							</p>
+							<p class="text-sm font-medium">
+								{{ priorityLabel(detail) }}
+							</p>
+						</div>
+
+						<div class="space-y-1">
+							<p class="text-muted-foreground flex items-center gap-2 text-xs">
+								<ng-icon name="lucideCalendar" class="size-4" />
+								Fecha incidente
+							</p>
+							<p class="text-sm font-medium">
+								{{ incidentCreatedAtLabel(detail) }}
+							</p>
+						</div>
+					</div>
+				</section>
+
+				<section class="bg-card text-card-foreground rounded-xl border p-4">
+					<h4 class="font-semibold">Oferta</h4>
+
+					<div class="mt-4 grid gap-4 sm:grid-cols-2">
+						<div class="space-y-1">
+							<p class="text-muted-foreground flex items-center gap-2 text-xs">
+								<ng-icon name="lucideClock" class="size-4" />
+								Enviada
+							</p>
+							<p class="text-sm font-medium">
+								{{ sentAtLabel(detail) }}
+							</p>
+						</div>
+
+						<div class="space-y-1">
+							<p class="text-muted-foreground flex items-center gap-2 text-xs">
+								<ng-icon name="lucideTimer" class="size-4" />
+								Vencimiento
+							</p>
+							<p class="text-sm font-medium">
+								{{ expiresAtLabel(detail) }}
+							</p>
+						</div>
+
+						<div class="space-y-1">
+							<p class="text-muted-foreground flex items-center gap-2 text-xs">
+								<ng-icon name="lucideMessageSquare" class="size-4" />
+								Respondida
+							</p>
+							<p class="text-sm font-medium">
+								{{ respondedAtLabel(detail) }}
+							</p>
+						</div>
+
+						<div class="space-y-1">
+							<p class="text-muted-foreground flex items-center gap-2 text-xs">
+								<ng-icon name="lucideClock" class="size-4" />
+								Tiempo de respuesta
+							</p>
+							<p class="text-sm font-medium">
+								{{ responseTimeLabel(detail) }}
+							</p>
+						</div>
+					</div>
+
+					@if (detailOfferResponseMessage(detail)) {
+						<div class="bg-muted/40 mt-4 rounded-lg border p-4 text-sm">
+							<p class="font-medium">Respuesta del taller</p>
+							<p class="text-muted-foreground mt-1 leading-6">
+								{{ detailOfferResponseMessage(detail) }}
+							</p>
+						</div>
+					}
+				</section>
+
+				<section class="bg-card text-card-foreground rounded-xl border p-4">
+					<h4 class="font-semibold">Vehículo y análisis</h4>
+
+					<div class="mt-4 grid gap-4">
+						<div class="space-y-1">
+							<p class="text-muted-foreground flex items-center gap-2 text-xs">
+								<ng-icon name="lucideInfo" class="size-4" />
+								Vehículo
+							</p>
+							<p class="text-sm font-medium">
+								{{ vehicleLabel(detail) }}
+							</p>
+						</div>
+
+						<div class="space-y-1">
+							<p class="text-muted-foreground flex items-center gap-2 text-xs">
+								<ng-icon name="lucideBot" class="size-4" />
+								Análisis IA
+							</p>
+							<p class="text-sm leading-6 font-medium">
+								{{ aiSummary(detail) }}
+							</p>
+						</div>
+					</div>
+				</section>
+
+				@if (isPending(detail)) {
+					<section class="bg-card text-card-foreground rounded-xl border p-4">
+						<h4 class="font-semibold">Responder oferta</h4>
+
+						<div class="mt-4 grid gap-2 sm:grid-cols-2">
+							<button
+								type="button"
+								hlmBtn
+								class="cursor-pointer"
+								(click)="respondClicked.emit({ item: detail, mode: 'ACCEPT' })"
+							>
+								Aceptar oferta
+							</button>
+
+							<button
+								type="button"
+								hlmBtn
+								variant="destructive"
+								class="cursor-pointer"
+								(click)="respondClicked.emit({ item: detail, mode: 'REJECT' })"
+							>
+								Rechazar oferta
+							</button>
+						</div>
+					</section>
+				}
+			</div>
+		}
+	</app-side-drawer>
+</div>

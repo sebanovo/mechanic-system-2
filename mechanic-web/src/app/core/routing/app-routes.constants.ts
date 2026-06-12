@@ -1,0 +1,58 @@
+export const APP_ROUTES = {
+	public: {
+		home: "/",
+		about: "/about",
+		contact: "/contact",
+	},
+
+	auth: {
+		login: "/login",
+		register: "/register",
+		registerClient: "/register/client",
+		registerTenant: "/register/tenant",
+		selectTenant: "/select-tenant",
+	},
+
+	client: {
+		root: "/client",
+		dashboard: "/client/dashboard",
+		incidents: "/client/incidents",
+		vehicles: "/client/vehicles",
+		assignments: "/client/assignments",
+		profile: "/client/profile",
+	},
+
+	tenant: {
+		root: "/tenant",
+		dashboard: "/tenant/dashboard",
+		incidents: "/tenant/incidents",
+		candidates: "/tenant/candidates",
+		offers: "/tenant/offers",
+		assignments: "/tenant/assignments",
+		trackingEvents: "/tenant/tracking-events",
+		technicians: "/tenant/technicians",
+		members: "/tenant/members",
+		services: "/tenant/services",
+		technicianServices: "/tenant/technician-services",
+		availability: "/tenant/availability",
+		catalog: "/tenant/catalog",
+		audit: "/tenant/audit",
+		settings: "/tenant/settings",
+	},
+
+	platform: {
+		root: "/platform",
+		dashboard: "/platform/dashboard",
+		users: "/platform/users",
+		clients: "/platform/clients",
+		tenants: "/platform/tenants",
+		providers: "/platform/providers",
+		technicians: "/platform/technicians",
+		serviceCatalog: "/platform/service-catalog",
+		incidents: "/platform/incidents",
+		assignments: "/platform/assignments",
+		reports: "/platform/reports",
+		audit: "/platform/audit",
+		settings: "/platform/settings",
+	},
+} as const;

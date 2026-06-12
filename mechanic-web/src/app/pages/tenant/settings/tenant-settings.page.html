@@ -1,0 +1,71 @@
+<app-admin-page-shell>
+	<app-page-header
+		title="Configuración del tenant"
+		description="Configura el perfil comercial, los valores por defecto y la operación del proveedor."
+		eyebrow="Gestión"
+		[showRefresh]="false"
+		[showPrimaryAction]="false"
+	/>
+
+	<app-tenant-settings-panel
+		(editProfileClicked)="openProfileDrawer()"
+		(editSettingsClicked)="openSettingsDrawer()"
+		(editProviderClicked)="openProviderDrawer()"
+		(createNetworkClicked)="openNetworkDrawer()"
+	/>
+
+	<app-side-drawer
+		[open]="showProfileDrawer()"
+		title="Editar perfil comercial"
+		description="Actualiza los datos legales, contacto y ubicación del tenant."
+		widthClass="sm:max-w-2xl"
+		(closed)="closeProfileDrawer()"
+	>
+		<app-update-tenant-profile-form
+			[profile]="currentProfile()"
+			(updated)="onProfileUpdated($event)"
+			(cancelled)="closeProfileDrawer()"
+		/>
+	</app-side-drawer>
+
+	<app-side-drawer
+		[open]="showSettingsDrawer()"
+		title="Editar configuración"
+		description="Define moneda, zona horaria e idioma por defecto."
+		widthClass="sm:max-w-xl"
+		(closed)="closeSettingsDrawer()"
+	>
+		<app-update-tenant-settings-form
+			[settings]="currentSettings()"
+			(updated)="onSettingsUpdated($event)"
+			(cancelled)="closeSettingsDrawer()"
+		/>
+	</app-side-drawer>
+
+	<app-side-drawer
+		[open]="showProviderDrawer()"
+		title="Editar operación"
+		description="Controla la disponibilidad operativa del proveedor."
+		widthClass="sm:max-w-xl"
+		(closed)="closeProviderDrawer()"
+	>
+		<app-update-provider-profile-form
+			[provider]="currentProvider()"
+			(updated)="onProviderUpdated($event)"
+			(cancelled)="closeProviderDrawer()"
+		/>
+	</app-side-drawer>
+
+	<app-side-drawer
+		[open]="showNetworkDrawer()"
+		title="Crear red de tenant"
+		description="Crea una red asociada al owner actual. Esta opción queda preparada para crecimiento multi-tenant."
+		widthClass="sm:max-w-xl"
+		(closed)="closeNetworkDrawer()"
+	>
+		<app-create-tenant-network-form
+			(created)="onNetworkCreated($event)"
+			(cancelled)="closeNetworkDrawer()"
+		/>
+	</app-side-drawer>
+</app-admin-page-shell>

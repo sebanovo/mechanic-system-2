@@ -1,0 +1,42 @@
+<app-admin-page-shell>
+	<app-page-header
+		title="Catálogo de servicios"
+		description="Administra el catálogo global de servicios mecánicos disponibles para clientes, talleres y técnicos."
+		eyebrow="Plataforma"
+		[showRefresh]="false"
+		[showPrimaryAction]="true"
+		primaryActionLabel="Nuevo servicio"
+		(primaryActionClicked)="openCreateDrawer()"
+	/>
+
+	<app-platform-service-catalog-list (editClicked)="openEditDrawer($event)" />
+
+	<app-side-drawer
+		[open]="showCreateDrawer()"
+		title="Nuevo servicio"
+		description="Registra un servicio global que luego podrá ser usado por los talleres."
+		widthClass="sm:max-w-2xl"
+		(closed)="closeCreateDrawer()"
+	>
+		<app-create-service-catalog-form
+			(created)="onCreated()"
+			(cancelled)="closeCreateDrawer()"
+		/>
+	</app-side-drawer>
+
+	<app-side-drawer
+		[open]="!!editingItem()"
+		title="Editar servicio"
+		description="Actualiza la información del servicio seleccionado."
+		widthClass="sm:max-w-2xl"
+		(closed)="closeEditDrawer()"
+	>
+		@if (editingItem()) {
+			<app-edit-service-catalog-form
+				[item]="editingItem()!"
+				(updated)="onUpdated()"
+				(cancelled)="closeEditDrawer()"
+			/>
+		}
+	</app-side-drawer>
+</app-admin-page-shell>

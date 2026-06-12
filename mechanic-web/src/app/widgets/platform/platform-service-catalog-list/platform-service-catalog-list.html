@@ -1,0 +1,321 @@
+<div class="space-y-5">
+	<div class="grid gap-4 sm:grid-cols-3">
+		<app-stat-card
+			label="Total servicios"
+			[value]="stats().total"
+			description="Registrados globalmente"
+		/>
+
+		<app-stat-card
+			label="Activos"
+			[value]="stats().active"
+			description="Disponibles para uso"
+			tone="success"
+		/>
+
+		<app-stat-card
+			label="Inactivos"
+			[value]="stats().inactive"
+			description="Ocultos o deshabilitados"
+			tone="muted"
+		/>
+	</div>
+
+	<app-data-toolbar
+		searchPlaceholder="Buscar por nombre, código o categoría..."
+		[showFilters]="false"
+		[showRefresh]="true"
+		(searchChanged)="onSearch($event)"
+		(refreshClicked)="load(); loadStats(); loadCategoryOptions()"
+	/>
+
+	<app-page-section [padded]="true">
+		<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+			<label class="space-y-2 text-sm">
+				<span class="font-medium">Estado</span>
+
+				<select
+					class="border-input bg-background h-10 w-full rounded-md border px-3 text-sm"
+					[value]="status()"
+					(change)="onStatusFilterChange($event)"
+				>
+					@for (option of statusOptions; track option.value) {
+						<option [value]="option.value">
+							{{ option.label }}
+						</option>
+					}
+				</select>
+			</label>
+
+			<label class="space-y-2 text-sm">
+				<span class="font-medium">Categoría</span>
+
+				<select
+					class="border-input bg-background h-10 w-full rounded-md border px-3 text-sm"
+					[value]="category()"
+					(change)="onCategoryFilterChange($event)"
+				>
+					<option value="">Todas</option>
+
+					@for (item of categoryOptions(); track item) {
+						<option [value]="item">
+							{{ item }}
+						</option>
+					}
+				</select>
+			</label>
+		</div>
+	</app-page-section>
+
+	@if (isLoading()) {
+		<app-loading-state
+			title="Cargando catálogo"
+			description="Estamos obteniendo los servicios registrados."
+		/>
+	} @else if (errorMessage()) {
+		<app-error-state
+			title="No se pudo cargar el catálogo"
+			[description]="errorMessage()!"
+			(actionClicked)="load()"
+		/>
+	} @else if (filteredItems().length === 0) {
+		<app-page-section [padded]="true">
+			<div
+				class="flex min-h-64 flex-col items-center justify-center text-center"
+			>
+				<div
+					class="bg-muted text-muted-foreground mb-4 flex size-12 items-center justify-center rounded-full"
+				>
+					<ng-icon name="lucideTag" class="size-5" />
+				</div>
+
+				<h3 class="text-base font-semibold">No hay servicios para mostrar</h3>
+
+				<p class="text-muted-foreground mt-2 max-w-md text-sm">
+					Crea el primer servicio del catálogo global o cambia los filtros.
+				</p>
+			</div>
+		</app-page-section>
+	} @else {
+		<div class="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+			@for (item of filteredItems(); track item.id) {
+				<article
+					class="bg-card text-card-foreground rounded-xl border p-4 shadow-sm transition hover:shadow-md"
+				>
+					<div class="flex items-start justify-between gap-3">
+						<div class="min-w-0">
+							<div class="mb-2 flex flex-wrap items-center gap-2">
+								<span
+									class="bg-muted text-muted-foreground rounded-md px-2 py-0.5 text-xs font-medium"
+								>
+									{{ item.service_code }}
+								</span>
+
+								<app-service-catalog-status-badge [item]="item" />
+							</div>
+
+							<h3 class="truncate text-base font-semibold">
+								{{ item.service_name }}
+							</h3>
+
+							<p class="text-muted-foreground mt-1 truncate text-sm">
+								{{ item.category }}
+							</p>
+						</div>
+
+						<app-resource-actions-menu
+							[actions]="actionsFor(item)"
+							(actionSelected)="onAction($event, item)"
+						/>
+					</div>
+
+					@if (item.description) {
+						<p
+							class="text-muted-foreground mt-4 line-clamp-2 text-sm leading-6"
+						>
+							{{ item.description }}
+						</p>
+					}
+
+					<div class="mt-4 space-y-2 text-sm">
+						<div class="text-muted-foreground flex min-w-0 items-center gap-2">
+							<ng-icon name="lucideDollarSign" class="size-4 shrink-0" />
+							<span class="truncate">{{ priceRange(item) }}</span>
+						</div>
+
+						<div class="text-muted-foreground flex min-w-0 items-center gap-2">
+							<ng-icon name="lucideClock" class="size-4 shrink-0" />
+							<span class="truncate">{{ durationRange(item) }}</span>
+						</div>
+
+						<div class="text-muted-foreground flex min-w-0 items-center gap-2">
+							<ng-icon name="lucideInfo" class="size-4 shrink-0" />
+							<span class="truncate">{{ operationalText(item) }}</span>
+						</div>
+					</div>
+
+					<div class="mt-5">
+						<button
+							type="button"
+							hlmBtn
+							variant="outline"
+							class="w-full cursor-pointer"
+							(click)="openDetail(item)"
+						>
+							Ver detalle
+						</button>
+					</div>
+				</article>
+			}
+		</div>
+
+		<app-pagination
+			[page]="pagination().page"
+			[pageSize]="pagination().page_size"
+			[total]="pagination().total"
+			[totalPages]="pagination().total_pages"
+			[disabled]="isLoading()"
+			(pageChanged)="onPageChange($event)"
+			(pageSizeChanged)="onPageSizeChange($event)"
+		/>
+	}
+
+	<app-side-drawer
+		[open]="isDetailDrawerOpen()"
+		title="Detalle del servicio"
+		description="Información completa del servicio global."
+		widthClass="sm:max-w-2xl"
+		(closed)="closeDetail()"
+	>
+		@if (isDetailLoading()) {
+			<app-loading-state
+				title="Cargando servicio"
+				description="Estamos obteniendo el detalle del servicio."
+				minHeight="min-h-52"
+			/>
+		} @else if (detailErrorMessage()) {
+			<app-error-state
+				title="No se pudo cargar el detalle"
+				[description]="detailErrorMessage()!"
+				(actionClicked)="closeDetail()"
+			/>
+		} @else if (selectedItem()) {
+			@let detail = selectedItem()!;
+
+			<div class="space-y-5">
+				<section class="bg-card text-card-foreground rounded-xl border p-4">
+					<div class="flex items-start justify-between gap-3">
+						<div class="min-w-0">
+							<div class="mb-2 flex flex-wrap items-center gap-2">
+								<span
+									class="bg-muted text-muted-foreground rounded-md px-2 py-0.5 text-xs font-medium"
+								>
+									{{ detail.service_code }}
+								</span>
+
+								<app-service-catalog-status-badge [item]="detail" />
+							</div>
+
+							<h3 class="text-lg font-semibold">
+								{{ detail.service_name }}
+							</h3>
+
+							<p class="text-muted-foreground mt-1 text-sm">
+								{{ detail.category }}
+							</p>
+						</div>
+					</div>
+
+					@if (detail.description) {
+						<p class="text-muted-foreground mt-4 text-sm leading-6">
+							{{ detail.description }}
+						</p>
+					}
+				</section>
+
+				<section class="bg-card text-card-foreground rounded-xl border p-4">
+					<h4 class="font-semibold">Información comercial</h4>
+
+					<div class="mt-4 grid gap-4 sm:grid-cols-2">
+						<div class="space-y-1">
+							<p class="text-muted-foreground flex items-center gap-2 text-xs">
+								<ng-icon name="lucideDollarSign" class="size-4" />
+								Precio
+							</p>
+							<p class="text-sm font-medium">
+								{{ priceRange(detail) }}
+							</p>
+						</div>
+
+						<div class="space-y-1">
+							<p class="text-muted-foreground flex items-center gap-2 text-xs">
+								<ng-icon name="lucideClock" class="size-4" />
+								Duración
+							</p>
+							<p class="text-sm font-medium">
+								{{ durationRange(detail) }}
+							</p>
+						</div>
+
+						<div class="space-y-1">
+							<p class="text-muted-foreground flex items-center gap-2 text-xs">
+								<ng-icon name="lucideTag" class="size-4" />
+								Categoría
+							</p>
+							<p class="text-sm font-medium">
+								{{ detail.category }}
+							</p>
+						</div>
+
+						<div class="space-y-1">
+							<p class="text-muted-foreground flex items-center gap-2 text-xs">
+								<ng-icon name="lucideInfo" class="size-4" />
+								Disponibilidad
+							</p>
+							<p class="text-sm font-medium">
+								{{ operationalText(detail) }}
+							</p>
+						</div>
+					</div>
+				</section>
+
+				<section class="bg-card text-card-foreground rounded-xl border p-4">
+					<h4 class="font-semibold">Auditoría</h4>
+
+					<div class="mt-4 grid gap-4 sm:grid-cols-2">
+						<div class="space-y-1">
+							<p class="text-muted-foreground flex items-center gap-2 text-xs">
+								<ng-icon name="lucideCalendar" class="size-4" />
+								Creado
+							</p>
+							<p class="text-sm font-medium">
+								{{ createdAtLabel(detail) }}
+							</p>
+						</div>
+
+						<div class="space-y-1">
+							<p class="text-muted-foreground flex items-center gap-2 text-xs">
+								<ng-icon name="lucideCalendar" class="size-4" />
+								Actualizado
+							</p>
+							<p class="text-sm font-medium">
+								{{ updatedAtLabel(detail) }}
+							</p>
+						</div>
+					</div>
+				</section>
+			</div>
+		}
+	</app-side-drawer>
+
+	<app-confirm-action-dialog
+		[open]="!!pendingStatusChange()"
+		[title]="pendingStatusChange()?.title ?? ''"
+		[description]="pendingStatusChange()?.description ?? ''"
+		[confirmLabel]="pendingStatusChange()?.confirmLabel ?? 'Confirmar'"
+		[destructive]="pendingStatusChange()?.destructive ?? false"
+		[loading]="isChangingStatus()"
+		(confirmed)="confirmStatusChange()"
+		(cancelled)="cancelStatusChange()"
+	/>
+</div>

@@ -1,0 +1,42 @@
+<app-admin-page-shell>
+	<app-page-header
+		title="Servicios por técnico"
+		description="Define qué servicios puede atender cada técnico y con qué nivel de habilidad."
+		eyebrow="Equipo"
+		[showRefresh]="false"
+		[showPrimaryAction]="true"
+		primaryActionLabel="Habilitar servicio"
+		(primaryActionClicked)="openCreateDrawer()"
+	/>
+
+	<app-tenant-technician-services-list (editClicked)="openEditDrawer($event)" />
+
+	<app-side-drawer
+		[open]="showCreateDrawer()"
+		title="Habilitar servicio para técnico"
+		description="Selecciona un técnico activo, un servicio disponible del taller y el nivel de habilidad."
+		widthClass="sm:max-w-2xl"
+		(closed)="closeCreateDrawer()"
+	>
+		<app-create-technician-service-form
+			(created)="onCreated()"
+			(cancelled)="closeCreateDrawer()"
+		/>
+	</app-side-drawer>
+
+	<app-side-drawer
+		[open]="!!editingItem()"
+		title="Editar servicio del técnico"
+		description="Actualiza el nivel de habilidad o habilita/deshabilita este vínculo."
+		widthClass="sm:max-w-2xl"
+		(closed)="closeEditDrawer()"
+	>
+		@if (editingItem()) {
+			<app-edit-technician-service-form
+				[item]="editingItem()!"
+				(updated)="onUpdated($event)"
+				(cancelled)="closeEditDrawer()"
+			/>
+		}
+	</app-side-drawer>
+</app-admin-page-shell>

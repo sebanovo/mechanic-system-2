@@ -1,0 +1,62 @@
+<div
+	class="bg-card text-card-foreground flex flex-col gap-3 rounded-xl border px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between"
+>
+	<p class="text-muted-foreground text-sm">
+		Mostrando
+		<span class="text-foreground font-medium">{{ fromItem() }}</span>
+		-
+		<span class="text-foreground font-medium">{{ toItem() }}</span>
+		de
+		<span class="text-foreground font-medium">{{ total() }}</span>
+		registros
+	</p>
+
+	<div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+		<label class="text-muted-foreground flex items-center gap-2 text-sm">
+			<span>Filas</span>
+
+			<select
+				class="border-input bg-background h-9 rounded-md border px-2 text-sm"
+				[value]="pageSize()"
+				[disabled]="disabled()"
+				(change)="onPageSizeChange($event)"
+			>
+				@for (size of pageSizeOptions(); track size) {
+					<option [value]="size">
+						{{ size }}
+					</option>
+				}
+			</select>
+		</label>
+
+		<div class="flex items-center gap-2">
+			<button
+				type="button"
+				hlmBtn
+				variant="outline"
+				size="sm"
+				class="cursor-pointer"
+				[disabled]="disabled() || page() <= 1"
+				(click)="previous()"
+			>
+				Anterior
+			</button>
+
+			<span class="text-muted-foreground min-w-20 text-center text-sm">
+				{{ page() }} / {{ totalPages() || 1 }}
+			</span>
+
+			<button
+				type="button"
+				hlmBtn
+				variant="outline"
+				size="sm"
+				class="cursor-pointer"
+				[disabled]="disabled() || page() >= totalPages()"
+				(click)="next()"
+			>
+				Siguiente
+			</button>
+		</div>
+	</div>
+</div>

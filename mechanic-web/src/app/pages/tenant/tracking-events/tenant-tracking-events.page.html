@@ -1,0 +1,29 @@
+<app-admin-page-shell>
+	<app-page-header
+		title="Bitácora de rutas operativa"
+		description="Registra avances, ubicación y notas de las asignaciones del taller."
+		eyebrow="Operación"
+		[showRefresh]="false"
+		[showPrimaryAction]="false"
+	/>
+
+	<app-tenant-assignment-tracking-events-panel
+		(createEventClicked)="openCreateDrawer($event)"
+	/>
+
+	<app-side-drawer
+		[open]="!!selectedAssignment()"
+		title="Registrar evento"
+		description="Registra un avance operativo para la asignación seleccionada."
+		widthClass="sm:max-w-2xl"
+		(closed)="closeCreateDrawer()"
+	>
+		@if (selectedAssignment()) {
+			<app-create-assignment-tracking-event-form
+				[assignment]="selectedAssignment()!"
+				(created)="onCreated($event)"
+				(cancelled)="closeCreateDrawer()"
+			/>
+		}
+	</app-side-drawer>
+</app-admin-page-shell>

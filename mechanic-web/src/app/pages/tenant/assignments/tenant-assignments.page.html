@@ -1,0 +1,42 @@
+<app-admin-page-shell>
+	<app-page-header
+		title="Asignaciones"
+		description="Revisa las asignaciones del taller, el técnico responsable y el avance operativo."
+		eyebrow="Operación"
+		[showRefresh]="false"
+		[showPrimaryAction]="true"
+		primaryActionLabel="Nueva asignación"
+		(primaryActionClicked)="openCreateDrawer()"
+	/>
+
+	<app-tenant-assignments-list (editClicked)="openEditDrawer($event)" />
+
+	<app-side-drawer
+		[open]="showCreateDrawer()"
+		title="Nueva asignación"
+		description="Crea una asignación desde una oferta aceptada y un técnico activo."
+		widthClass="sm:max-w-2xl"
+		(closed)="closeCreateDrawer()"
+	>
+		<app-create-assignment-form
+			(created)="onCreated()"
+			(cancelled)="closeCreateDrawer()"
+		/>
+	</app-side-drawer>
+
+	<app-side-drawer
+		[open]="!!editingItem()"
+		title="Editar asignación"
+		description="Cambia el técnico asignado o actualiza las notas internas."
+		widthClass="sm:max-w-2xl"
+		(closed)="closeEditDrawer()"
+	>
+		@if (editingItem()) {
+			<app-edit-assignment-form
+				[item]="editingItem()!"
+				(updated)="onUpdated($event)"
+				(cancelled)="closeEditDrawer()"
+			/>
+		}
+	</app-side-drawer>
+</app-admin-page-shell>

@@ -1,0 +1,30 @@
+<app-admin-page-shell>
+	<app-page-header
+		title="Ofertas"
+		description="Revisa y responde las ofertas recibidas para atender incidentes de clientes."
+		eyebrow="Operación"
+		[showRefresh]="false"
+		[showPrimaryAction]="false"
+	/>
+
+	<app-tenant-incident-offers-list
+		(respondClicked)="openResponseDrawer($event)"
+	/>
+
+	<app-side-drawer
+		[open]="!!respondingItem()"
+		[title]="responseMode() === 'ACCEPT' ? 'Aceptar oferta' : 'Rechazar oferta'"
+		description="Agrega un mensaje opcional y confirma tu respuesta."
+		widthClass="sm:max-w-xl"
+		(closed)="closeResponseDrawer()"
+	>
+		@if (respondingItem()) {
+			<app-respond-incident-offer-form
+				[item]="respondingItem()!"
+				[mode]="responseMode()"
+				(responded)="onResponded($event)"
+				(cancelled)="closeResponseDrawer()"
+			/>
+		}
+	</app-side-drawer>
+</app-admin-page-shell>

@@ -1,15 +1,81 @@
-<footer class="border-t border-slate-200 bg-white">
-  <div
-    class="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-8 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
-    <div>
-      <p class="text-sm font-semibold text-slate-900">MyApp</p>
-      <p class="mt-1 text-sm text-slate-500">Plataforma moderna para gestionar tu negocio.</p>
-    </div>
+<footer id="contact" class="bg-background border-t">
+	<div
+		class="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 md:grid-cols-3 lg:px-8"
+	>
+		<div>
+			<div class="flex items-center gap-2">
+				<span
+					class="bg-primary text-primary-foreground flex size-9 items-center justify-center rounded-xl text-sm font-bold"
+				>
+					M
+				</span>
 
-    <div class="flex flex-wrap gap-4 text-sm text-slate-500">
-      <a class="transition hover:text-slate-900">Términos</a>
-      <a class="transition hover:text-slate-900">Privacidad</a>
-      <a class="transition hover:text-slate-900">Soporte</a>
-    </div>
-  </div>
+				<span class="text-foreground font-semibold"> Mechanic </span>
+			</div>
+
+			<p class="text-muted-foreground mt-4 max-w-sm text-sm leading-6">
+				Plataforma para conectar clientes con talleres y técnicos disponibles
+				para asistencia mecánica.
+			</p>
+		</div>
+
+		<div>
+			<h3 class="text-foreground text-sm font-semibold">Producto</h3>
+
+			<div class="mt-4 grid gap-3 text-sm">
+				<a
+					[routerLink]="appRoutes.public.home"
+					fragment="how-it-works"
+					class="text-muted-foreground hover:text-foreground"
+				>
+					Cómo funciona
+				</a>
+
+				<a
+					[routerLink]="appRoutes.public.home"
+					fragment="services"
+					class="text-muted-foreground hover:text-foreground"
+				>
+					Servicios
+				</a>
+
+				<a
+					[routerLink]="appRoutes.public.home"
+					fragment="for-workshops"
+					class="text-muted-foreground hover:text-foreground"
+				>
+					Para talleres
+				</a>
+			</div>
+		</div>
+
+		<div>
+			<h3 class="text-foreground text-sm font-semibold">Acceso</h3>
+
+			<div class="mt-4 grid gap-3 text-sm">
+				<a
+					[routerLink]="appRoutes.auth.login"
+					class="text-muted-foreground hover:text-foreground"
+				>
+					Iniciar sesión
+				</a>
+
+				<a
+					[routerLink]="appRoutes.auth.register"
+					class="text-muted-foreground hover:text-foreground"
+				>
+					Crear cuenta
+				</a>
+			</div>
+		</div>
+	</div>
+
+	<div class="border-t">
+		<div
+			class="text-muted-foreground mx-auto flex max-w-7xl flex-col gap-2 px-4 py-5 text-xs sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8"
+		>
+			<p>© 2026 Mechanic System. Todos los derechos reservados.</p>
+			<p>Diseñado para asistencia mecánica moderna.</p>
+		</div>
+	</div>
 </footer>

@@ -1,0 +1,95 @@
+<form class="space-y-5" [formGroup]="form" (ngSubmit)="submit()">
+	<section class="bg-muted/40 rounded-lg border p-4 text-sm">
+		<p class="font-medium">
+			{{ technicianLabel() }}
+		</p>
+
+		<p class="text-muted-foreground mt-1 leading-6">
+			La disponibilidad define si este técnico puede ser considerado para nuevas
+			asignaciones.
+		</p>
+	</section>
+
+	<hlm-field>
+		<label hlmFieldLabel for="availability_status"
+			>Estado de disponibilidad</label
+		>
+
+		<select
+			id="availability_status"
+			formControlName="availability_status"
+			class="border-input bg-background h-10 w-full rounded-md border px-3 text-sm"
+		>
+			@for (option of statusOptions; track option.value) {
+				<option [value]="option.value">
+					{{ option.label }}
+				</option>
+			}
+		</select>
+	</hlm-field>
+
+	<div class="bg-muted/40 rounded-lg border p-4 text-sm">
+		<p class="font-medium">Ventana horaria opcional</p>
+		<p class="text-muted-foreground mt-1 leading-6">
+			Si dejas ambas fechas vacías, el estado aplica sin límite horario.
+		</p>
+	</div>
+
+	<div class="grid gap-4 sm:grid-cols-2">
+		<hlm-field>
+			<label hlmFieldLabel for="available_from">Disponible desde</label>
+
+			<input
+				id="available_from"
+				type="datetime-local"
+				hlmInput
+				formControlName="available_from"
+			/>
+		</hlm-field>
+
+		<hlm-field>
+			<label hlmFieldLabel for="available_until">Disponible hasta</label>
+
+			<input
+				id="available_until"
+				type="datetime-local"
+				hlmInput
+				formControlName="available_until"
+			/>
+		</hlm-field>
+	</div>
+
+	@if (errorMessage()) {
+		<div
+			class="border-destructive/40 bg-destructive/10 text-destructive rounded-md border px-3 py-2 text-sm"
+		>
+			{{ errorMessage() }}
+		</div>
+	}
+
+	<div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+		<button
+			type="button"
+			hlmBtn
+			variant="outline"
+			class="cursor-pointer"
+			[disabled]="isSubmitting()"
+			(click)="cancel()"
+		>
+			Cancelar
+		</button>
+
+		<button
+			type="submit"
+			hlmBtn
+			class="cursor-pointer"
+			[disabled]="isSubmitting()"
+		>
+			@if (isSubmitting()) {
+				Guardando...
+			} @else {
+				Guardar disponibilidad
+			}
+		</button>
+	</div>
+</form>
