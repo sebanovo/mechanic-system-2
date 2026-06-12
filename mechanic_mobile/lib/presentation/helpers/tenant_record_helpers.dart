@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../pages/assignment_tracking_page.dart';
 import '../widgets/app_widgets.dart';
 
 String tenantRecordPrimaryLabel(Map<String, dynamic> record) {
@@ -344,6 +345,16 @@ void showTenantRecordDetails(
                   AssignmentTrackingLivePanel(
                     assignmentId: tenantAssignmentId(record),
                     trackingSession: _mapValue(record['tracking_session']),
+                    onOpenMap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => AssignmentTrackingPage(
+                            assignmentId: tenantAssignmentId(record),
+                            trackingSession: _mapValue(record['tracking_session']),
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ],
               ],

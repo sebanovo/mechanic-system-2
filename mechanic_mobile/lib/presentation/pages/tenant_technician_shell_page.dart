@@ -9,6 +9,7 @@ import '../utils/api_enum_labels.dart';
 import '../viewmodels/auth_viewmodel.dart';
 import '../viewmodels/tenant_viewmodel.dart';
 import '../widgets/app_widgets.dart';
+import 'assignment_tracking_page.dart';
 
 class TenantTechnicianShellPage extends StatefulWidget {
   const TenantTechnicianShellPage({super.key});
@@ -435,6 +436,16 @@ class _TenantTechnicianShellPageState extends State<TenantTechnicianShellPage> {
             AssignmentTrackingLivePanel(
               assignmentId: _selectedAssignmentId!,
               trackingSession: vm.assignmentTrackingSession,
+              onOpenMap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => AssignmentTrackingPage(
+                      assignmentId: _selectedAssignmentId!,
+                      trackingSession: vm.assignmentTrackingSession,
+                    ),
+                  ),
+                );
+              },
             ),
           ],
         ],

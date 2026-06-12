@@ -64,9 +64,13 @@ class AssignmentTrackingSocketService {
       'type': 'LOCATION_UPDATED',
       'latitude': latitude,
       'longitude': longitude,
-      'heading': ?heading,
-      'speed_kmh': ?speedKmh,
     };
+    if (heading != null) {
+      payload['heading'] = heading;
+    }
+    if (speedKmh != null) {
+      payload['speed_kmh'] = speedKmh;
+    }
     _channel!.sink.add(jsonEncode(payload));
   }
 

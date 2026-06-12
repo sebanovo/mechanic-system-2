@@ -10,6 +10,16 @@ class AppEnv {
 
   static String get defaultTenantId => dotenv.env['DEFAULT_TENANT_ID'] ?? '';
 
+  static String get mapTileUrl =>
+      dotenv.env['MAP_TILE_URL'] ??
+      'https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=Wz3sO6ej1k66cNR8Lzcr';
+
+  static String get graphhopperApiKey =>
+      dotenv.env['GRAPHHOPPER_API_KEY'] ?? '';
+
+  static String get graphhopperBaseUrl =>
+      _normalize(dotenv.env['GRAPHHOPPER_BASE_URL'] ?? 'https://graphhopper.com/api/1');
+
   static Future<void> load() async {
     try {
       await dotenv.load(fileName: '.env');

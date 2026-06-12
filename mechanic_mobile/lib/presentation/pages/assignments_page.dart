@@ -4,6 +4,7 @@ import 'package:skeletonizer/skeletonizer.dart';
 
 import '../viewmodels/app_viewmodels.dart';
 import '../widgets/app_widgets.dart';
+import 'assignment_tracking_page.dart';
 
 class AssignmentsPage extends StatelessWidget {
   const AssignmentsPage({super.key});
@@ -352,6 +353,16 @@ class AssignmentsPage extends StatelessWidget {
                   AssignmentTrackingLivePanel(
                     assignmentId: id,
                     trackingSession: vm.trackingSession,
+                    onOpenMap: () {
+                      Navigator.of(sheetContext).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => AssignmentTrackingPage(
+                            assignmentId: id,
+                            trackingSession: vm.trackingSession,
+                          ),
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 12),
                   Text(
