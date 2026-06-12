@@ -302,28 +302,32 @@ Future<void> showIncidentForm(
                           ),
                         ),
                         const SizedBox(width: 8),
-                        FilledButton.tonalIcon(
-                          onPressed: () async {
-                            try {
-                              final position = await _resolveCurrentPosition();
-                              if (!sheetContext.mounted) return;
-                              latController.text = position.latitude.toString();
-                              lngController.text = position.longitude.toString();
-                              setState(() {});
-                              showAppSnackBar(
-                                sheetContext,
-                                'GPS aplicado: ${position.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}',
-                              );
-                            } catch (exception) {
-                              formError = exception.toString().replaceFirst(
-                                'Exception: ',
-                                '',
-                              );
-                              setState(() {});
-                            }
-                          },
-                          icon: const Icon(Icons.my_location_rounded),
-                          label: const Text('Usar GPS'),
+                        SizedBox(
+                          width: 48,
+                          height: 48,
+                          child: IconButton.filledTonal(
+                            tooltip: 'Usar GPS',
+                            onPressed: () async {
+                              try {
+                                final position = await _resolveCurrentPosition();
+                                if (!sheetContext.mounted) return;
+                                latController.text = position.latitude.toString();
+                                lngController.text = position.longitude.toString();
+                                setState(() {});
+                                showAppSnackBar(
+                                  sheetContext,
+                                  'GPS aplicado: ${position.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}',
+                                );
+                              } catch (exception) {
+                                formError = exception.toString().replaceFirst(
+                                  'Exception: ',
+                                  '',
+                                );
+                                setState(() {});
+                              }
+                            },
+                            icon: const Icon(Icons.my_location_rounded),
+                          ),
                         ),
                       ],
                     ),
@@ -486,7 +490,7 @@ Widget _vehiclePickerCard(
           children: [
             Row(
               children: [
-                Icon(icon, color: const Color(0xFF166AE9)),
+                Icon(icon, color: Theme.of(context).colorScheme.primary),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
@@ -512,9 +516,9 @@ Widget _vehiclePickerCard(
               detail,
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: Colors.blueGrey),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
             ),
           ],
         ),

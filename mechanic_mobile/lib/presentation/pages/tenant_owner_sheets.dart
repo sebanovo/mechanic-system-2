@@ -474,28 +474,32 @@ void showEditTenantProfileSheet(BuildContext context, TenantViewModel vm) {
                 const SizedBox(width: 10),
                 Expanded(child: _sheetField(longitude, 'Longitud')),
                 const SizedBox(width: 8),
-                FilledButton.tonalIcon(
-                  onPressed: () async {
-                    try {
-                      final position = await _resolveCurrentPosition();
-                      latitude.text = position.latitude.toString();
-                      longitude.text = position.longitude.toString();
-                      if (sheetContext.mounted) {
+                SizedBox(
+                  width: 48,
+                  height: 48,
+                  child: IconButton.filledTonal(
+                    tooltip: 'Usar GPS',
+                    onPressed: () async {
+                      try {
+                        final position = await _resolveCurrentPosition();
+                        latitude.text = position.latitude.toString();
+                        longitude.text = position.longitude.toString();
+                        if (sheetContext.mounted) {
+                          showAppSnackBar(
+                            sheetContext,
+                            'GPS aplicado: ${position.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}',
+                          );
+                        }
+                      } catch (exception) {
+                        if (!sheetContext.mounted) return;
                         showAppSnackBar(
                           sheetContext,
-                          'GPS aplicado: ${position.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}',
+                          exception.toString().replaceFirst('Exception: ', ''),
                         );
                       }
-                    } catch (exception) {
-                      if (!sheetContext.mounted) return;
-                      showAppSnackBar(
-                        sheetContext,
-                        exception.toString().replaceFirst('Exception: ', ''),
-                      );
-                    }
-                  },
-                  icon: const Icon(Icons.my_location_rounded),
-                  label: const Text('Usar GPS'),
+                    },
+                    icon: const Icon(Icons.my_location_rounded),
+                  ),
                 ),
               ],
             ),
@@ -753,7 +757,7 @@ Widget _recordPickerCard(
           children: [
             Row(
               children: [
-                Icon(icon, color: const Color(0xFF166AE9)),
+                Icon(icon, color: Theme.of(context).colorScheme.primary),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
@@ -780,7 +784,7 @@ Widget _recordPickerCard(
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.blueGrey,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
             ),
           ],

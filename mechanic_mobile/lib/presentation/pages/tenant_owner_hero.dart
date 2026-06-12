@@ -28,16 +28,15 @@ class TenantOwnerHero extends StatelessWidget {
         ? Map<String, dynamic>.from(detail['tenant'])
         : tenant;
 
-    return SurfaceCard(
+  return SurfaceCard(
       padding: const EdgeInsets.all(0),
       child: Container(
         decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [SapphirePalette.sapphire700, SapphirePalette.sapphire500],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          color: Color(0xFFFFC107),
           borderRadius: BorderRadius.all(Radius.circular(28)),
+          border: Border.fromBorderSide(
+            BorderSide(color: Colors.black, width: 1.2),
+          ),
         ),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
@@ -47,7 +46,7 @@ class TenantOwnerHero extends StatelessWidget {
               Text(
                 contextData?.user.fullName ?? 'Propietario de taller',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: Colors.white,
+                  color: Colors.black,
                   fontWeight: FontWeight.w900,
                 ),
               ),
@@ -57,7 +56,7 @@ class TenantOwnerHero extends StatelessWidget {
                     ? 'Sin tenant actual seleccionado'
                     : tenant['commercial_name']?.toString() ?? 'Sin nombre',
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.9),
+                  color: Colors.black87,
                 ),
               ),
               const SizedBox(height: 12),
@@ -116,9 +115,9 @@ Widget _heroChip(BuildContext context, String label, IconData icon) {
   return Container(
     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
     decoration: BoxDecoration(
-      color: Colors.white.withValues(alpha: 0.14),
+      color: Colors.black,
       borderRadius: BorderRadius.circular(999),
-      border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
+      border: Border.all(color: Colors.black, width: 1),
     ),
     child: Row(
       mainAxisSize: MainAxisSize.min,
@@ -147,7 +146,7 @@ Widget _heroAction(
   required VoidCallback onTap,
 }) {
   return Material(
-    color: Colors.white,
+    color: const Color(0xFFFFF8D6),
     borderRadius: BorderRadius.circular(18),
     child: InkWell(
       onTap: onTap,
@@ -157,14 +156,14 @@ Widget _heroAction(
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: SapphirePalette.sapphire700, size: 20),
+            Icon(icon, color: Colors.black, size: 20),
             const SizedBox(width: 8),
             Flexible(
               child: Text(
                 label,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: SapphirePalette.sapphire900,
+                  color: Colors.black,
                   fontWeight: FontWeight.w800,
                 ),
               ),

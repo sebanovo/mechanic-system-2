@@ -45,14 +45,67 @@ class AuthPage extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Acceso rápido',
-                        style: Theme.of(context).textTheme.titleLarge,
+                      Row(
+                        children: [
+                          Container(
+                            width: 74,
+                            height: 74,
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.primary,
+                              borderRadius: BorderRadius.circular(22),
+                            ),
+                            child: Image.asset(
+                              'assets/logo2.png',
+                              fit: BoxFit.contain,
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  _titleForRole(role),
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.headlineMedium,
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  _subtitleForRole(role),
+                                  style: Theme.of(context).textTheme.bodyMedium,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        _subtitleForRole(role),
-                        style: Theme.of(context).textTheme.bodyMedium,
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SurfaceCard(
+                  padding: const EdgeInsets.all(18),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.primary,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Text(
+                          'Acceso rápido',
+                          style: Theme.of(
+                            context,
+                          ).textTheme.titleLarge?.copyWith(color: Colors.black),
+                        ),
                       ),
                       if (vm.error != null) ...[
                         const SizedBox(height: 12),

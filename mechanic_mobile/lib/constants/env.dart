@@ -20,6 +20,9 @@ class AppEnv {
   static String get graphhopperBaseUrl =>
       _normalize(dotenv.env['GRAPHHOPPER_BASE_URL'] ?? 'https://graphhopper.com/api/1');
 
+  static String get graphhopperProfile =>
+      dotenv.env['GRAPHHOPPER_PROFILE'] ?? 'car';
+
   static Future<void> load() async {
     try {
       await dotenv.load(fileName: '.env');

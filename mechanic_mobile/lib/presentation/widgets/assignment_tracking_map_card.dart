@@ -69,8 +69,9 @@ class _AssignmentTrackingMapCardState extends State<AssignmentTrackingMapCard> {
 
   List<LatLng> _visiblePoints() {
     final points = <LatLng>[];
-    if (widget.technicianLocation != null)
+    if (widget.technicianLocation != null) {
       points.add(widget.technicianLocation!);
+    }
     if (widget.destinationLocation != null) {
       points.add(widget.destinationLocation!);
     }
@@ -114,6 +115,8 @@ class _AssignmentTrackingMapCardState extends State<AssignmentTrackingMapCard> {
     final destination = widget.destinationLocation;
     final routePoints = widget.routePoints;
     final routeAvailable = routePoints.length >= 2;
+    final technicianCoords = _formatLatLng(technician);
+    final destinationCoords = _formatLatLng(destination);
     final markers = <Marker>[
       if (destination != null)
         Marker(
@@ -163,10 +166,48 @@ class _AssignmentTrackingMapCardState extends State<AssignmentTrackingMapCard> {
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: 12),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF3A6),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: Colors.black, width: 1.2),
+            ),
+            child: Text(
+              'Vista ampliada para seguir cliente, técnico y ruta sin perder contexto.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Colors.black87,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: [
+              _coordinateCard(
+                context,
+                label: 'Cliente / incidente',
+                value: destinationCoords,
+                icon: Icons.location_on_rounded,
+                color: Theme.of(context).colorScheme.error,
+              ),
+              _coordinateCard(
+                context,
+                label: 'Técnico',
+                value: technicianCoords,
+                icon: Icons.build_circle_rounded,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
           AspectRatio(
-            aspectRatio: 16 / 11,
+            aspectRatio: 16 / 15,
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(24),
               child: Stack(
                 children: [
                   FlutterMap(
@@ -347,6 +388,59 @@ class _AssignmentTrackingMapCardState extends State<AssignmentTrackingMapCard> {
     );
   }
 
+  Widget _coordinateCard(
+    BuildContext context, {
+    required String label,
+    required String value,
+    required IconData icon,
+    required Color color,
+  }) {
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minWidth: 220),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFF7C9),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: Colors.black, width: 1.1),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Icon(icon, size: 18, color: color),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      label,
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w900,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                value,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: Colors.black87,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _statusChip(BuildContext context, String label) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
@@ -361,6 +455,11 @@ class _AssignmentTrackingMapCardState extends State<AssignmentTrackingMapCard> {
         ).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w800),
       ),
     );
+  }
+
+  String _formatLatLng(LatLng? point) {
+    if (point == null) return 'Sin ubicación';
+    return '${point.latitude.toStringAsFixed(6)}, ${point.longitude.toStringAsFixed(6)}';
   }
 
   Widget _detailChip(

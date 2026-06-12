@@ -16,14 +16,14 @@ class SurfaceCard extends StatelessWidget {
       width: double.infinity,
       padding: padding,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFFFFF8D6),
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: const Color(0xFFE4ECFB)),
+        border: Border.all(color: Colors.black, width: 1.2),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x080D408C),
-            blurRadius: 24,
-            offset: Offset(0, 10),
+            color: Color(0xFF111111),
+            blurRadius: 0,
+            offset: Offset(5, 5),
           ),
         ],
       ),

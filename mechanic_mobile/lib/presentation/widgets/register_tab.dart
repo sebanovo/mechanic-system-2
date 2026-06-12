@@ -37,7 +37,20 @@ class RegisterTab extends StatelessWidget {
     return Form(
       key: formKey,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          Text(
+            'Crea tu acceso',
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+          const SizedBox(height: 6),
+          Text(
+            role == AppEntryRole.client
+                ? 'Regístrate como cliente para manejar tus vehículos e incidentes.'
+                : 'Completa tus datos para entrar al flujo de taller.',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 16),
           TextFormField(
             controller: email,
             decoration: const InputDecoration(labelText: 'Correo electrónico'),

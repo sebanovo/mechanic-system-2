@@ -23,7 +23,18 @@ class LoginTab extends StatelessWidget {
     return Form(
       key: formKey,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          Text(
+            'Ingresa con tu cuenta',
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Usa tus credenciales para abrir la app con el rol correcto.',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 16),
           TextFormField(
             controller: email,
             decoration: const InputDecoration(labelText: 'Correo electrónico'),

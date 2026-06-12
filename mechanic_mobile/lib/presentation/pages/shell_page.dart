@@ -69,16 +69,26 @@ class ShellPage extends StatelessWidget {
 
   Widget _buildRail(BuildContext context, AppShellViewModel vm) {
     return NavigationRail(
+      backgroundColor: const Color(0xFFFFF5C2),
       selectedIndex: vm.selectedIndex,
       onDestinationSelected: context.read<AppShellViewModel>().setIndex,
       labelType: NavigationRailLabelType.all,
       leading: Padding(
         padding: const EdgeInsets.all(16),
-        child: Text(
-          'Cliente',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w900,
-              ),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.black,
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Text(
+            'Cliente',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white,
+                ),
+          ),
         ),
       ),
       destinations: const [
@@ -109,7 +119,7 @@ class ShellPage extends StatelessWidget {
       ],
       trailing: Padding(
         padding: const EdgeInsets.all(16),
-        child: FilledButton.tonalIcon(
+        child: FilledButton.icon(
           onPressed: () async {
             await context.read<AuthViewModel>().signOut();
             if (!context.mounted) return;
@@ -124,16 +134,36 @@ class ShellPage extends StatelessWidget {
 
   Drawer _buildDrawer(BuildContext context, AppShellViewModel vm) {
     return Drawer(
+      backgroundColor: const Color(0xFFFFF8D6),
       child: SafeArea(
         child: ListView(
           padding: const EdgeInsets.symmetric(vertical: 16),
           children: [
-            ListTile(
-              title: Text(
-                'Cliente',
-                style: Theme.of(context).textTheme.titleLarge,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.black,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Cliente',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            color: Colors.white,
+                          ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Navegación principal',
+                      style: TextStyle(color: Colors.white70),
+                    ),
+                  ],
+                ),
               ),
-              subtitle: const Text('Navegación principal'),
             ),
             const Divider(height: 24),
             _drawerTile(

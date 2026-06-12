@@ -1,28 +1,30 @@
 import 'package:flutter/material.dart';
 
 class SapphirePalette {
-  static const Color sapphire50 = Color(0xFFE8F0FD);
-  static const Color sapphire100 = Color(0xFFD0E1FB);
-  static const Color sapphire200 = Color(0xFFA2C4F6);
-  static const Color sapphire300 = Color(0xFF73A6F2);
-  static const Color sapphire400 = Color(0xFF4488EE);
-  static const Color sapphire500 = Color(0xFF166AE9);
-  static const Color sapphire600 = Color(0xFF1155BB);
-  static const Color sapphire700 = Color(0xFF0D408C);
-  static const Color sapphire800 = Color(0xFF092B5D);
-  static const Color sapphire900 = Color(0xFF04152F);
-  static const Color sapphire950 = Color(0xFF030F21);
+  static const Color sapphire50 = Color(0xFFFFFDE7);
+  static const Color sapphire100 = Color(0xFFFFF9C4);
+  static const Color sapphire200 = Color(0xFFFFF59D);
+  static const Color sapphire300 = Color(0xFFFFF176);
+  static const Color sapphire400 = Color(0xFFFFEB3B);
+  static const Color sapphire500 = Color(0xFFFFC107);
+  static const Color sapphire600 = Color(0xFFFFB300);
+  static const Color sapphire700 = Color(0xFFFFA000);
+  static const Color sapphire800 = Color(0xFFFF8F00);
+  static const Color sapphire900 = Color(0xFFFF6F00);
+  static const Color sapphire950 = Color(0xFF111111);
 }
 
 class AppTheme {
   static ThemeData light() {
     const primary = SapphirePalette.sapphire500;
-    const surface = Color(0xFFF6F9FF);
+    const surface = Color(0xFFFFFBEB);
+    const surfaceVariant = Color(0xFFFFF4CC);
+    const outline = Color(0xFF2A2A2A);
 
     final colorScheme = ColorScheme.fromSeed(
       seedColor: primary,
       primary: primary,
-      secondary: SapphirePalette.sapphire700,
+      secondary: Colors.black,
       surface: surface,
       brightness: Brightness.light,
     );
@@ -36,20 +38,20 @@ class AppTheme {
         elevation: 0,
         scrolledUnderElevation: 0,
         backgroundColor: Colors.transparent,
-        foregroundColor: SapphirePalette.sapphire950,
+        foregroundColor: Colors.black,
       ),
       cardTheme: CardThemeData(
-        color: Colors.white,
+        color: surfaceVariant,
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(24),
-          side: const BorderSide(color: Color(0xFFE4ECFB)),
+          side: const BorderSide(color: outline),
         ),
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: Colors.white,
-        indicatorColor: SapphirePalette.sapphire50,
+        indicatorColor: SapphirePalette.sapphire100,
         labelTextStyle: WidgetStateProperty.resolveWith(
           (states) =>
               const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
@@ -64,16 +66,16 @@ class AppTheme {
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
-          borderSide: const BorderSide(color: Color(0xFFD8E3F7)),
+          borderSide: const BorderSide(color: outline),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
-          borderSide: const BorderSide(color: Color(0xFFD8E3F7)),
+          borderSide: const BorderSide(color: outline),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
           borderSide: const BorderSide(
-            color: SapphirePalette.sapphire500,
+            color: Colors.black,
             width: 1.6,
           ),
         ),
@@ -82,7 +84,7 @@ class AppTheme {
         style: ElevatedButton.styleFrom(
           minimumSize: const Size.fromHeight(52),
           backgroundColor: SapphirePalette.sapphire500,
-          foregroundColor: Colors.white,
+          foregroundColor: Colors.black,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(18),
           ),
@@ -92,8 +94,8 @@ class AppTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           minimumSize: const Size.fromHeight(52),
-          foregroundColor: SapphirePalette.sapphire700,
-          side: const BorderSide(color: Color(0xFFB9CDEF)),
+          foregroundColor: Colors.black,
+          side: const BorderSide(color: outline),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(18),
           ),
@@ -103,14 +105,14 @@ class AppTheme {
         headlineMedium: TextStyle(
           fontWeight: FontWeight.w800,
           letterSpacing: -0.4,
-          color: SapphirePalette.sapphire950,
+          color: Colors.black,
         ),
         titleLarge: TextStyle(
           fontWeight: FontWeight.w700,
-          color: SapphirePalette.sapphire950,
+          color: Colors.black,
         ),
-        bodyLarge: TextStyle(color: SapphirePalette.sapphire900, height: 1.35),
-        bodyMedium: TextStyle(color: SapphirePalette.sapphire800, height: 1.35),
+        bodyLarge: TextStyle(color: Colors.black87, height: 1.35),
+        bodyMedium: TextStyle(color: Colors.black87, height: 1.35),
       ),
     );
   }

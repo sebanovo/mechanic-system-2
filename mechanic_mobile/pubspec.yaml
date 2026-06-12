@@ -52,19 +52,19 @@ flutter:
     - assets/
 
 flutter_launcher_icons:
-  image_path: "assets/logo1.png" 
+  image_path: "assets/logo2.png" 
   android: true
   ios: true
   remove_alpha_ios: true
   web:
     generate: true
-    image_path: "assets/logo1.png"
+    image_path: "assets/logo2.png"
   windows:
     generate: true
-    image_path: "assets/logo1.png"
+    image_path: "assets/logo2.png"
   macos:
     generate: true
-    image_path: "assets/logo1.png"
+    image_path: "assets/logo2.png"
   linux:
     generate: true
-    image_path: "assets/logo1.png"
+    image_path: "assets/logo2.png"

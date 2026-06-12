@@ -17,14 +17,10 @@ class SplashPage extends StatelessWidget {
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF030F21), Color(0xFF092B5D), Color(0xFF166AE9)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          color: Color(0xFFFFC107),
         ),
         child: const Center(
-          child: CircularProgressIndicator(color: Colors.white),
+          child: CircularProgressIndicator(color: Colors.black),
         ),
       ),
     );

@@ -103,12 +103,11 @@ class NotificationsPage extends StatelessWidget {
       padding: EdgeInsets.zero,
       child: Container(
         decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF04152F), Color(0xFF166AE9)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          color: Color(0xFFFFC107),
           borderRadius: BorderRadius.all(Radius.circular(28)),
+          border: Border.fromBorderSide(
+            BorderSide(color: Colors.black, width: 1.2),
+          ),
         ),
         padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
         child: Column(
@@ -117,7 +116,7 @@ class NotificationsPage extends StatelessWidget {
             Text(
               'Centro de notificaciones',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                color: Colors.white,
+                color: Colors.black,
                 fontWeight: FontWeight.w900,
               ),
             ),
@@ -125,7 +124,7 @@ class NotificationsPage extends StatelessWidget {
             Text(
               'Mensajes y dispositivos sincronizados con Firebase y el backend.',
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: Colors.white.withValues(alpha: 0.9),
+                color: Colors.black87,
               ),
             ),
             const SizedBox(height: 14),
@@ -370,9 +369,9 @@ class NotificationsPage extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.14),
+        color: Colors.black,
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
+        border: Border.all(color: Colors.black, width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -382,9 +381,9 @@ class NotificationsPage extends StatelessWidget {
           Text(
             label,
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.w800,
-            ),
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                ),
           ),
         ],
       ),

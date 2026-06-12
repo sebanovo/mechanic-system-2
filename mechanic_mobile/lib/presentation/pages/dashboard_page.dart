@@ -147,21 +147,14 @@ Widget _buildHeroPanel({
 }) {
   return Container(
     decoration: BoxDecoration(
-      gradient: const LinearGradient(
-        colors: [
-          SapphirePalette.sapphire700,
-          SapphirePalette.sapphire500,
-          SapphirePalette.sapphire400,
-        ],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      ),
+      color: const Color(0xFFFFC107),
       borderRadius: BorderRadius.circular(30),
+      border: Border.all(color: Colors.black, width: 1.4),
       boxShadow: const [
         BoxShadow(
-          color: Color(0x2A0D408C),
-          blurRadius: 26,
-          offset: Offset(0, 14),
+          color: Color(0xFF111111),
+          blurRadius: 0,
+          offset: Offset(6, 6),
         ),
       ],
     ),
@@ -170,12 +163,12 @@ Widget _buildHeroPanel({
         Positioned(
           right: -24,
           top: -18,
-          child: _accentCircle(size: 120, opacity: 0.16),
+          child: _accentCircle(size: 120, opacity: 0.12),
         ),
         Positioned(
           right: 28,
           bottom: -30,
-          child: _accentCircle(size: 84, opacity: 0.12),
+          child: _accentCircle(size: 84, opacity: 0.08),
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 22, 20, 20),
@@ -188,7 +181,7 @@ Widget _buildHeroPanel({
                     width: 12,
                     height: 12,
                     decoration: BoxDecoration(
-                      color: SapphirePalette.sapphire50,
+                      color: Colors.black,
                       borderRadius: BorderRadius.circular(100),
                     ),
                   ),
@@ -196,7 +189,7 @@ Widget _buildHeroPanel({
                   Text(
                     'Panel de auxilio',
                     style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.88),
+                      color: Colors.black87,
                       letterSpacing: 0.4,
                     ),
                   ),
@@ -206,7 +199,7 @@ Widget _buildHeroPanel({
               Text(
                 'Todo lo importante en un solo lugar',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  color: Colors.white,
+                  color: Colors.black,
                   fontWeight: FontWeight.w900,
                   height: 1.05,
                 ),
@@ -215,7 +208,7 @@ Widget _buildHeroPanel({
               Text(
                 'Accede rápido a tu sección activa, revisa el estado de la operación y vuelve a los módulos clave sin perder el flujo.',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.9),
+                  color: Colors.black87,
                   height: 1.45,
                 ),
               ),
@@ -274,9 +267,9 @@ Widget _heroChip({
   return Container(
     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
     decoration: BoxDecoration(
-      color: Colors.white.withValues(alpha: 0.14),
+      color: Colors.black,
       borderRadius: BorderRadius.circular(999),
-      border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
+      border: Border.all(color: Colors.black, width: 1),
     ),
     child: Row(
       mainAxisSize: MainAxisSize.min,
@@ -302,7 +295,7 @@ Widget _heroButton({
   required VoidCallback onTap,
 }) {
   return Material(
-    color: Colors.white,
+    color: Colors.black,
     borderRadius: BorderRadius.circular(18),
     child: InkWell(
       onTap: onTap,
@@ -312,14 +305,14 @@ Widget _heroButton({
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: SapphirePalette.sapphire700, size: 20),
+            Icon(icon, color: const Color(0xFFFFC107), size: 20),
             const SizedBox(width: 8),
             Flexible(
               child: Text(
                 label,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: SapphirePalette.sapphire900,
+                  color: Colors.white,
                   fontWeight: FontWeight.w800,
                 ),
               ),
@@ -337,7 +330,7 @@ Widget _compactAction({
   required VoidCallback onTap,
 }) {
   return Material(
-    color: SapphirePalette.sapphire50,
+    color: const Color(0xFFFFF8D6),
     borderRadius: BorderRadius.circular(18),
     child: InkWell(
       onTap: onTap,
@@ -350,14 +343,14 @@ Widget _compactAction({
               child: Text(
                 label,
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: SapphirePalette.sapphire900,
+                  color: Colors.black,
                   fontWeight: FontWeight.w800,
                 ),
               ),
             ),
             const Icon(
               Icons.arrow_forward_rounded,
-              color: SapphirePalette.sapphire700,
+              color: Colors.black,
               size: 18,
             ),
           ],
@@ -373,7 +366,7 @@ Widget _accentCircle({required double size, required double opacity}) {
     height: size,
     decoration: BoxDecoration(
       shape: BoxShape.circle,
-      color: Colors.white.withValues(alpha: opacity),
+      color: Colors.black.withValues(alpha: opacity),
     ),
   );
 }

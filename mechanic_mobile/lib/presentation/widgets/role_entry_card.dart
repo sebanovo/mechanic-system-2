@@ -25,8 +25,15 @@ class RoleEntryCard extends StatelessWidget {
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(28),
-          color: Colors.white.withValues(alpha: 0.08),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+          color: const Color(0xFFFFF8D6),
+          border: Border.all(color: Colors.black, width: 1.2),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0xFF111111),
+              blurRadius: 0,
+              offset: Offset(4, 4),
+            ),
+          ],
         ),
         child: Row(
           children: [
@@ -34,10 +41,11 @@ class RoleEntryCard extends StatelessWidget {
               width: 60,
               height: 60,
               decoration: BoxDecoration(
-                color: accent.withValues(alpha: 0.18),
+                color: accent,
                 borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.black, width: 1.2),
               ),
-              child: Icon(icon, color: Colors.white, size: 28),
+              child: Icon(icon, color: Colors.black, size: 28),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -48,19 +56,19 @@ class RoleEntryCard extends StatelessWidget {
                     title,
                     style: Theme.of(
                       context,
-                    ).textTheme.titleLarge?.copyWith(color: Colors.white),
+                    ).textTheme.titleLarge?.copyWith(color: Colors.black),
                   ),
                   const SizedBox(height: 6),
                   Text(
                     subtitle,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.82),
+                      color: Colors.black87,
                     ),
                   ),
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right_rounded, color: Colors.white),
+            const Icon(Icons.chevron_right_rounded, color: Colors.black),
           ],
         ),
       ),

@@ -24,14 +24,14 @@ class ActionCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: const Color(0xFFFFF8D6),
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: const Color(0xFFE4ECFB)),
+          border: Border.all(color: Colors.black, width: 1.2),
           boxShadow: const [
             BoxShadow(
-              color: Color(0x0F0D408C),
-              blurRadius: 20,
-              offset: Offset(0, 8),
+              color: Color(0xFF111111),
+              blurRadius: 0,
+              offset: Offset(5, 5),
             ),
           ],
         ),
@@ -41,10 +41,11 @@ class ActionCard extends StatelessWidget {
               width: 52,
               height: 52,
               decoration: BoxDecoration(
-                color: SapphirePalette.sapphire50,
+                color: SapphirePalette.sapphire500,
                 borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: Colors.black, width: 1.2),
               ),
-              child: Icon(icon, color: SapphirePalette.sapphire700),
+              child: Icon(icon, color: Colors.black),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -55,17 +56,20 @@ class ActionCard extends StatelessWidget {
                     title,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w700,
+                          color: Colors.black,
                         ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     subtitle,
-                    style: Theme.of(context).textTheme.bodyMedium,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Colors.black87,
+                        ),
                   ),
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right_rounded),
+            const Icon(Icons.chevron_right_rounded, color: Colors.black),
           ],
         ),
       ),

@@ -125,16 +125,26 @@ class _TenantTechnicianShellPageState extends State<TenantTechnicianShellPage> {
 
   Widget _buildRail(BuildContext context) {
     return NavigationRail(
+      backgroundColor: const Color(0xFFFFF5C2),
       selectedIndex: _index,
       onDestinationSelected: _goTo,
       labelType: NavigationRailLabelType.all,
       leading: Padding(
         padding: const EdgeInsets.all(16),
-        child: Text(
-          'Panel técnico',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w900,
-              ),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.black,
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Text(
+            'Panel técnico',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white,
+                ),
+          ),
         ),
       ),
       destinations: const [
@@ -173,7 +183,7 @@ class _TenantTechnicianShellPageState extends State<TenantTechnicianShellPage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             const SizedBox(height: 8),
-            FilledButton.tonalIcon(
+            FilledButton.icon(
               onPressed: () async {
                 await context.read<AuthViewModel>().signOut();
                 if (!context.mounted) return;
@@ -190,16 +200,36 @@ class _TenantTechnicianShellPageState extends State<TenantTechnicianShellPage> {
 
   Drawer _buildDrawer(BuildContext context) {
     return Drawer(
+      backgroundColor: const Color(0xFFFFF8D6),
       child: SafeArea(
         child: ListView(
           padding: const EdgeInsets.symmetric(vertical: 16),
           children: [
-            ListTile(
-              title: Text(
-                'Panel técnico',
-                style: Theme.of(context).textTheme.titleLarge,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.black,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Panel técnico',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            color: Colors.white,
+                          ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Navegación principal',
+                      style: TextStyle(color: Colors.white70),
+                    ),
+                  ],
+                ),
               ),
-              subtitle: const Text('Navegación principal'),
             ),
             const Divider(height: 24),
             _drawerTile(context, 0, Icons.home_rounded, 'Inicio'),
@@ -744,12 +774,11 @@ class _TenantTechnicianShellPageState extends State<TenantTechnicianShellPage> {
       padding: const EdgeInsets.all(0),
       child: Container(
         decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [SapphirePalette.sapphire800, SapphirePalette.sapphire500],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          color: Color(0xFFFFC107),
           borderRadius: BorderRadius.all(Radius.circular(28)),
+          border: Border.fromBorderSide(
+            BorderSide(color: Colors.black, width: 1.2),
+          ),
         ),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
@@ -759,7 +788,7 @@ class _TenantTechnicianShellPageState extends State<TenantTechnicianShellPage> {
               Text(
                 auth?.user.fullName ?? 'Técnico',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: Colors.white,
+                      color: Colors.black,
                       fontWeight: FontWeight.w900,
                     ),
               ),
@@ -767,7 +796,7 @@ class _TenantTechnicianShellPageState extends State<TenantTechnicianShellPage> {
               Text(
                 auth?.currentTenant?.commercialName ?? 'Sin tenant activo',
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.9),
+                      color: Colors.black87,
                     ),
               ),
               const SizedBox(height: 12),
@@ -968,8 +997,8 @@ class _TenantTechnicianShellPageState extends State<TenantTechnicianShellPage> {
     required IconData icon,
     required VoidCallback onTap,
   }) {
-    return Material(
-      color: Colors.white,
+  return Material(
+      color: const Color(0xFFFFF8D6),
       borderRadius: BorderRadius.circular(18),
       child: InkWell(
         onTap: onTap,
@@ -979,12 +1008,12 @@ class _TenantTechnicianShellPageState extends State<TenantTechnicianShellPage> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, color: SapphirePalette.sapphire700, size: 20),
+              Icon(icon, color: Colors.black, size: 20),
               const SizedBox(width: 8),
               Text(
                 label,
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: SapphirePalette.sapphire900,
+                    color: Colors.black,
                       fontWeight: FontWeight.w800,
                     ),
               ),
