@@ -1,0 +1,89 @@
+<app-admin-page-shell>
+	<app-page-header
+		eyebrow="Cliente"
+		title="Mis vehículos"
+		description="Consulta los vehículos asociados a tu cuenta."
+		[showRefresh]="true"
+		[showPrimaryAction]="true"
+		primaryActionLabel="Nuevo vehículo"
+		(refreshClicked)="load()"
+		(primaryActionClicked)="createVehicle()"
+	/>
+
+	@if (loading()) {
+		<div class="rounded-2xl border border-black bg-[#FFF4CC] p-6 font-medium">
+			Cargando vehículos...
+		</div>
+	} @else if (error()) {
+		<div class="rounded-2xl border border-black bg-[#FFF4CC] p-6">
+			<p class="font-semibold">No se pudieron cargar los vehículos.</p>
+			<p class="mt-1">{{ error() }}</p>
+		</div>
+	} @else {
+		<section class="grid gap-4">
+			@if (vehicles().length === 0) {
+				<div class="rounded-2xl border border-black bg-[#FFF4CC] p-6">
+					No tienes vehículos registrados.
+				</div>
+			} @else {
+				@for (vehicle of vehicles(); track vehicle.id) {
+					<article class="rounded-2xl border border-black bg-[#FFF4CC] p-5">
+						<div class="flex flex-wrap items-start justify-between gap-3">
+							<div>
+								<p class="text-xs font-semibold uppercase tracking-wide">
+									{{ vehicle.plate_number }}
+								</p>
+								<h2 class="mt-1 text-xl font-semibold">
+									{{ vehicle.brand || "Sin marca" }} {{ vehicle.model || "" }}
+								</h2>
+							</div>
+
+							<div class="flex flex-wrap gap-2 text-xs font-semibold">
+								<span class="rounded-full border border-black bg-black px-3 py-1 text-[#FFFBEB]">
+									{{ statusLabel(vehicle.status) }}
+								</span>
+								<span class="rounded-full border border-black px-3 py-1">
+									{{ typeLabel(vehicle.vehicle_type) }}
+								</span>
+							</div>
+						</div>
+
+						<div class="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+							<div class="rounded-xl border border-black bg-[#FFFBEB] p-3">
+								<p class="text-xs uppercase tracking-wide">Color</p>
+								<p class="mt-1 text-sm">{{ vehicle.color || "Sin color" }}</p>
+							</div>
+
+							<div class="rounded-xl border border-black bg-[#FFFBEB] p-3">
+								<p class="text-xs uppercase tracking-wide">Año</p>
+								<p class="mt-1 text-sm">{{ vehicle.year || "Sin año" }}</p>
+							</div>
+
+							<div class="rounded-xl border border-black bg-[#FFFBEB] p-3">
+								<p class="text-xs uppercase tracking-wide">Creado</p>
+								<p class="mt-1 text-sm">{{ formatDate(vehicle.created_at) }}</p>
+							</div>
+
+							<div class="rounded-xl border border-black bg-[#FFFBEB] p-3">
+								<p class="text-xs uppercase tracking-wide">Actualizado</p>
+								<p class="mt-1 text-sm">{{ formatDate(vehicle.updated_at) }}</p>
+							</div>
+						</div>
+
+						<div class="mt-4 flex flex-wrap gap-2">
+							<button
+								type="button"
+								hlmBtn
+								variant="outline"
+								class="cursor-pointer"
+								(click)="editVehicle(vehicle)"
+							>
+								Editar vehículo
+							</button>
+						</div>
+					</article>
+				}
+			}
+		</section>
+	}
+</app-admin-page-shell>

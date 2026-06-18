@@ -1,5 +1,4 @@
 import { Component } from "@angular/core";
-import { RouterLink } from "@angular/router";
 import { NgIcon, provideIcons } from "@ng-icons/core";
 import {
 	lucideArrowRight,
@@ -15,7 +14,7 @@ import { APP_ROUTES } from "../../../core/routing";
 @Component({
 	selector: "app-public-mobile-app",
 	standalone: true,
-	imports: [RouterLink, NgIcon],
+	imports: [NgIcon],
 	providers: [
 		provideIcons({
 			lucideArrowRight,

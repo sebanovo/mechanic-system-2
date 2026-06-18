@@ -1,0 +1,134 @@
+<app-admin-page-shell>
+	<app-page-header
+		eyebrow="Cliente"
+		title="Editar incidente"
+		description="Actualiza los datos del incidente o cancélalo si ya no aplica."
+	/>
+
+	@if (loading()) {
+		<div class="rounded-2xl border border-black bg-[#FFF4CC] p-6 font-medium">
+			Cargando incidente...
+		</div>
+	} @else if (errorMessage()) {
+		<div class="rounded-2xl border border-black bg-[#FFF4CC] p-6">
+			<p class="font-semibold">No se pudo cargar el incidente.</p>
+			<p class="mt-1">{{ errorMessage() }}</p>
+			<div class="mt-4">
+				<button type="button" hlmBtn variant="outline" class="cursor-pointer" (click)="cancel()">Volver</button>
+			</div>
+		</div>
+	} @else if (incident()) {
+		<div class="mb-4 flex flex-wrap items-center gap-2">
+			<span class="text-sm font-semibold uppercase tracking-wide">Estado</span>
+			<span class="rounded-full border border-black bg-[#FFC107] px-3 py-1 text-xs font-semibold text-black">
+				{{ statusLabel(incident()?.status) }}
+			</span>
+		</div>
+
+		@if (incident()?.status === "UNATTENDED" && incident()?.unattended_reason) {
+			<div class="mb-4 rounded-xl border border-black bg-black px-3 py-2 text-sm text-[#FFFBEB]">
+				Sin atención: {{ incident()?.unattended_reason }}
+			</div>
+		}
+
+		<form class="space-y-5 rounded-2xl border border-black bg-[#FFF4CC] p-5" [formGroup]="form">
+			<div class="grid gap-4 md:grid-cols-2">
+				<hlm-field>
+					<label hlmFieldLabel for="vehicle_id">Vehículo</label>
+					<select id="vehicle_id" class="h-10 w-full rounded-md border border-black bg-[#FFFBEB] px-3 text-sm" formControlName="vehicle_id">
+						@for (vehicle of vehicles(); track vehicle.id) {
+							<option [value]="vehicle.id">{{ vehicle.plate_number }} - {{ vehicle.brand || 'Sin marca' }}</option>
+						}
+					</select>
+				</hlm-field>
+
+				<hlm-field>
+					<label hlmFieldLabel for="priority">Prioridad</label>
+					<select id="priority" class="h-10 w-full rounded-md border border-black bg-[#FFFBEB] px-3 text-sm" formControlName="priority">
+						<option value="">Sin prioridad</option>
+						@for (option of priorityOptions; track option.value) {
+							<option [value]="option.value">{{ option.label }}</option>
+						}
+					</select>
+				</hlm-field>
+			</div>
+
+			<div class="grid gap-4 md:grid-cols-2">
+				<hlm-field>
+					<label hlmFieldLabel for="title">Título</label>
+					<input id="title" hlmInput type="text" formControlName="title" />
+				</hlm-field>
+
+				<hlm-field>
+					<label hlmFieldLabel for="service_catalog_id">Servicio</label>
+					<input id="service_catalog_id" hlmInput type="text" formControlName="service_catalog_id" placeholder="Opcional" />
+				</hlm-field>
+			</div>
+
+			<hlm-field>
+				<label hlmFieldLabel for="description">Descripción</label>
+				<textarea id="description" class="min-h-32 w-full rounded-md border border-black bg-[#FFFBEB] px-3 py-2 text-sm" formControlName="description"></textarea>
+			</hlm-field>
+
+			<div class="grid gap-4 md:grid-cols-2">
+				<hlm-field>
+					<label hlmFieldLabel for="latitude">Latitud</label>
+					<input id="latitude" hlmInput type="number" step="any" formControlName="latitude" />
+				</hlm-field>
+
+				<hlm-field>
+					<label hlmFieldLabel for="longitude">Longitud</label>
+					<input id="longitude" hlmInput type="number" step="any" formControlName="longitude" />
+				</hlm-field>
+			</div>
+
+			<div>
+				<button
+					type="button"
+					hlmBtn
+					variant="outline"
+					class="cursor-pointer"
+					[disabled]="saving()"
+					(click)="useCurrentLocation()"
+				>
+					Cargar ubicación actual
+				</button>
+			</div>
+
+			<hlm-field>
+				<label hlmFieldLabel for="address_text">Dirección</label>
+				<input id="address_text" hlmInput type="text" formControlName="address_text" />
+			</hlm-field>
+
+			@if (errorMessage()) {
+				<div class="rounded-xl border border-black bg-black px-3 py-2 text-sm text-[#FFFBEB]">
+					{{ errorMessage() }}
+				</div>
+			}
+
+			<hlm-field>
+				<label hlmFieldLabel for="cancellation_notes">Notas de cancelación</label>
+				<textarea
+					id="cancellation_notes"
+					hlmTextarea
+					class="min-h-24"
+					formControlName="cancellation_notes"
+					placeholder="Escribe el motivo o una nota breve para la cancelación"
+				></textarea>
+			</hlm-field>
+
+			<div class="flex flex-wrap gap-2">
+				@if (canCancelIncident(incident()?.status)) {
+					<button type="button" hlmBtn variant="outline" class="cursor-pointer" [disabled]="saving()" (click)="cancelIncident()">Cancelar incidente</button>
+				}
+			</div>
+
+			<div class="flex justify-end gap-2">
+				<button type="button" hlmBtn variant="outline" class="cursor-pointer" (click)="cancel()">Volver</button>
+				<button type="button" hlmBtn class="cursor-pointer" [disabled]="saving()" (click)="save()">
+					{{ saving() ? "Guardando..." : "Guardar cambios" }}
+				</button>
+			</div>
+		</form>
+	}
+</app-admin-page-shell>

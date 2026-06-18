@@ -58,7 +58,7 @@ flutter_launcher_icons:
   remove_alpha_ios: true
   web:
     generate: true
-    image_path: "assets/logo2.png"
+    image_path: "assets/con-fondo/logo2.png"
   windows:
     generate: true
     image_path: "assets/logo2.png"

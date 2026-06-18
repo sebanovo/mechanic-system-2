@@ -42,6 +42,33 @@ export const CLIENT_NAVIGATION: NavigationGroup[] = [
 				requiresAuth: true,
 			},
 			{
+				id: "client-tracking",
+				label: "Tracking en vivo",
+				icon: "satellite",
+				route: APP_ROUTES.client.tracking,
+				context: ["CLIENT"],
+				allowedUserTypes: ["CLIENT"],
+				requiresAuth: true,
+			},
+			{
+				id: "client-sessions",
+				label: "Sesiones",
+				icon: "clock",
+				route: APP_ROUTES.client.sessions,
+				context: ["CLIENT"],
+				allowedUserTypes: ["CLIENT"],
+				requiresAuth: true,
+			},
+			{
+				id: "client-notifications",
+				label: "Notificaciones",
+				icon: "bell",
+				route: APP_ROUTES.client.notifications,
+				context: ["CLIENT"],
+				allowedUserTypes: ["CLIENT"],
+				requiresAuth: true,
+			},
+			{
 				id: "client-profile",
 				label: "Perfil",
 				icon: "users",
@@ -53,3 +80,4 @@ export const CLIENT_NAVIGATION: NavigationGroup[] = [
 		],
 	},
 ];
+

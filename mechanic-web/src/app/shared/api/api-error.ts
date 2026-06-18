@@ -2,6 +2,25 @@ import { HttpErrorResponse } from "@angular/common/http";
 
 import { ApiErrorResponse } from "./api.types";
 
+function extractApiErrorDetails(body: Partial<ApiErrorResponse> | null): {
+	field?: string;
+	message: string;
+}[] {
+	if (!body) {
+		return [];
+	}
+
+	if (body.details?.length) {
+		return body.details;
+	}
+
+	if (body.error?.details?.length) {
+		return body.error.details;
+	}
+
+	return [];
+}
+
 export function getApiErrorMessage(error: unknown): string {
 	if (error instanceof HttpErrorResponse) {
 		const body = error.error as Partial<ApiErrorResponse> | null;
@@ -51,11 +70,13 @@ export function getApiFieldErrors(error: unknown): Record<string, string> {
 
 	const body = error.error as Partial<ApiErrorResponse> | null;
 
-	if (!body?.details?.length) {
+	const details = extractApiErrorDetails(body);
+
+	if (!details.length) {
 		return {};
 	}
 
-	return body.details.reduce<Record<string, string>>((acc, detail) => {
+	return details.reduce<Record<string, string>>((acc, detail) => {
 		if (!detail.field) {
 			return acc;
 		}

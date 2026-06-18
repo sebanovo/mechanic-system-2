@@ -15,6 +15,13 @@ export interface ApiErrorResponse {
 	error_code?: string;
 	request_id?: string;
 	details?: ApiErrorDetail[];
+	error?: {
+		code?: string;
+		details?: ApiErrorDetail[];
+	} | null;
+	meta?: {
+		request_id?: string;
+	} | null;
 }
 
 export interface ApiMessageResponse {

@@ -1,0 +1,228 @@
+<app-admin-page-shell>
+	<app-page-header
+		eyebrow="Cliente"
+		title="Tracking en vivo"
+		description="Sigue el estado de tu asignación en tiempo real."
+		[showRefresh]="true"
+		(refreshClicked)="loadAssignments()"
+	/>
+
+	<div class="grid gap-6 xl:grid-cols-[380px_1fr]">
+		<section class="space-y-5">
+			@if (isLoadingAssignments()) {
+				<app-loading-state
+					title="Cargando asignaciones"
+					description="Buscando asignaciones activas para tracking."
+				/>
+			} @else if (assignments().length === 0) {
+				<app-page-section [padded]="true">
+					<div class="flex min-h-52 flex-col items-center justify-center text-center">
+						<ng-icon name="lucideRadar" class="size-6" />
+						<h3 class="mt-3 text-base font-semibold">Sin asignaciones activas</h3>
+						<p class="mt-2 text-sm">
+							El tracking en vivo solo aplica a asignaciones no finalizadas.
+						</p>
+					</div>
+				</app-page-section>
+			} @else {
+				<div class="space-y-3">
+					@for (item of assignments(); track item.assignment.id) {
+						<button
+							type="button"
+							class="w-full rounded-xl border border-black p-4 text-left transition"
+							[ngClass]="
+								selectedAssignment()?.assignment?.id === item.assignment.id
+									? 'bg-black text-[#FFFBEB]'
+									: 'bg-[#FFF4CC] text-black'
+							"
+							(click)="selectAssignment(item)"
+						>
+							<div class="flex items-start justify-between gap-3">
+								<div class="min-w-0">
+									<p class="truncate text-sm font-semibold">
+										{{ assignmentCode(item) }}
+									</p>
+									<p class="mt-1 line-clamp-2 text-xs">
+										{{ assignmentDescription(item) }}
+									</p>
+								</div>
+
+								<app-assignment-status-badge
+									[status]="item.assignment.assignment_status"
+								/>
+							</div>
+
+							<div class="mt-3 grid gap-2 text-xs">
+								<p class="truncate">{{ technicianLabel(item) }}</p>
+								<p class="truncate">{{ assignmentLocation(item) }}</p>
+							</div>
+						</button>
+					}
+				</div>
+			}
+		</section>
+
+		<section class="space-y-5">
+			<div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+				<app-stat-card
+					label="Conexión"
+					[value]="connectionStatus()"
+					description="Estado WebSocket"
+					tone="info"
+				/>
+				<app-stat-card
+					label="Técnico"
+					[value]="technicianConnected() ? 'Conectado' : 'Sin señal'"
+					description="Presencia en vivo"
+					[tone]="technicianConnected() ? 'success' : 'muted'"
+				/>
+				<app-stat-card
+					label="Velocidad"
+					[value]="speedLabel()"
+					description="Último dato recibido"
+					tone="info"
+				/>
+				<app-stat-card
+					label="Dirección"
+					[value]="headingLabel()"
+					description="Heading del técnico"
+					tone="muted"
+				/>
+			</div>
+
+			<app-page-section [padded]="true">
+				<div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+					<div class="min-w-0">
+						<p class="text-sm">Asignación seleccionada</p>
+						<h2 class="mt-1 truncate text-lg font-semibold">
+							{{ selectedAssignmentCode() }}
+						</h2>
+						<p class="mt-1 line-clamp-2 text-sm">
+							{{ selectedAssignmentDescription() }}
+						</p>
+					</div>
+
+					<div class="flex gap-2">
+						<button
+							type="button"
+							hlmBtn
+							variant="outline"
+							class="cursor-pointer"
+							[disabled]="!trackingSession()"
+							(click)="reconnect()"
+						>
+							Reconectar
+						</button>
+
+						<button
+							type="button"
+							hlmBtn
+							variant="outline"
+							class="cursor-pointer"
+							[disabled]="!trackingSession()"
+							(click)="disconnect()"
+						>
+							Desconectar
+						</button>
+					</div>
+				</div>
+			</app-page-section>
+
+			@if (errorMessage()) {
+				<app-error-state
+					title="Problema con tracking"
+					[description]="errorMessage()!"
+					(actionClicked)="
+						selectedAssignment() && loadTrackingSession(selectedAssignment()!.assignment.id)
+					"
+				/>
+			}
+
+			@if (!selectedAssignment()) {
+				<app-page-section [padded]="true">
+					<div class="flex min-h-80 flex-col items-center justify-center text-center">
+						<ng-icon name="lucideSatellite" class="size-8" />
+						<h3 class="mt-4 text-base font-semibold">
+							Selecciona una asignación
+						</h3>
+						<p class="mt-2 max-w-md text-sm">
+							Elige una asignación activa para abrir la sesión de seguimiento.
+						</p>
+					</div>
+				</app-page-section>
+			} @else if (isLoadingSession()) {
+				<app-loading-state
+					title="Cargando sesión"
+					description="Estamos obteniendo origen, destino y contrato WebSocket."
+				/>
+			}
+
+			@if (trackingSession()) {
+				<div class="grid gap-5 lg:grid-cols-2">
+					<app-page-section
+						title="Técnico"
+						description="Actor operativo enviado por el backend."
+					>
+						<div class="space-y-4">
+							<p class="text-sm font-semibold">
+								{{ trackingSession()!.technician.name }}
+							</p>
+							<p class="text-sm">
+								{{ trackingSession()!.technician.phone || 'Sin teléfono' }}
+							</p>
+							<p class="text-sm">{{ formatPoint(originPoint()) }}</p>
+							<p class="text-xs">{{ formatPointDate(originPoint()) }}</p>
+						</div>
+					</app-page-section>
+
+					<app-page-section
+						title="Cliente"
+						description="Cliente asociado al incidente."
+					>
+						<div class="space-y-4">
+							<p class="text-sm font-semibold">
+								{{ trackingSession()!.customer.name }}
+							</p>
+							<p class="text-sm">
+								{{ trackingSession()!.customer.phone || 'Sin teléfono' }}
+							</p>
+							<p class="text-sm">{{ formatPoint(destinationPoint()) }}</p>
+							<p class="text-xs">
+								{{ destinationPoint()?.address_text || 'Sin dirección textual' }}
+							</p>
+						</div>
+					</app-page-section>
+				</div>
+
+				<app-realtime-google-map
+					[origin]="originPoint()"
+					[destination]="destinationPoint()"
+					[connectionStatus]="connectionStatus()"
+					[technicianConnected]="technicianConnected()"
+				/>
+
+				<app-page-section
+					title="Eventos WebSocket"
+					description="Últimos mensajes recibidos desde el backend."
+				>
+					@if (logs().length === 0) {
+						<div class="flex min-h-40 flex-col items-center justify-center text-center">
+							<ng-icon name="lucideMessageSquare" class="size-6" />
+							<p class="mt-3 text-sm">Aún no se recibieron eventos.</p>
+						</div>
+					} @else {
+						<div class="space-y-3">
+							@for (item of logs(); track item.id) {
+								<article class="rounded-lg border border-black bg-[#FFF4CC] p-4">
+									<p class="text-sm font-semibold">{{ item.title }}</p>
+									<p class="mt-1 text-sm">{{ item.description }}</p>
+									<p class="mt-3 text-xs">{{ item.occurred_at }}</p>
+								</article>
+							}
+						</div>
+					}
+				</app-page-section>
+			}
+		</section>
+	</div>
+</app-admin-page-shell>

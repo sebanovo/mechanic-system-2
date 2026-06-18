@@ -17,8 +17,13 @@ export const APP_ROUTES = {
 		root: "/client",
 		dashboard: "/client/dashboard",
 		incidents: "/client/incidents",
+		incidentCreate: "/client/incidents/new",
 		vehicles: "/client/vehicles",
+		vehicleCreate: "/client/vehicles/new",
 		assignments: "/client/assignments",
+		sessions: "/client/sessions",
+		notifications: "/client/notifications",
+		tracking: "/client/tracking",
 		profile: "/client/profile",
 	},
 

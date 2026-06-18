@@ -1,0 +1,66 @@
+<app-admin-page-shell>
+	<app-page-header
+		eyebrow="Cliente"
+		title="Nuevo vehículo"
+		description="Registra un vehículo para usarlo en tus incidentes."
+	/>
+
+	<form class="space-y-5 rounded-2xl border border-black bg-[#FFF4CC] p-5" [formGroup]="form" (ngSubmit)="submit()">
+		<div class="grid gap-4 md:grid-cols-2">
+			<hlm-field>
+				<label hlmFieldLabel for="brand">Marca</label>
+				<input id="brand" hlmInput type="text" formControlName="brand" placeholder="Toyota" />
+			</hlm-field>
+
+			<hlm-field>
+				<label hlmFieldLabel for="model">Modelo</label>
+				<input id="model" hlmInput type="text" formControlName="model" placeholder="Corolla" />
+			</hlm-field>
+		</div>
+
+		<div class="grid gap-4 md:grid-cols-2">
+			<hlm-field>
+				<label hlmFieldLabel for="plate_number">Placa</label>
+				<input id="plate_number" hlmInput type="text" formControlName="plate_number" placeholder="ABC123" />
+			</hlm-field>
+
+			<hlm-field>
+				<label hlmFieldLabel for="vehicle_type">Tipo de vehículo</label>
+				<select id="vehicle_type" class="h-10 w-full rounded-md border border-black bg-[#FFFBEB] px-3 text-sm" formControlName="vehicle_type">
+					@for (option of vehicleTypeOptions; track option.value) {
+						<option [value]="option.value">{{ option.label }}</option>
+					}
+				</select>
+			</hlm-field>
+		</div>
+
+		<div class="grid gap-4 md:grid-cols-2">
+			<hlm-field>
+				<label hlmFieldLabel for="color">Color</label>
+				<input id="color" hlmInput type="text" formControlName="color" placeholder="Blanco" />
+			</hlm-field>
+
+			<hlm-field>
+				<label hlmFieldLabel for="year">Año</label>
+				<input id="year" hlmInput type="number" formControlName="year" placeholder="2020" />
+			</hlm-field>
+		</div>
+
+		@if (errorMessage()) {
+			<div class="rounded-xl border border-black bg-black px-3 py-2 text-sm text-[#FFFBEB]">
+				{{ errorMessage() }}
+			</div>
+		}
+
+		<div class="flex justify-end gap-2">
+			<button type="button" hlmBtn variant="outline" class="cursor-pointer" (click)="cancel()">Cancelar</button>
+			<button type="submit" hlmBtn class="cursor-pointer" [disabled]="isSubmitting()">
+				@if (isSubmitting()) {
+					Creando...
+				} @else {
+					Crear vehículo
+				}
+			</button>
+		</div>
+	</form>
+</app-admin-page-shell>

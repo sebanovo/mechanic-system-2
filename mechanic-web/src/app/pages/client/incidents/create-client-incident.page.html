@@ -1,0 +1,68 @@
+<app-admin-page-shell>
+	<app-page-header
+		eyebrow="Cliente"
+		title="Nuevo incidente"
+		description="Registra un incidente desde tu cuenta."
+	/>
+
+	<form class="space-y-5 rounded-2xl border border-black bg-[#FFF4CC] p-5" [formGroup]="form" (ngSubmit)="submit()">
+		<div class="grid gap-4 md:grid-cols-2">
+			<hlm-field>
+				<label hlmFieldLabel for="vehicle_id">Vehículo</label>
+				<select id="vehicle_id" class="h-10 w-full rounded-md border border-black bg-[#FFFBEB] px-3 text-sm" formControlName="vehicle_id">
+					<option value="">Selecciona un vehículo</option>
+					@for (vehicle of vehicles(); track vehicle.id) {
+						<option [value]="vehicle.id">{{ vehicle.plate_number }} - {{ vehicle.brand || 'Sin marca' }}</option>
+					}
+				</select>
+			</hlm-field>
+
+			<hlm-field>
+				<label hlmFieldLabel for="priority">Prioridad</label>
+				<select id="priority" class="h-10 w-full rounded-md border border-black bg-[#FFFBEB] px-3 text-sm" formControlName="priority">
+					@for (option of priorityOptions; track option.value) {
+						<option [value]="option.value">{{ option.label }}</option>
+					}
+				</select>
+			</hlm-field>
+		</div>
+
+		<hlm-field>
+			<label hlmFieldLabel for="description">Descripción</label>
+			<textarea id="description" class="min-h-32 w-full rounded-md border border-black bg-[#FFFBEB] px-3 py-2 text-sm" formControlName="description" placeholder="El auto no arranca y parece problema de batería."></textarea>
+		</hlm-field>
+
+		<div class="grid gap-4 md:grid-cols-2">
+			<hlm-field>
+				<label hlmFieldLabel for="latitude">Latitud</label>
+				<input id="latitude" hlmInput type="number" step="any" formControlName="latitude" />
+			</hlm-field>
+
+			<hlm-field>
+				<label hlmFieldLabel for="longitude">Longitud</label>
+				<input id="longitude" hlmInput type="number" step="any" formControlName="longitude" />
+			</hlm-field>
+		</div>
+
+		<div class="flex justify-end">
+			<button type="button" hlmBtn variant="outline" class="cursor-pointer" (click)="useCurrentLocation()">Usar ubicación actual</button>
+		</div>
+
+		@if (errorMessage()) {
+			<div class="rounded-xl border border-black bg-black px-3 py-2 text-sm text-[#FFFBEB]">
+				{{ errorMessage() }}
+			</div>
+		}
+
+		<div class="flex justify-end gap-2">
+			<button type="button" hlmBtn variant="outline" class="cursor-pointer" (click)="cancel()">Cancelar</button>
+			<button type="submit" hlmBtn class="cursor-pointer" [disabled]="isSubmitting()">
+				@if (isSubmitting()) {
+					Creando...
+				} @else {
+					Crear incidente
+				}
+			</button>
+		</div>
+	</form>
+</app-admin-page-shell>

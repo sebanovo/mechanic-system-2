@@ -42,7 +42,6 @@ import { IncidentAiAnalysisPriorityBadge } from "../../../entities/incident-ai-a
 import { Incident } from "../../../entities/incident/model";
 import { getApiErrorMessage } from "../../../shared/api";
 import {
-	ConfirmActionDialog,
 	DataToolbar,
 	ErrorState,
 	LoadingState,
@@ -85,8 +84,6 @@ function createEmptyFilters(): AnalysisFilters {
 		Pagination,
 		ResourceActionsMenu,
 		SideDrawer,
-		ConfirmActionDialog,
-		StatCard,
 		IncidentAiAnalysisPriorityBadge,
 		CreateIncidentAiAnalysisForm,
 	],
